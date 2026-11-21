@@ -3,6 +3,7 @@
 // exact compilers as the function itself: certified f' and f'' for free.
 
 import { Rational } from "@ratmath/core";
+import { constValue } from "./expr.js";
 
 const N = (q) => ({ type: "num", value: q instanceof Rational ? q : new Rational(BigInt(q)) });
 const isNum = (a, q) => a.type === "num" && (q === undefined || a.value.equals(new Rational(BigInt(q))));
@@ -15,8 +16,18 @@ export function add(a, b) {
   return { type: "op", op: "+", args: [a, b] };
 }
 
+/** Structural equality of two ASTs. */
+export function same(a, b) {
+  if (a.type !== b.type) return false;
+  if (a.type === "num") return a.value.equals(b.value);
+  if (a.type === "var" || a.type === "const") return a.name === b.name;
+  if ((a.op ?? a.name) !== (b.op ?? b.name) || a.args.length !== b.args.length) return false;
+  return a.args.every((x, i) => same(x, b.args[i]));
+}
+
 export function sub(a, b) {
   if (isNum(b, 0)) return a;
+  if (same(a, b)) return N(0);
   if (isNum(a, 0)) return neg(b);
   if (isNum(a) && isNum(b)) return N(a.value.subtract(b.value));
   if (b.type === "op" && b.op === "neg") return add(a, b.args[0]);
@@ -58,12 +69,8 @@ export function pow(a, k) {
 const call = (name, ...args) => ({ type: "call", name, args });
 
 function intExp(e) {
-  if (e.type === "num" && e.value.denominator === 1n) return Number(e.value.numerator);
-  if (e.type === "op" && e.op === "neg") {
-    const k = intExp(e.args[0]);
-    return k === null ? null : -k;
-  }
-  return null;
+  const c = constValue(e);
+  return c && c.denominator === 1n ? Number(c.numerator) : null;
 }
 
 function dependsOn(ast, x) {
@@ -90,8 +97,12 @@ export function derive(ast, x = "x") {
         case "^": {
           const k = intExp(v);
           if (k !== null) return mul(mul(N(k), pow(u, k - 1)), derive(u, x));
-          if (!dependsOn(v, x)) {
+          const c = constValue(v);
+          if (c !== null) {
             // u^c with constant non-integer c: c * u^(c-1) * u'
+            return mul(mul(N(c), { type: "op", op: "^", args: [u, N(c.subtract(new Rational(1n)))] }), derive(u, x));
+          }
+          if (!dependsOn(v, x)) {
             return mul(mul(v, { type: "op", op: "^", args: [u, sub(v, N(1))] }), derive(u, x));
           }
           // u^v = exp(v ln u): (u^v) * (v' ln u + v u'/u)

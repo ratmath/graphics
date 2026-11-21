@@ -29,7 +29,7 @@
   <div id="sliders"></div>
   <canvas id="plot" width="800" height="480"></canvas>
   <div id="zeros"></div>
-  <p style="color:var(--muted);font-size:13px">While a slider moves you see a fast floating-point sketch. When it stops, every pixel column is recomputed with certified rational interval arithmetic: shaded cells are exactly the pixels the graph can touch. Slider values are exact rationals. Dashed lines are proven poles; filled dots are proven maxima and minima, open dots inflection points.</p>
+  <p style="color:var(--muted);font-size:13px">While a slider moves you see a fast floating-point sketch. When it stops, every pixel column is recomputed with certified rational interval arithmetic: shaded cells are exactly the pixels the graph can touch. Slider values are exact rationals. Dashed lines are proven poles. Dots: zeros in the curve's color, max/min darker, inflection points lighter; open dots are holes or excluded domain ends, filled ones included ends.</p>
 </main>
 <script type="module" src="./dist/main.js"></script>
 </body>

@@ -105,3 +105,49 @@ test("features() does not list a pole of tan as a possible zero", () => {
   expect(v.zeros.map((r) => r.kind)).toEqual(["sign-change", "sign-change", "sign-change"]);
   expect(v.poles.length).toBe(2);
 });
+
+describe("holes and domain endpoints", () => {
+  const ex = (f, r = [-4, 4]) => features(f, {}, r, { tolerance: "1/100000" }).exact();
+  test("holes are removable points, not poles", () => {
+    const a = ex("x/x");
+    expect(a.poles).toEqual([]);
+    expect(a.holes.map((h) => `${h.at} ${h.valueApprox}`)).toEqual(["0 1"]);
+    const b = ex("(x^2 - 1)/(x - 1)");
+    expect(b.holes.map((h) => `${h.at} ${h.valueApprox}`)).toEqual(["1 2"]);
+    const c = ex("sin(x)/x");
+    expect(c.holes[0].valueApprox).toBeCloseTo(1, 6);
+    expect(c.zeros.every((z) => z.kind === "sign-change")).toBe(true);
+  });
+  test("domain endpoints: included, with sides", () => {
+    const s = ex("sqrt(9 - x^2)");
+    expect(s.endpoints.map((e) => `${e.at} ${e.side} ${e.included}`)).toEqual(["-3 right true", "3 left true"]);
+    expect(s.zeros.map((z) => `${z.kind} ${z.at}`)).toEqual(["exact -3", "exact 3"]);
+    expect(s.extrema.map((e) => `${e.kind} ${e.at}`)).toEqual(["max 0"]);
+    expect(ex("x^(1/2)").endpoints.map((e) => `${e.at} ${e.included}`)).toEqual(["0 true"]);
+    const irr = ex("sqrt(x^2 - 2)");
+    expect(irr.endpoints.map((e) => e.side)).toEqual(["left", "right"]);
+    expect(irr.endpoints[1].lo.toNumber()).toBeLessThanOrEqual(Math.SQRT2);
+    expect(irr.endpoints[1].hi.toNumber()).toBeGreaterThanOrEqual(Math.SQRT2);
+  });
+  test("an excluded end that is a pole is drawn as an asymptote, not a dot", () => {
+    const v = ex("1/sqrt(x)");
+    expect(v.endpoints).toEqual([]);
+    expect(v.poles.map((p) => `${p.at} ${p.certain}`)).toEqual(["0 true"]);
+  });
+  test("a constant derivative has no extrema", () => {
+    expect(ex("x/x").extrema).toEqual([]);
+    expect(ex("(x^2 - 1)/(x - 1)").inflections).toEqual([]);
+  });
+});
+
+import { markerList, shade } from "../src/render/markers.js";
+test("marker roles and fills follow the convention", () => {
+  const v = features("sqrt(9 - x^2) * x", {}, [-4, 4], { tolerance: "1/10000" }).exact();
+  const roles = markerList(v).map((m) => `${m.role}${m.filled ? "" : "(open)"}`);
+  expect(roles).toContain("zero");
+  expect(roles).toContain("extremum");
+  expect(roles).toContain("endpoint");
+  expect(markerList(features("x/x", {}, [-1, 1]).exact()).map((m) => `${m.role}${m.filled ? "" : "(open)"}`)).toEqual(["hole(open)"]);
+  expect(shade("#2563eb", -0.5)).toBe("rgb(19, 50, 118)");
+  expect(shade("#000", 1)).toBe("rgb(255, 255, 255)");
+});

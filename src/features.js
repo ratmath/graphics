@@ -19,7 +19,7 @@
 // point (like x^3 at 0). Inflections are sign changes of f'' the same way.
 
 import { Rational } from "@ratmath/core";
-import { compileExact, compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
+import { compileExact, compileFloat, constValue, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import { derive, format } from "./derive.js";
 import * as I from "./interval.js";
 import { Refinement } from "./refine.js";
@@ -36,7 +36,7 @@ function* run(gen, step) {
 
 // ---- setup shared by the analyses ------------------------------------------------
 
-function setup(ast, params, tolerance, variable) {
+export function setup(ast, params, tolerance, variable) {
   const tol = toRational(tolerance);
   const bits = I.bitLength(tol.denominator) - I.bitLength(tol.numerator) + 24;
   const ctx = I.context(Math.max(32, bits));
@@ -80,9 +80,8 @@ export function denominators(ast, out = []) {
   if (ast.type === "op") {
     if (ast.op === "/") out.push({ D: ast.args[1], N: ast.args[0], kind: "pole" });
     if (ast.op === "^") {
-      const e = ast.args[1];
-      const negInt = (e.type === "op" && e.op === "neg") || (e.type === "num" && e.value.numerator < 0n);
-      if (negInt) out.push({ D: ast.args[0], N: { type: "num", value: new Rational(1n) }, kind: "pole" });
+      const c = constValue(ast.args[1]);
+      if (c !== null && c.numerator < 0n) out.push({ D: ast.args[0], N: { type: "num", value: new Rational(1n) }, kind: "pole" });
     }
   }
   if (ast.type === "call") {
@@ -259,6 +258,90 @@ function finish(gen) {
 
 export const findExtrema = (f, params, range, options) => finish(extremaGenerator(f, params, range, options));
 export const findInflections = (f, params, range, options) => finish(inflectionsGenerator(f, params, range, options));
+export const findEndpoints = (f, params, range, options) => finish(endpointsGenerator(f, params, range, options));
+
+// ---- domain endpoints and holes ----------------------------------------------------
+
+/** Arguments u that bound the domain from one side with u = 0 included: sqrt(u), u^c (c > 0 not an integer). */
+export function domainArguments(ast, out = []) {
+  if (ast.type === "call" && ast.name === "sqrt") out.push(ast.args[0]);
+  if (ast.type === "op" && ast.op === "^") {
+    const c = constValue(ast.args[1]);
+    if (c !== null && c.numerator > 0n && c.denominator !== 1n) out.push(ast.args[0]);
+  }
+  if (ast.args) for (const a of ast.args) domainArguments(a, out);
+  return out;
+}
+
+/** Is f defined at the located point? Exact rational points are evaluated directly. */
+function definedAt(F, loc) {
+  if (loc.exact && F.exact) return F.exact(loc.at, F.rp) !== null;
+  const { y } = encloseOn(F, F.enclose, loc.lo, loc.hi);
+  return finite(y);
+}
+
+/**
+ * Ends of the domain inside (a, b): where an argument of sqrt (or of a
+ * fractional power) crosses 0. `side` says which side the domain lies on;
+ * `included` whether f is defined at the end itself (filled dot) or not
+ * (open dot). An isolated point of the domain (sqrt(-x^2) at 0) has side
+ * "isolated".
+ */
+export function* endpointsGenerator(f, params, [a, b], { variable = "x", tolerance = "1/1000000", pieces = 64 } = {}) {
+  const ast = asAst(f);
+  const lo0 = toRational(a);
+  const hi0 = toRational(b);
+  const F = setup(ast, params, tolerance, variable);
+  const args = domainArguments(ast);
+  const out = [];
+  for (let k = 0; k < args.length; k++) {
+    const u = args[k];
+    const U = setup(u, params, tolerance, variable);
+    const zs = yield* run(zerosGenerator(u, params, [lo0, hi0], { variable, tolerance, pieces }), `domain ${k + 1}/${args.length}`);
+    for (const { z, left, right } of classify(U, zs, [lo0, hi0])) {
+      const loc = location(z);
+      if (loc.lo.equals(lo0) || loc.hi.equals(hi0)) continue; // the edge of the view, not of the domain
+      let side;
+      if (left < 0 && right > 0) side = "right";
+      else if (left > 0 && right < 0) side = "left";
+      else if (left < 0 && right < 0) side = "isolated";
+      else continue; // u >= 0 on both sides: an interior point of the domain
+      const included = definedAt(F, loc);
+      out.push({ kind: "endpoint", side, included, ...loc, ...(included ? valueAt(F, loc) : {}) });
+    }
+  }
+  out.sort((p, q) => p.lo.compareTo(q.lo));
+  return out.filter((e, i) => i === 0 || !e.lo.equals(out[i - 1].lo));
+}
+
+/**
+ * Holes: points where f is undefined but stays bounded nearby (x/x at 0,
+ * sin(x)/x at 0). The value is an estimate of the limit from enclosures of f
+ * just to each side, so it carries `approx: true`.
+ */
+export function holeAt(F, at, tol) {
+  if (definedAt(F, { exact: true, at, lo: at, hi: at })) return null;
+  // Values just to each side, at exact points; they must nearly agree, or
+  // this is a jump or a pole, not a hole.
+  const vals = [];
+  for (const k of [-2n, -1n, 1n, 2n]) {
+    const x = at.add(tol.multiply(new Rational(k)));
+    if (F.exact) {
+      const v = F.exact(x, F.rp);
+      if (v === null) return null;
+      vals.push(v.toNumber());
+    } else {
+      const { y } = encloseOn(F, F.enclose, x, x);
+      if (!finite(y)) return null;
+      vals.push(I.toNumber(F.ctx, y.lo));
+    }
+  }
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  if (hi - lo > 1e-3 * (1 + Math.abs(lo))) return null;
+  const v = (lo + hi) / 2;
+  return { kind: "hole", exact: true, at, lo: at, hi: at, valueApprox: v, approx: true };
+}
 
 // ---- everything together ---------------------------------------------------------------
 
@@ -295,10 +378,24 @@ export function* featuresGenerator(f, params, range, options = {}) {
   const poles = yield* polesGenerator(ast, params, range, options);
   const extrema = yield* extremaGenerator(ast, params, range, options);
   const inflections = yield* inflectionsGenerator(ast, params, range, options);
+  const endpointList = yield* endpointsGenerator(ast, params, range, options);
+  const F = setup(ast, params, options.tolerance ?? "1/1000000", options.variable ?? "x");
+  const holes = [];
+  for (const p of poles) {
+    if (p.certain || !p.exact) continue;
+    const h = holeAt(F, p.at, F.tol);
+    if (h) holes.push(h);
+  }
+  const notHole = (p) => !holes.some((h) => h.at.equals(p.lo));
+  const endpoints = endpointList.filter((e) => !poles.some((p) => p.certain && !e.lo.greaterThan(p.hi) && !p.lo.greaterThan(e.hi)));
   // An unsettled "possible" zero that overlaps a proven pole is that pole.
   const atPole = (r) => poles.some((p) => p.certain && !r.lo.greaterThan(p.hi) && !p.lo.greaterThan(r.hi));
-  const cleanZeros = zeros.filter((r) => r.kind !== "undefined" && !(r.kind === "possible" && atPole(r)));
-  return { value: { zeros: cleanZeros, poles, extrema, inflections }, via: "certified-derivatives" };
+  const atHole = (r) => holes.some((h) => !r.lo.greaterThan(h.at) && !h.at.greaterThan(r.hi) && Math.abs(h.valueApprox) > 1e-6);
+  const cleanZeros = zeros.filter((r) => r.kind !== "undefined" && !(r.kind === "possible" && (atPole(r) || atHole(r))));
+  return {
+    value: { zeros: cleanZeros, poles: poles.filter(notHole), holes, endpoints, extrema, inflections },
+    via: "certified-derivatives",
+  };
 }
 
 /**

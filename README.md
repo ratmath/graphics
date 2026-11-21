@@ -73,9 +73,37 @@ findPoles("1/(x - 1/3)", {}, [-1, 1]); // exact pole at 1/3
   f' lies between neighbouring results. An enclosure that needed no domain
   clipping proves f' is continuous there. A pole between two extrema
   therefore cannot fool the classification.
+- **Holes and domain ends.** A hole is a point where f is undefined but
+  stays bounded on both sides, such as `x/x` or `sin(x)/x` at 0. It carries
+  an estimate of the limit (`valueApprox`). A domain end is where an argument
+  of `sqrt`, or of a fractional power, crosses 0. Each end records which side
+  the domain lies on and whether f is defined at the end itself (`included`).
 - **Inflection points** are sign changes of f'', found the same way, and
   labelled `convex-to-concave` or `concave-to-convex`. A point where f''
   vanishes without changing sign, as for x^4 at 0, is not reported.
+
+### Markers
+
+`drawMarkers(ctx2d, vp, features, { color, background, scale })` draws
+features as dots, using this convention:
+
+| Feature | Dot |
+|---|---|
+| Zero | Filled, in the curve's color |
+| Max or min | Filled, darker than the curve |
+| Inflection point | Filled, lighter than the curve |
+| Hole | Open (the function is not defined there) |
+| Domain end, included | Filled |
+| Domain end, excluded | Open |
+
+Graph frames list holes too. Interval arithmetic cannot bound `x/x` tightly
+over a column that contains 0, so that column comes out tall. The renderer
+draws it faint and lets the open dot show the missing point.
+
+Known limit: expressions with heavy dependency, such as a rational function
+with a hole plus a trigonometric term, can leave some zeros of f'' unsettled
+on one side. Mean-value or Taylor-model enclosures would fix this. They
+belong with the analytic work.
 
 ## The fast-then-exact shape
 

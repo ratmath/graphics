@@ -1,4 +1,4 @@
-import { graph, features, live, parse, freeVariables, viewport, drawCanvas } from "../index.js";
+import { graph, features, live, parse, freeVariables, viewport, drawCanvas, drawMarkers } from "../index.js";
 
 const W = 800, H = 480;
 const vp = viewport({ x: [-8, 8], y: [-6, 6], width: W, height: H });
@@ -46,20 +46,7 @@ function redraw(partial) {
   } else if (shown) {
     drawCanvas(g2, shown.value, { color: shown.exact ? css("--cert") : css("--curve"), scale, asymptoteColor: css("--muted") });
   }
-  if (marks) {
-    for (const m of marks.items) {
-      const px = ((m.x + 8) / 16) * W * scale;
-      const py = ((6 - m.y) / 12) * H * scale;
-      if (!(py >= 0 && py <= H * scale)) continue;
-      g2.beginPath();
-      g2.arc(px, py, (m.kind === "inflection" ? 3 : 4.5) * scale, 0, 2 * Math.PI);
-      g2.fillStyle = m.kind === "inflection" ? css("--bg") : css(marks.exact ? "--cert" : "--curve");
-      g2.strokeStyle = css(marks.exact ? "--cert" : "--curve");
-      g2.lineWidth = 1.5 * scale;
-      g2.fill();
-      g2.stroke();
-    }
-  }
+  if (marks) drawMarkers(g2, vp, marks, { color: css(shown && shown.exact ? "--cert" : "--curve"), background: css("--bg"), scale });
 }
 
 const update = live(
@@ -90,21 +77,17 @@ const updateFeatures = live(
   (stage) => {
     const v = stage.value;
     if (stage.stage === "float") {
-      marks = { exact: false, items: [...v.extrema.map((e) => ({ x: e.x, y: e.y, kind: e.kind })), ...v.inflections.map((e) => ({ ...e, kind: "inflection" }))] };
+      marks = v;
       featureText.innerHTML = "<b>estimates</b> · zeros ≈ " + (v.zeros.map((x) => x.toFixed(4)).join(", ") || "none") +
         " · extrema ≈ " + (v.extrema.filter((e) => e.kind !== "flat").map((e) => `${e.kind} ${e.x.toFixed(4)}`).join(", ") || "none");
     } else {
-      marks = {
-        exact: true,
-        items: [
-          ...v.extrema.filter((e) => e.kind === "max" || e.kind === "min").map((e) => ({ x: mid(e), y: e.value ? e.value.toNumber() : (e.valueLo.toNumber() + e.valueHi.toNumber()) / 2, kind: e.kind })),
-          ...v.inflections.filter((e) => e.kind !== "possible").map((e) => ({ x: mid(e), y: e.value ? e.value.toNumber() : (e.valueLo.toNumber() + e.valueHi.toNumber()) / 2, kind: "inflection" })),
-        ],
-      };
+      marks = v;
       const line = (label, list, fmt) => `<div><b>${label}</b> ${list.length ? list.map(fmt).join(" · ") : "none"}</div>`;
       featureText.innerHTML =
         line("zeros", v.zeros, (r) => (r.kind === "exact" ? `${r.at} (exact)` : r.kind === "sign-change" ? `in ${where(r)}` : `maybe in ${where(r)}`)) +
         line("poles", v.poles, (p) => `${p.kind === "log" ? "log " : ""}${where(p)}${p.certain ? "" : " (unsettled)"}`) +
+        line("holes", v.holes, (h) => `${h.at}, y ≈ ${Number(h.valueApprox.toPrecision(10))}`) +
+        line("domain ends", v.endpoints, (e) => `${where(e)} (${e.included ? "included" : "excluded"})`) +
         line("max / min", v.extrema, (e) => `${e.kind} at ${where(e)}, y = ${yval(e)}`) +
         line("inflections", v.inflections, (e) => `${e.kind === "possible" ? "maybe " : ""}${where(e)}`);
     }

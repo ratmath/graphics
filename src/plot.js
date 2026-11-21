@@ -17,7 +17,7 @@ import { Refinement } from "./refine.js";
 import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse } from "./expr.js";
 import * as I from "./interval.js";
 import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
-import { denominators, polesGenerator } from "./features.js";
+import { denominators, holeAt, polesGenerator, setup } from "./features.js";
 import { floatZeros } from "./roots.js";
 import { Rational } from "@ratmath/core";
 
@@ -185,7 +185,7 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
   const ctx = I.context(precisionFor(vp, extraBits));
   const P = paramsToIntervals(ctx, paramsToRational(params));
   const columns = new Array(vp.width);
-  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false, asymptotes: [] };
+  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false, asymptotes: [], holes: [] };
   for (let i = 0; i < vp.width; i++) {
     const X = columnInterval(ctx, vp, i);
     const r = certifyColumn(ctx, vp, enclose, P, X, { maxDepth });
@@ -198,10 +198,16 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
     // Vertical asymptotes, located to well under a pixel.
     const tolerance = vp.dx.divide(new Rational(16n));
     const poles = yield* polesGenerator(ast, params, [vp.xmin, vp.xmax], { variable, tolerance });
-    frame.asymptotes = poles.map((p) => ({
-      ...p,
-      px: toPixelX(vp, p.lo.add(p.hi).divide(new Rational(2n)).toNumber()),
-    }));
+    // An unsettled spot where f stays bounded is a hole (x/x at 0), not a pole.
+    const F = setup(ast, params, tolerance, variable);
+    const at = (p) => toPixelX(vp, p.lo.add(p.hi).divide(new Rational(2n)).toNumber());
+    frame.holes = [];
+    frame.asymptotes = [];
+    for (const p of poles) {
+      const h = !p.certain && p.exact ? holeAt(F, p.at, tolerance) : null;
+      if (h) frame.holes.push({ ...h, px: at(p) });
+      else frame.asymptotes.push({ ...p, px: at(p) });
+    }
   }
   frame.complete = true;
   return { value: frame, via: "interval-columns" };

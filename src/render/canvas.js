@@ -63,11 +63,21 @@ function drawGraph(ctx2d, value, { color, lineWidth, scale, cellAlpha }) {
     const cols = value.columns;
     // A column holding a certified pole is filled top to bottom (the graph
     // really passes through it); draw it faint so the dashed line reads.
-    const poleCols = new Set((value.asymptotes ?? []).filter((a) => a.certain).map((a) => Math.floor(a.px)));
+    // Interval arithmetic cannot bound f tightly in the column of a hole
+    // either (x/x over an interval holding 0), so that column is tall too;
+    // draw it faint and let the hole marker show the missing point.
+    // Columns are closed intervals, so a point on a column edge is in both.
+    const colsOf = (list) => new Set(list.flatMap((a) => {
+      const c = Math.floor(a.px);
+      return Math.abs(a.px - Math.round(a.px)) < 1e-9 ? [Math.round(a.px) - 1, Math.round(a.px)] : [c];
+    }));
+    const poleCols = colsOf((value.asymptotes ?? []).filter((a) => a.certain));
+    const holeCols = colsOf(value.holes ?? []);
     for (let i = 0; i < cols.length; i++) {
       const s = cols[i];
       if (!s) continue;
-      ctx2d.globalAlpha = poleCols.has(i) && s.length === 2 && s[1] - s[0] + 1 >= value.height ? cellAlpha * 0.2 : cellAlpha;
+      const faint = holeCols.has(i) || (poleCols.has(i) && s.length === 2 && s[1] - s[0] + 1 >= value.height);
+      ctx2d.globalAlpha = faint ? cellAlpha * 0.2 : cellAlpha;
       for (let j = 0; j < s.length; j += 2) {
         ctx2d.fillRect(i * scale, s[j] * scale, scale, (s[j + 1] - s[j] + 1) * scale);
       }

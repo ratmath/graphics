@@ -6,12 +6,13 @@
 //                                                     a zero is certainly inside
 //   { kind: "possible", lo, hi }                       enclosure contains 0 but no proof either way
 //                                                     (a pole of a non-rational f, a near-touch)
+//   { kind: "zero-interval", lo, hi }                  f is identically 0 on [lo, hi]
 //   { kind: "undefined", at, lo, hi }                  rational-only f is undefined at `at` (a pole);
 //                                                     no zero is proven in [lo, hi]
 // Intervals with no listed result certainly contain no zero.
 
 import { Rational } from "@ratmath/core";
-import { compileExact, compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
+import { compileExact, compileFloat, compileInterval, integerExponent, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import * as I from "./interval.js";
 import { Refinement } from "./refine.js";
 
@@ -47,6 +48,8 @@ export function signAt(ctx, enclose, exact, P, rp, r) {
     const Pc = extra === 0 ? P : paramsToIntervals(c, rp);
     const y = enclose(c, X, Pc);
     if (!y) return { sign: NaN };
+    // An enclosure of exactly [0, 0] at an exact point proves f(r) = 0.
+    if (y.lo === 0n && y.hi === 0n) return { sign: 0, exact: true };
     if (y.lo > 0n) return { sign: 1 };
     if (y.hi < 0n) return { sign: -1 };
   }
@@ -57,7 +60,7 @@ export function signAt(ctx, enclose, exact, P, rp, r) {
  * Generator form of findZeros (yields progress, returns { value, via }).
  * `tolerance` is the width at which sign-change brackets stop narrowing.
  */
-export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance = "1/1000000", pieces = 64, maxDepth = 40 } = {}) {
+export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance = "1/1000000", pieces = 64, maxDepth = 40, budget = 20000 } = {}) {
   const ast = typeof f === "string" ? parse(f) : f;
   const lo0 = toRational(a);
   const hi0 = toRational(b);
@@ -88,21 +91,34 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
   const step = hi0.subtract(lo0).divide(new Rational(pieces));
   const two = new Rational(2);
 
+  let spent = 0;
   const work = (lo, hi, sLo, sHi, depth) => {
+    if (++spent > budget) {
+      // Out of budget (f may vanish on a whole stretch): say so honestly.
+      results.push({ kind: "possible", lo, hi });
+      return;
+    }
     if (sLo.sign === 0 && sLo.exact) addExact(lo);
     if (sHi.sign === 0 && sHi.exact) addExact(hi);
     if (Number.isNaN(sLo.sign) && sLo.exact) addUndefined(lo);
     if (Number.isNaN(sHi.sign) && sHi.exact) addUndefined(hi);
     const X = I.fromBounds(ctx, lo.numerator, lo.denominator, hi.numerator, hi.denominator);
     let y;
+    I.resetClipped();
     try {
       y = enclose(ctx, X, P);
     } catch (e) {
       if (!(e instanceof RangeError)) throw e;
       y = I.WHOLE;
     }
+    const clipped = I.wasClipped();
     if (!y) return; // undefined on the whole piece
     if (!I.containsZero(y)) return; // certainly no zero
+    if (y.lo === 0n && y.hi === 0n && !clipped) {
+      // The enclosure is exactly 0: f vanishes on the whole piece.
+      results.push({ kind: "zero-interval", lo, hi });
+      return;
+    }
     if (hi.subtract(lo).lessThan(tol)) {
       // Near a zero, rounding can make an enclosure touch 0; try once more
       // with 64 extra bits before treating the piece as a candidate.
@@ -141,6 +157,25 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
     work(mid, hi, sMid, sHi, depth + 1);
   };
 
+  // A rational function whose numerator has degree <= n and which is 0 at
+  // n + 1 points is 0 wherever it is defined.
+  if (exact) {
+    const n = degreeBound(ast, variable);
+    if (n !== null && n < 64) {
+      let zerosSeen = 0;
+      let defined = 0;
+      for (let i = 0; i <= 4 * n + 8 && zerosSeen <= n; i++) {
+        const r = lo0.add(hi0.subtract(lo0).multiply(new Rational(BigInt(2 * i + 1), BigInt(8 * n + 18))));
+        const v = exact(r, rp);
+        if (v === null) continue;
+        defined++;
+        if (v.numerator !== 0n) break;
+        zerosSeen++;
+      }
+      if (zerosSeen > n) return { value: [{ kind: "zero-interval", lo: lo0, hi: hi0 }], via: "degree-bound" };
+    }
+  }
+
   let left = lo0;
   let sLeft = signAt(ctx, enclose, exact, P, rp, left);
   for (let i = 0; i < pieces; i++) {
@@ -172,15 +207,54 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
   return { value: merged, via: exact ? "exact-rational-bisection" : "interval-bisection" };
 }
 
+/**
+ * An upper bound on the degree (in the variable) of the numerator of a
+ * rational-only expression written over a common denominator, or null.
+ */
+export function degreeBound(ast, x = "x") {
+  const go = (n) => {
+    switch (n.type) {
+      case "num": return [0, 0];
+      case "var": return n.name === x ? [1, 0] : [0, 0];
+      case "op": {
+        const [a, b] = n.args.map(go);
+        if (!a || (n.args.length > 1 && !b)) return null;
+        switch (n.op) {
+          case "neg": return a;
+          case "+": case "-": return [Math.max(a[0] + b[1], b[0] + a[1]), a[1] + b[1]];
+          case "*": return [a[0] + b[0], a[1] + b[1]];
+          case "/": return [a[0] + b[1], a[1] + b[0]];
+          case "^": {
+            const k = integerExponent(n.args[1]);
+            if (k === null) return null;
+            return k >= 0 ? [a[0] * k, a[1] * k] : [a[1] * -k, a[0] * -k];
+          }
+        }
+        return null;
+      }
+    }
+    return null;
+  };
+  const r = go(ast);
+  return r ? r[0] : null;
+}
+
 function mergeResults(results) {
+  const zi = results.filter((r) => r.kind === "zero-interval");
+  if (zi.length) {
+    const inside = (r) => zi.some((z) => r !== z && !(r.lo ?? r.at).lessThan(z.lo) && !(r.hi ?? r.at).greaterThan(z.hi));
+    results = results.filter((r) => r.kind === "zero-interval" || !inside(r));
+  }
   const key = (r) => (r.kind === "exact" ? r.at : r.lo);
   results.sort((p, q) => key(p).compareTo(key(q)));
   // Merge touching "possible" intervals into one.
   const out = [];
   for (const r of results) {
     const last = out[out.length - 1];
-    if (r.kind === "possible" && last && last.kind === "possible" && last.hi.equals(r.lo)) {
-      out[out.length - 1] = { kind: "possible", lo: last.lo, hi: r.hi };
+    if ((r.kind === "possible" || r.kind === "zero-interval") && last && last.kind === r.kind && last.hi.equals(r.lo)) {
+      out[out.length - 1] = { kind: r.kind, lo: last.lo, hi: r.hi };
+    } else if (r.kind === "exact" && last && last.kind === "zero-interval" && !r.at.greaterThan(last.hi)) {
+      continue;
     } else if (r.kind === "possible" && last && (last.kind === "exact" || last.kind === "undefined") && last.at.equals(r.lo)) {
       // a possible interval starting at an exact zero adds nothing new
       continue;

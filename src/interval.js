@@ -511,6 +511,19 @@ function sinShift(ctx, a, quarter) {
   return rescale(g, ctx, clampUnit(g, res));
 }
 
+/**
+ * a^c for an exponent interval c > 0, on the domain a >= 0 (0^c = 0).
+ * x^c is increasing on [0, inf) for c > 0, so the ends of a give the ends.
+ */
+export function powPos(ctx, a, c) {
+  if (a && a.lo < 0n) clipped = true;
+  if (!a || !c || a.hi < 0n) return null;
+  const at = (m) => exp(ctx, mul(ctx, c, log(ctx, { lo: m, hi: m })));
+  const lo = a.lo > 0n ? at(a.lo).lo : 0n;
+  const hi = !isFinite(a.hi) ? POS : a.hi === 0n ? 0n : at(a.hi).hi;
+  return { lo, hi };
+}
+
 export function tan(ctx, a) {
   return div(ctx, sin(ctx, a), cos(ctx, a));
 }

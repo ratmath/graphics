@@ -196,16 +196,39 @@ export function isRationalOnly(ast) {
   return false;
 }
 
-/** The exponent as a JS integer when it is a literal integer (possibly negated). */
-function integerExponent(ast) {
-  if (ast.type === "num" && ast.value.denominator === 1n) {
-    const n = ast.value.numerator;
-    if (n >= -4096n && n <= 4096n) return Number(n);
+/**
+ * The exact value of a constant, rational-only subexpression (no variables,
+ * no pi or functions), or null. So `1/2`, `-3` and `(1/2 - 1)` are constants.
+ */
+export function constValue(ast) {
+  switch (ast.type) {
+    case "num":
+      return ast.value;
+    case "op": {
+      const vals = ast.args.map(constValue);
+      if (vals.some((x) => x === null)) return null;
+      const [a, b] = vals;
+      switch (ast.op) {
+        case "+": return a.add(b);
+        case "-": return a.subtract(b);
+        case "*": return a.multiply(b);
+        case "/": return b.numerator === 0n ? null : a.divide(b);
+        case "neg": return a.negate();
+        case "^": {
+          if (b.denominator !== 1n || b.numerator > 4096n || b.numerator < -4096n) return null;
+          if (a.numerator === 0n && b.numerator <= 0n) return null;
+          return a.pow(Number(b.numerator));
+        }
+      }
+    }
   }
-  if (ast.type === "op" && ast.op === "neg") {
-    const e = integerExponent(ast.args[0]);
-    return e === null ? null : -e;
-  }
+  return null;
+}
+
+/** The exponent as a JS integer when it is a constant integer. */
+export function integerExponent(ast) {
+  const c = constValue(ast);
+  if (c && c.denominator === 1n && c.numerator >= -4096n && c.numerator <= 4096n) return Number(c.numerator);
   return null;
 }
 
@@ -305,6 +328,12 @@ export function compileInterval(ast, variable = "x") {
           case "^": {
             const k = integerExponent(n.args[1]);
             if (k !== null) return (c, X, P) => I.powInt(c, a(c, X, P), k);
+            const cv = constValue(n.args[1]);
+            if (cv !== null) {
+              // Constant exponent: x^c is defined at x = 0 for c > 0.
+              if (cv.numerator > 0n) return (c, X, P) => I.powPos(c, a(c, X, P), b(c, X, P));
+              return (c, X, P) => I.recip(c, I.powPos(c, a(c, X, P), I.neg(c, b(c, X, P))));
+            }
             // General power: base^e = exp(e * ln(base)) for base > 0.
             return (c, X, P) => I.exp(c, I.mul(c, b(c, X, P), I.log(c, a(c, X, P))));
           }

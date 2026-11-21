@@ -21,12 +21,14 @@ export interface Viewport {
   readonly width: number; readonly height: number; readonly dx: Rational; readonly dy: Rational;
 }
 
-export interface Polyline { kind: "polyline"; points: Float64Array }
+export interface Asymptote { px: number; certain: boolean; kind?: "pole" | "log"; exact?: boolean; at?: Rational; lo?: Rational; hi?: Rational; denominator?: string }
+export interface Polyline { kind: "polyline"; points: Float64Array; asymptotes: Asymptote[] }
 export interface Cells {
   kind: "cells"; width: number; height: number;
   /** columns[i] = [top, bottom, top, bottom, ...], inclusive rows, 0 at the top. */
   columns: number[][];
   tight: boolean; evaluations: number; complete: boolean;
+  asymptotes: Asymptote[];
 }
 
 export type FloatStage<T> = { stage: "float"; exact: false; value: T; trust: "good" | "rough" | "unsure" };
@@ -65,6 +67,35 @@ export function findZeros(f: string | Ast, params: Params, range: [RationalInput
 export function floatZeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): number[];
 export function zerosGenerator(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, { value: Zero[]; via: string }>;
 
+export function simplestBetween(lo: Rational, hi: Rational): Rational;
+
+/** A located point: exact (`at`) or a certified bracket [lo, hi]. */
+interface Located { exact: boolean; at?: Rational; lo: Rational; hi: Rational }
+/** f's value there: exact `value`, or a certified enclosure [valueLo, valueHi]. */
+interface Valued { value?: Rational; valueLo?: Rational | null; valueHi?: Rational | null }
+export interface Pole extends Located { kind: "pole" | "log"; certain: boolean; denominator: string }
+export interface Extremum extends Located, Valued { kind: "max" | "min" | "flat" | "critical" }
+export interface Inflection extends Located, Valued { kind: "convex-to-concave" | "concave-to-convex" | "possible" }
+export interface Features { zeros: Zero[]; poles: Pole[]; extrema: Extremum[]; inflections: Inflection[] }
+export interface FloatFeatures {
+  zeros: number[]; poles: { x: number }[];
+  extrema: { kind: "max" | "min" | "flat"; x: number; y: number }[];
+  inflections: { x: number; y: number }[];
+}
+type Range = [RationalInput, RationalInput];
+export function features(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Refinement<FloatFeatures, Features>;
+export function featuresGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, { value: Features; via: string }>;
+export function floatFeatures(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): FloatFeatures;
+export function findPoles(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Pole[];
+export function polesGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Pole[]>;
+export function findExtrema(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Extremum[];
+export function extremaGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Extremum[]>;
+export function findInflections(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Inflection[];
+export function inflectionsGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Inflection[]>;
+export function denominators(ast: Ast): { D: Ast; N: Ast; kind: "pole" | "log" }[];
+export function derive(ast: Ast, variable?: string): Ast;
+export function format(ast: Ast): string;
+
 export function viewport(spec: ViewportSpec): Viewport;
 export function precisionFor(vp: Viewport, extraBits?: number): number;
 export function columnRationals(vp: Viewport, i: number): [Rational, Rational];
@@ -83,7 +114,8 @@ export function compileExact(ast: Ast, variable?: string): ((x: Rational, params
 export const FUNCTIONS: Set<string>;
 export const CONSTANTS: Set<string>;
 
-export function drawCanvas(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, value: Polyline | Cells, options?: { color?: string; lineWidth?: number; scale?: number; cellAlpha?: number }): void;
+export function drawCanvas(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, value: Polyline | Cells, options?: { color?: string; lineWidth?: number; scale?: number; cellAlpha?: number; asymptoteColor?: string }): void;
+export function drawAsymptotes(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, value: Polyline | Cells, options?: { color?: string; scale?: number }): void;
 export function toSVG(value: Polyline | Cells, options?: { width?: number; height?: number; color?: string; lineWidth?: number; background?: string }): string;
 
 export const interval: Record<string, unknown>;

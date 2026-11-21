@@ -60,6 +60,19 @@ export function context(k) {
 
 export const WHOLE = Object.freeze({ lo: NEG, hi: POS });
 
+// Domain clipping flag. Operations that cut an input down to their domain
+// (sqrt of an interval reaching below 0, ln reaching 0 or below, division by
+// an interval containing 0) set it. An enclosure computed with the flag left
+// clear proves the function is defined, and therefore continuous, on the
+// whole input interval: every operation here is continuous on its domain.
+let clipped = false;
+export function resetClipped() {
+  clipped = false;
+}
+export function wasClipped() {
+  return clipped;
+}
+
 /** Outward-rounded enclosure of the exact rational n/d. */
 export function fromRational(ctx, n, d = 1n) {
   n = BigInt(n);
@@ -165,6 +178,7 @@ export function recip(ctx, a) {
   if (!a) return null;
   if (a.lo > 0n) return recipPos(ctx, a.lo, a.hi);
   if (a.hi < 0n) return neg(ctx, recipPos(ctx, -a.hi, isFinite(a.lo) ? -a.lo : POS));
+  clipped = true;
   if (a.lo === 0n && a.hi === 0n) return null; // 1/0 is undefined
   if (a.lo === 0n) return { lo: isFinite(a.hi) ? floorDiv(ctx.one * ctx.one, a.hi) : 0n, hi: POS };
   if (a.hi === 0n) return { lo: NEG, hi: isFinite(a.lo) ? ceilDiv(ctx.one * ctx.one, a.lo) : 0n };
@@ -214,6 +228,7 @@ export function max(ctx, a, b) {
 }
 
 export function sqrt(ctx, a) {
+  if (a && a.lo < 0n) clipped = true;
   if (!a || a.hi < 0n) return null;
   const lo = a.lo > 0n ? isqrt(a.lo << ctx.K) : 0n;
   let hi;
@@ -334,6 +349,7 @@ function logPoint(g, m) {
 }
 
 export function log(ctx, a) {
+  if (a && a.lo <= 0n) clipped = true;
   if (!a || a.hi <= 0n) return null;
   const g = guard(ctx);
   const up = lift(ctx, g, a);

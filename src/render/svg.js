@@ -25,6 +25,10 @@ export function toSVG(value, { width = value.width, height = value.height, color
     });
     parts.push(`<path d="${d}" fill="${color}" shape-rendering="crispEdges"/>`);
   }
+  for (const a of value.asymptotes ?? []) {
+    const x = Math.round(a.px * 100) / 100;
+    parts.push(`<line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="${color}" stroke-width="1" stroke-dasharray="${a.certain ? "6 4" : "2 4"}" opacity="${a.certain ? 0.9 : 0.45}"/>`);
+  }
   parts.push("</svg>");
   return parts.join("");
 }

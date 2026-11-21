@@ -16,7 +16,10 @@
 import { Refinement } from "./refine.js";
 import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse } from "./expr.js";
 import * as I from "./interval.js";
-import { columnInterval, precisionFor, rowSpan, toPixelY, viewport as makeViewport } from "./viewport.js";
+import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
+import { denominators, polesGenerator } from "./features.js";
+import { floatZeros } from "./roots.js";
+import { Rational } from "@ratmath/core";
 
 const compiled = new WeakMap();
 
@@ -76,7 +79,14 @@ export function sampleFloat(f, params, vp, { samplesPerPixel = 1, variable = "x"
     pts[k++] = clampPx(py, H);
     prev = py;
   }
-  return { kind: "polyline", points: pts.slice(0, k) };
+  // Where a denominator crosses zero, mark a (float, unproven) asymptote.
+  const asymptotes = [];
+  for (const { D } of denominators(ast)) {
+    for (const x of floatZeros(D, params, [vp.f.xmin, vp.f.xmax], { variable, samples: Math.max(64, vp.width >> 2) })) {
+      asymptotes.push({ px: toPixelX(vp, x), certain: false });
+    }
+  }
+  return { kind: "polyline", points: pts.slice(0, k), asymptotes };
 }
 
 function clampPx(py, H) {
@@ -168,14 +178,14 @@ function mergeSpans(flat) {
  * { done, of, step: "column", partial } where partial is the frame so far,
  * and returns { value: frame, via: "interval-columns" }.
  */
-export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, extraBits = 12, partialEvery = 16 } = {}) {
+export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, extraBits = 12, partialEvery = 16, asymptotes = true } = {}) {
   const ast = asAst(f);
   vp = asViewport(vp);
   const enclose = compile(ast, variable).interval;
   const ctx = I.context(precisionFor(vp, extraBits));
   const P = paramsToIntervals(ctx, paramsToRational(params));
   const columns = new Array(vp.width);
-  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false };
+  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false, asymptotes: [] };
   for (let i = 0; i < vp.width; i++) {
     const X = columnInterval(ctx, vp, i);
     const r = certifyColumn(ctx, vp, enclose, P, X, { maxDepth });
@@ -183,6 +193,15 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
     frame.evaluations += r.evaluations;
     if (!r.tight) frame.tight = false;
     yield { done: i + 1, of: vp.width, step: "column", partial: (i + 1) % partialEvery === 0 ? frame : undefined };
+  }
+  if (asymptotes) {
+    // Vertical asymptotes, located to well under a pixel.
+    const tolerance = vp.dx.divide(new Rational(16n));
+    const poles = yield* polesGenerator(ast, params, [vp.xmin, vp.xmax], { variable, tolerance });
+    frame.asymptotes = poles.map((p) => ({
+      ...p,
+      px: toPixelX(vp, p.lo.add(p.hi).divide(new Rational(2n)).toNumber()),
+    }));
   }
   frame.complete = true;
   return { value: frame, via: "interval-columns" };

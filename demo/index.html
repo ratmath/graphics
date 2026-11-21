@@ -17,7 +17,7 @@
   canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; touch-action: none; }
   #status { font-size: 13px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--axis); }
   #status.exact { color: var(--cert); border-color: var(--cert); }
-  #zeros { font-family: ui-monospace, monospace; font-size: 13px; color: var(--muted); }
+  #zeros { font-family: ui-monospace, monospace; font-size: 13px; color: var(--muted); } #zeros div { margin: 2px 0; } #zeros b { color: var(--fg); font-weight: 600; }
   #err { color: #dc2626; font-size: 13px; }
 </style>
 </head>
@@ -28,8 +28,8 @@
   <div id="err"></div>
   <div id="sliders"></div>
   <canvas id="plot" width="800" height="480"></canvas>
-  <p id="zeros"></p>
-  <p style="color:var(--muted);font-size:13px">While a slider moves you see a fast floating-point sketch. When it stops, every pixel column is recomputed with certified rational interval arithmetic: shaded cells are exactly the pixels the graph can touch. Slider values are exact rationals.</p>
+  <div id="zeros"></div>
+  <p style="color:var(--muted);font-size:13px">While a slider moves you see a fast floating-point sketch. When it stops, every pixel column is recomputed with certified rational interval arithmetic: shaded cells are exactly the pixels the graph can touch. Slider values are exact rationals. Dashed lines are proven poles; filled dots are proven maxima and minima, open dots inflection points.</p>
 </main>
 <script type="module" src="./dist/main.js"></script>
 </body>

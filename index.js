@@ -6,7 +6,12 @@ export {
 } from "./src/expr.js";
 export { viewport, precisionFor, columnRationals } from "./src/viewport.js";
 export { graph, sampleFloat, certifyGraph } from "./src/plot.js";
-export { zeros, findZeros, floatZeros, zerosGenerator } from "./src/roots.js";
+export { zeros, findZeros, floatZeros, zerosGenerator, simplestBetween } from "./src/roots.js";
+export {
+  features, featuresGenerator, floatFeatures, findPoles, polesGenerator, findExtrema, extremaGenerator,
+  findInflections, inflectionsGenerator, denominators,
+} from "./src/features.js";
+export { derive, format } from "./src/derive.js";
 export * as interval from "./src/interval.js";
-export { drawCanvas } from "./src/render/canvas.js";
+export { drawCanvas, drawAsymptotes } from "./src/render/canvas.js";
 export { toSVG } from "./src/render/svg.js";

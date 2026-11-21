@@ -39,6 +39,44 @@ zeros("x^2 - 2", {}, [0, 2]).exact();
 // [{ kind: "sign-change", lo: 1393/985, hi: 1970/1393 }]
 ```
 
+## Poles, extrema and inflection points
+
+`features(f, params, [a, b])` returns a Refinement. Its quick stage holds
+float estimates. Its exact stage holds certified results:
+
+```js
+features("x^3/8 - 2x", {}, [-8, 8]).exact();
+// zeros:       exact -4, 0, 4
+// extrema:     max in [-515/223, -321/139], min in [321/139, 515/223] (±√(16/3)), with y enclosures
+// inflections: concave-to-convex at 0 (exact)
+findPoles("tan(x)", {}, [-4, 4]);      // certified brackets around ±π/2, e.g. [7089/4513, 355/226]
+findPoles("1/(x - 1/3)", {}, [-1, 1]); // exact pole at 1/3
+```
+
+- **Poles.** Every denominator in f is searched for zeros: `u/v`,
+  `u^-k`, `tan u = sin u / cos u`, and the argument of `ln u`. A pole is
+  proven where the denominator has a proven zero and the matching numerator
+  is provably non-zero. A rational pole is exact. An irrational pole is a
+  bracket that certainly holds it. A removable spot such as `x/x` at 0 is
+  reported with `certain: false`. One case is not detected: a pole cancelled
+  by an equal pole in another term, as in `1/x - 1/x`. Certified graph
+  frames carry the poles as `asymptotes`. The renderers draw them as dashed
+  lines, and they draw an unproven float estimate as a fainter dotted line.
+- **Extrema.** `derive()` differentiates the expression symbolically, so f'
+  gets the same certified arithmetic. Each zero of f' is classified by the
+  sign of f' on each side:
+  - `max` when f' goes + to −, and `min` when it goes − to +.
+  - `flat` when the sign is the same on both sides, as for x^3 at 0.
+  - `critical` when a side could not be settled.
+
+  The side signs are proven. The zero search certifies that no other zero of
+  f' lies between neighbouring results. An enclosure that needed no domain
+  clipping proves f' is continuous there. A pole between two extrema
+  therefore cannot fool the classification.
+- **Inflection points** are sign changes of f'', found the same way, and
+  labelled `convex-to-concave` or `concave-to-convex`. A point where f''
+  vanishes without changing sign, as for x^4 at 0, is not reported.
+
 ## The fast-then-exact shape
 
 `graph()` and `zeros()` return a `Refinement`. This is the same class the
@@ -155,6 +193,7 @@ These are next in roughly this order:
 
 - implicit curves `f(x, y) = 0` and inequalities on a certified quadtree
 - parametric and polar curves
-- points of interest: extrema and intersections, using the zeros machinery
+- intersections of two curves (the zeros of f − g, with the same machinery)
+- exact algebraic forms for irrational points of polynomials (√2 rather than a bracket)
 - a Worker wrapper with a Stop button
 - hooks so `@ratmath/analytic` functions can supply their own enclosures

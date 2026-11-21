@@ -33,12 +33,12 @@ export function simplestBetween(lo, hi) {
   return new Rational(n, d);
 }
 
-function signAt(ctx, enclose, exact, P, rp, r) {
+export function signAt(ctx, enclose, exact, P, rp, r) {
   // Sign of f at a rational point: exact when possible, else from an enclosure
   // that excludes 0 (raising precision a few times), else 0 meaning unknown.
   if (exact) {
     const v = exact(r, rp);
-    if (v === null) return { sign: NaN };
+    if (v === null) return { sign: NaN, exact: true }; // f is undefined at r
     return { sign: v.numerator > 0n ? 1 : v.numerator < 0n ? -1 : 0, exact: true };
   }
   for (let extra = 0; extra <= 96; extra += 32) {
@@ -78,12 +78,21 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
       results.push({ kind: "exact", at: r });
     }
   };
+  const addUndefined = (r) => {
+    const key = "u" + r.toString();
+    if (!seenExact.has(key)) {
+      seenExact.add(key);
+      results.push({ kind: "undefined", at: r, lo: r, hi: r });
+    }
+  };
   const step = hi0.subtract(lo0).divide(new Rational(pieces));
   const two = new Rational(2);
 
   const work = (lo, hi, sLo, sHi, depth) => {
     if (sLo.sign === 0 && sLo.exact) addExact(lo);
     if (sHi.sign === 0 && sHi.exact) addExact(hi);
+    if (Number.isNaN(sLo.sign) && sLo.exact) addUndefined(lo);
+    if (Number.isNaN(sHi.sign) && sHi.exact) addUndefined(hi);
     const X = I.fromBounds(ctx, lo.numerator, lo.denominator, hi.numerator, hi.denominator);
     let y;
     try {
@@ -172,7 +181,7 @@ function mergeResults(results) {
     const last = out[out.length - 1];
     if (r.kind === "possible" && last && last.kind === "possible" && last.hi.equals(r.lo)) {
       out[out.length - 1] = { kind: "possible", lo: last.lo, hi: r.hi };
-    } else if (r.kind === "possible" && last && last.kind === "exact" && last.at.equals(r.lo)) {
+    } else if (r.kind === "possible" && last && (last.kind === "exact" || last.kind === "undefined") && last.at.equals(r.lo)) {
       // a possible interval starting at an exact zero adds nothing new
       continue;
     } else out.push(r);

@@ -9,7 +9,7 @@ function runCertified(f, params, vp, opts) {
   const gen = certifyGraph(f, params, vp, opts);
   let s;
   let ticks = 0;
-  while (!(s = gen.next()).done) ticks++;
+  while (!(s = gen.next()).done) if (s.value.step === "column") ticks++;
   return { frame: s.value.value, via: s.value.via, ticks };
 }
 

@@ -71,7 +71,7 @@ describe("zeros", () => {
     expect(s[0].hi.toNumber()).toBeGreaterThan(Math.PI);
   });
   test("poles are not zeros", () => {
-    expect(findZeros("1/x", {}, [-1, 1])).toEqual([]);
+    expect(findZeros("1/x", {}, [-1, 1]).map((r) => `${r.kind} ${r.at}`)).toEqual(["undefined 0"]);
     // Near the pole of tan at pi/2 the enclosure is unbounded, so the most
     // honest answer is "possible", never a certified zero.
     expect(findZeros("tan(x)", {}, [1, 2]).every((r) => r.kind === "possible")).toBe(true);

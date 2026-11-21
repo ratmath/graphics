@@ -1,4 +1,4 @@
-import { graph, zeros, live, parse, freeVariables, viewport, drawCanvas } from "../index.js";
+import { graph, features, live, parse, freeVariables, viewport, drawCanvas } from "../index.js";
 
 const W = 800, H = 480;
 const vp = viewport({ x: [-8, 8], y: [-6, 6], width: W, height: H });
@@ -35,49 +35,80 @@ function line(x0, y0, x1, y1) {
 
 let ast = null;
 let lastFloat = null;
+let shown = null; // { value, exact }
+let marks = null; // { exact, items: [{ x, y, kind }] }
+
+function redraw(partial) {
+  axes();
+  if (partial) {
+    drawCanvas(g2, lastFloat, { color: css("--curve"), scale, lineWidth: 1 });
+    drawCanvas(g2, partial, { color: css("--cert"), scale });
+  } else if (shown) {
+    drawCanvas(g2, shown.value, { color: shown.exact ? css("--cert") : css("--curve"), scale, asymptoteColor: css("--muted") });
+  }
+  if (marks) {
+    for (const m of marks.items) {
+      const px = ((m.x + 8) / 16) * W * scale;
+      const py = ((6 - m.y) / 12) * H * scale;
+      if (!(py >= 0 && py <= H * scale)) continue;
+      g2.beginPath();
+      g2.arc(px, py, (m.kind === "inflection" ? 3 : 4.5) * scale, 0, 2 * Math.PI);
+      g2.fillStyle = m.kind === "inflection" ? css("--bg") : css(marks.exact ? "--cert" : "--curve");
+      g2.strokeStyle = css(marks.exact ? "--cert" : "--curve");
+      g2.lineWidth = 1.5 * scale;
+      g2.fill();
+      g2.stroke();
+    }
+  }
+}
 
 const update = live(
   (params) => graph(ast, params, vp),
   (stage) => {
-    axes();
-    if (stage.stage === "float") {
-      lastFloat = stage.value;
-      drawCanvas(g2, stage.value, { color: css("--curve"), scale });
-      status.textContent = "sketch";
-      status.className = "";
-    } else {
-      drawCanvas(g2, stage.value, { color: css("--cert"), scale });
-      status.textContent = stage.value.tight ? "certified" : "certified (coarse)";
-      status.className = "exact";
-    }
+    if (stage.stage === "float") lastFloat = stage.value;
+    shown = { value: stage.value, exact: stage.exact };
+    redraw();
+    status.textContent = stage.exact ? (stage.value.tight ? "certified" : "certified (coarse)") : "sketch";
+    status.className = stage.exact ? "exact" : "";
   },
   {
     idleMs: 120,
     onProgress: (p) => {
       status.textContent = `certifying ${Math.round((100 * p.done) / p.of)}%`;
-      if (p.partial) {
-        axes();
-        drawCanvas(g2, lastFloat, { color: css("--curve"), scale, lineWidth: 1 });
-        drawCanvas(g2, p.partial, { color: css("--cert"), scale });
-      }
+      if (p.partial) redraw(p.partial);
     },
     onError: (e) => (document.getElementById("err").textContent = e.message),
   },
 );
 
-const zeroText = document.getElementById("zeros");
-const updateZeros = live(
-  (params) => zeros(ast, params, [-8, 8], { tolerance: "1/10000" }),
+const featureText = document.getElementById("zeros");
+const mid = (r) => (r.exact ? r.at.toNumber() : (r.lo.toNumber() + r.hi.toNumber()) / 2);
+const where = (r) => (r.exact ? `${r.at}` : `[${r.lo}, ${r.hi}]`);
+const yval = (r) => (r.value ? `${r.value}` : r.valueLo ? `≈ ${((r.valueLo.toNumber() + r.valueHi.toNumber()) / 2).toFixed(6)}` : "?");
+const updateFeatures = live(
+  (params) => features(ast, params, [-8, 8], { tolerance: "1/10000" }),
   (stage) => {
+    const v = stage.value;
     if (stage.stage === "float") {
-      zeroText.textContent = "zeros ≈ " + (stage.value.map((x) => x.toFixed(4)).join(", ") || "none");
+      marks = { exact: false, items: [...v.extrema.map((e) => ({ x: e.x, y: e.y, kind: e.kind })), ...v.inflections.map((e) => ({ ...e, kind: "inflection" }))] };
+      featureText.innerHTML = "<b>estimates</b> · zeros ≈ " + (v.zeros.map((x) => x.toFixed(4)).join(", ") || "none") +
+        " · extrema ≈ " + (v.extrema.filter((e) => e.kind !== "flat").map((e) => `${e.kind} ${e.x.toFixed(4)}`).join(", ") || "none");
     } else {
-      zeroText.textContent =
-        "zeros: " +
-        (stage.value
-          .map((r) => (r.kind === "exact" ? `${r.at} (exact)` : r.kind === "sign-change" ? `in [${r.lo}, ${r.hi}]` : r.kind === "undefined" ? `(pole at ${r.at})` : `maybe in [${r.lo}, ${r.hi}]`))
-          .join(", ") || "none in view");
+      marks = {
+        exact: true,
+        items: [
+          ...v.extrema.filter((e) => e.kind === "max" || e.kind === "min").map((e) => ({ x: mid(e), y: e.value ? e.value.toNumber() : (e.valueLo.toNumber() + e.valueHi.toNumber()) / 2, kind: e.kind })),
+          ...v.inflections.filter((e) => e.kind !== "possible").map((e) => ({ x: mid(e), y: e.value ? e.value.toNumber() : (e.valueLo.toNumber() + e.valueHi.toNumber()) / 2, kind: "inflection" })),
+        ],
+      };
+      const line = (label, list, fmt) => `<div><b>${label}</b> ${list.length ? list.map(fmt).join(" · ") : "none"}</div>`;
+      featureText.innerHTML =
+        line("zeros", v.zeros, (r) => (r.kind === "exact" ? `${r.at} (exact)` : r.kind === "sign-change" ? `in ${where(r)}` : `maybe in ${where(r)}`)) +
+        line("poles", v.poles, (p) => `${p.kind === "log" ? "log " : ""}${where(p)}${p.certain ? "" : " (unsettled)"}`) +
+        line("max / min", v.extrema, (e) => `${e.kind} at ${where(e)}, y = ${yval(e)}`) +
+        line("inflections", v.inflections, (e) => `${e.kind === "possible" ? "maybe " : ""}${where(e)}`);
     }
+    redraw();
   },
   { idleMs: 300 },
 );
@@ -127,7 +158,7 @@ function rebuild() {
 function gcd(a, b) { return b ? gcd(b, a % b) : a || 1; }
 function go() {
   update(params());
-  updateZeros(params());
+  updateFeatures(params());
 }
 
 document.getElementById("expr").addEventListener("input", rebuild);

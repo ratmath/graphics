@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { parse, viewport, graph, toSVG } from "../index.js";
-import { derive, format } from "../src/derive.js";
+import { differentiate as derive, format } from "@ratmath/analytic";
 import { compileFloat } from "../src/expr.js";
-import { features, findExtrema, findInflections, findPoles } from "../src/features.js";
+import { features, findExtrema, findHoles, findInflections, findPoles } from "../src/features.js";
 
 const show = (r) => `${r.kind}${r.certain === false ? "?" : ""} ${r.exact ? r.at : `[${r.lo}, ${r.hi}]`}`;
 const contains = (r, x) => r.lo.toNumber() <= x + 1e-12 && r.hi.toNumber() >= x - 1e-12;
@@ -13,7 +13,7 @@ describe("symbolic derivative", () => {
     const p = { a: 2, b: 1.5, c: 0.25 };
     for (const s of cases) {
       const f = compileFloat(parse(s));
-      const d = compileFloat(derive(parse(s)));
+      const d = compileFloat(derive(parse(s), "x"));
       for (const x of [0.3, 0.7, 1.3, 2.1]) {
         const h = 1e-6;
         const num = (f(x + h, p) - f(x - h, p)) / (2 * h);
@@ -22,8 +22,8 @@ describe("symbolic derivative", () => {
     }
   });
   test("simplifies constants", () => {
-    expect(format(derive(parse("x^3 - 3x")))).toBe("3 * x^2 - 3");
-    expect(format(derive(derive(parse("x^3 - 3x"))))).toBe("6 * x");
+    expect(format(derive(parse("x^3 - 3x"), "x"))).toBe("3*x^2 - 3");
+    expect(format(derive(derive(parse("x^3 - 3x"), "x"), "x"))).toBe("3*(2*x)");
   });
 });
 
@@ -44,7 +44,8 @@ describe("poles", () => {
     expect(contains(t[0], -Math.PI / 2)).toBe(true);
   });
   test("a removable singularity is not claimed as a pole", () => {
-    expect(findPoles("x/x", {}, [-1, 1]).map(show)).toEqual(["pole? 0"]);
+    expect(findPoles("x/x", {}, [-1, 1])).toEqual([]);
+    expect(findHoles("x/x", {}, [-1, 1]).map((h) => `${h.at} ${h.value}`)).toEqual(["0 1"]);
   });
 });
 
@@ -62,7 +63,8 @@ describe("extrema", () => {
     expect(e.some((r) => r.kind === "max" && contains(r, x0))).toBe(true);
     const s = findExtrema("sqrt(9 - x^2)", {}, [-8, 8]);
     expect(s.map((r) => r.kind)).toEqual(["max"]);
-    expect(s[0].valueLo.toNumber()).toBeCloseTo(3, 4);
+    expect(String(s[0].at)).toBe("0");
+    expect(String(s[0].value)).toBe("3"); // exact now
   });
   test("a pole between extrema does not confuse the sides", () => {
     expect(findExtrema("1/(x - 1/3) + x^2/8 - 2", {}, [-8, 8]).map((r) => r.kind)).toEqual(["min"]);
@@ -72,7 +74,7 @@ describe("extrema", () => {
 
 describe("inflection points", () => {
   test("exact and bracketed", () => {
-    expect(findInflections("x^3 - 3x", {}, [-4, 4]).map(show)).toEqual(["concave-to-convex 0"]);
+    expect(findInflections("x^3 - 3x", {}, [-4, 4]).map(show)).toEqual(["inflection 0"]);
     expect(findInflections("x^4", {}, [-4, 4])).toEqual([]);
     const s = findInflections("sin(x)", {}, [1, 7], { tolerance: "1/100000" });
     expect(s.length).toBe(2);
@@ -86,7 +88,7 @@ describe("features() and asymptotes in graphs", () => {
     expect(f.quick.value.extrema.map((e) => e.kind)).toEqual(["max", "min"]);
     const v = f.exact();
     expect(v.extrema.map(show)).toEqual(["max -1", "min 1"]);
-    expect(v.inflections.map(show)).toEqual(["concave-to-convex 0"]);
+    expect(v.inflections.map(show)).toEqual(["inflection 0"]);
     expect(v.zeros.length).toBe(3);
   });
   test("certified graph frames carry dashed asymptotes", () => {
@@ -102,7 +104,7 @@ describe("features() and asymptotes in graphs", () => {
 
 test("features() does not list a pole of tan as a possible zero", () => {
   const v = features("tan(x)", {}, [-4, 4], { tolerance: "1/10000" }).exact();
-  expect(v.zeros.map((r) => r.kind)).toEqual(["sign-change", "sign-change", "sign-change"]);
+  expect(v.zeros.map((r) => r.kind)).toEqual(["sign-change", "exact", "sign-change"]);
   expect(v.poles.length).toBe(2);
 });
 
@@ -160,4 +162,10 @@ test("a hole does not starve the rest of the range (per-piece work budget)", () 
     expect(v.inflections.some((r) => r.lo.toNumber() <= (k * Math.PI) / 2 + 1e-9 && r.hi.toNumber() >= (k * Math.PI) / 2 - 1e-9)).toBe(true);
   }
   expect(v.holes.map((h) => String(h.at))).toEqual(["1"]);
+});
+
+test("an end of sqrt's domain outside f's domain is not a domain end", () => {
+  const v = features("ln(x) + sqrt(16 - x^2)", {}, [-8, 8], { tolerance: "1/10000" }).exact();
+  expect(v.endpoints.map((e) => `${e.at} ${e.included}`)).toEqual(["4 true"]);
+  expect(v.poles.map((p) => `${p.kind} ${p.at}`)).toEqual(["log 0"]);
 });

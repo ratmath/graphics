@@ -17,7 +17,7 @@ import { Refinement } from "./refine.js";
 import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse } from "./expr.js";
 import * as I from "./interval.js";
 import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
-import { denominators, holeAt, polesGenerator, setup } from "./features.js";
+import { denominators, polesGenerator } from "./features.js";
 import { floatZeros } from "./roots.js";
 import { Rational } from "@ratmath/core";
 
@@ -198,14 +198,12 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
     // Vertical asymptotes, located to well under a pixel.
     const tolerance = vp.dx.divide(new Rational(16n));
     const poles = yield* polesGenerator(ast, params, [vp.xmin, vp.xmax], { variable, tolerance });
-    // An unsettled spot where f stays bounded is a hole (x/x at 0), not a pole.
-    const F = setup(ast, params, tolerance, variable);
+    // Poles and holes come from @ratmath/analytic (see features.js).
     const at = (p) => toPixelX(vp, p.lo.add(p.hi).divide(new Rational(2n)).toNumber());
     frame.holes = [];
     frame.asymptotes = [];
     for (const p of poles) {
-      const h = !p.certain && p.exact ? holeAt(F, p.at, tolerance) : null;
-      if (h) frame.holes.push({ ...h, px: at(p) });
+      if (p.kind === "hole") frame.holes.push({ ...p, px: at(p) });
       else frame.asymptotes.push({ ...p, px: at(p) });
     }
   }

@@ -6,22 +6,49 @@
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
-    ".": { "types": "./index.d.ts", "import": "./index.js", "default": "./index.js" },
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
+    },
     "./package.json": "./package.json"
   },
-  "files": ["index.js", "index.d.ts", "src/", "README.md", "LICENSE"],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
   "scripts": {
     "test": "bun test ./tests",
     "demo:build": "bun build demo/main.js --outdir demo/dist --target browser",
     "demo": "bun run demo:build && bunx serve demo"
   },
-  "keywords": ["rational", "exact", "interval", "certified", "plot", "graph", "ratmath"],
+  "keywords": [
+    "rational",
+    "exact",
+    "interval",
+    "certified",
+    "plot",
+    "graph",
+    "ratmath"
+  ],
   "author": "James Taylor",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/ratmath/graphics.git" },
-  "engines": { "node": ">=22" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ratmath/graphics.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "@ratmath/core": "^0.8.0"
-  }
+    "@ratmath/core": "^0.8.0",
+    "@ratmath/analytic": "workspace:*"
+  },
+  "workspaces": [
+    "vendor/*"
+  ]
 }

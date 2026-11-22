@@ -39,48 +39,61 @@ zeros("x^2 - 2", {}, [0, 2]).exact();
 // [{ kind: "sign-change", lo: 1393/985, hi: 1970/1393 }]
 ```
 
-## Poles, extrema and inflection points
+## Poles, holes, extrema and inflection points
+
+These come from [`@ratmath/analytic`](https://github.com/ratmath/analytic),
+which is vendored as a git submodule in `vendor/analytic`. Graphics asks
+analytic and translates the answers for plotting. Analytic differentiates
+symbolically. For rational functions it uses exact gcd, square-free and Sturm
+steps. For everything else it uses Krawczyk and Rolle tests, which prove that
+a bracket holds exactly one zero.
 
 `features(f, params, [a, b])` returns a Refinement. Its quick stage holds
-float estimates. Its exact stage holds certified results:
+float estimates. Its exact stage holds `{ zeros, poles, holes, endpoints,
+extrema, inflections }`:
 
 ```js
 features("x^3/8 - 2x", {}, [-8, 8]).exact();
 // zeros:       exact -4, 0, 4
-// extrema:     max in [-515/223, -321/139], min in [321/139, 515/223] (±√(16/3)), with y enclosures
-// inflections: concave-to-convex at 0 (exact)
-findPoles("tan(x)", {}, [-4, 4]);      // certified brackets around ±π/2, e.g. [7089/4513, 355/226]
+// extrema:     max near -√(16/3), min near √(16/3), each a proven bracket with a y enclosure
+// inflections: 0 (exact)
+findPoles("tan(x)", {}, [-4, 4]);      // certified brackets around ±π/2
 findPoles("1/(x - 1/3)", {}, [-1, 1]); // exact pole at 1/3
+findHoles("sin(x)/x * 4", {}, [-8, 8]); // hole at 0 with exact limit value 4
 ```
 
-- **Poles.** Every denominator in f is searched for zeros: `u/v`,
-  `u^-k`, `tan u = sin u / cos u`, and the argument of `ln u`. A pole is
-  proven where the denominator has a proven zero and the matching numerator
-  is provably non-zero. A rational pole is exact. An irrational pole is a
-  bracket that certainly holds it. A removable spot such as `x/x` at 0 is
-  reported with `certain: false`. One case is not detected: a pole cancelled
-  by an equal pole in another term, as in `1/x - 1/x`. Certified graph
-  frames carry the poles as `asymptotes`. The renderers draw them as dashed
-  lines, and they draw an unproven float estimate as a fainter dotted line.
-- **Extrema.** `derive()` differentiates the expression symbolically, so f'
-  gets the same certified arithmetic. Each zero of f' is classified by the
-  sign of f' on each side:
-  - `max` when f' goes + to −, and `min` when it goes − to +.
-  - `flat` when the sign is the same on both sides, as for x^3 at 0.
-  - `critical` when a side could not be settled.
+Each result has `at` when it is an exact rational, or `lo`/`hi` for a
+bracket that certainly holds it. `unique: true` means it is proven to be the
+only one in its bracket.
 
-  The side signs are proven. The zero search certifies that no other zero of
-  f' lies between neighbouring results. An enclosure that needed no domain
-  clipping proves f' is continuous there. A pole between two extrema
-  therefore cannot fool the classification.
-- **Holes and domain ends.** A hole is a point where f is undefined but
-  stays bounded on both sides, such as `x/x` or `sin(x)/x` at 0. It carries
-  an estimate of the limit (`valueApprox`). A domain end is where an argument
-  of `sqrt`, or of a fractional power, crosses 0. Each end records which side
-  the domain lies on and whether f is defined at the end itself (`included`).
-- **Inflection points** are sign changes of f'', found the same way, and
-  labelled `convex-to-concave` or `concave-to-convex`. A point where f''
-  vanishes without changing sign, as for x^4 at 0, is not reported.
+- **Zeros.** `exact` or `sign-change` (proven), or `possible` (no proof
+  either way). Zeros also carry `multiplicity` where analytic can prove it.
+- **Poles.** A pole is proven where a denominator has a proven zero and the
+  numerator is provably non-zero. A pole from `ln u` has kind `log`. Certified
+  graph frames carry the poles as `asymptotes`. The renderers draw them as
+  dashed lines, and they draw an unproven float estimate as a fainter dotted
+  line.
+- **Holes.** A hole is a point where f is undefined but has a finite limit,
+  such as `x/x` or `sin(x)/x` at 0. Before searching, analytic rewrites f as
+  one quotient, so scaled and summed forms like `4*sin(x)/x + x` are covered.
+  The limit is given as `value` when it is exact, otherwise as
+  `valueLo`/`valueHi`, plus a float `valueApprox`.
+- **Domain ends.** A domain end is where an argument of `sqrt`, or of a
+  fractional power, crosses 0. Each end records which side the domain lies on
+  and whether f is defined at the end itself (`included`). An end is reported
+  only where f is defined just inside it, so `ln(x) + sqrt(16 - x^2)` has an
+  end at 4 but not at -4.
+- **Extrema** are `max` or `min` (from the proven sign of f' on each side),
+  `flat` (f' = 0 without a sign change, as for x^3 at 0), or `critical` when
+  it is not settled. A `critical` bracket with `touching: true` has f' with
+  the same proven sign at both ends. Either f' only touches 0 there, or a max
+  and min pair sits inside. Finite precision cannot rule out the pair when the
+  touch is at an irrational point such as π/2.
+- **Inflection points** are proven sign changes of f'' (`inflection`), or
+  `possible`, with the same `touching` flag. A point where f'' vanishes
+  without changing sign, as for x^4 at 0, is not reported.
+
+`derive(ast)` is analytic's `differentiate`, re-exported.
 
 ### Markers
 
@@ -100,9 +113,9 @@ Graph frames list holes too. Interval arithmetic cannot bound `x/x` tightly
 over a column that contains 0, so that column comes out tall. The renderer
 draws it faint and lets the open dot show the missing point.
 
-The zero search gives each starting piece its own work budget. A hole or
-pole, where interval bounds are poor, therefore cannot use up the work
-meant for the rest of the range. A piece that runs out reports "possible"
+Analytic gives each starting piece of the range its own work budget. A hole
+or pole, where interval bounds are poor, therefore cannot use up the work
+meant for the rest of the range. A piece that runs out reports `possible`
 rather than guessing.
 
 ## The fast-then-exact shape
@@ -158,16 +171,11 @@ so far, so the certified picture can sweep in over the sketch.
 - **Domains.** Where a function is undefined, such as `sqrt` of a negative
   number, `ln` of a non-positive number, or division by exactly zero, the
   enclosure is empty, so no cells are drawn.
-- **Zeros.** Rational-only expressions (`+ - * /`, integer powers, `abs`,
-  `min`, `max`) are also evaluated exactly with Core `Rational`s. Bisection
-  splits at the simplest rational in the middle of each bracket (a
-  Stern–Brocot descent), so zeros like `2` or `-5/7` are found exactly, and
-  irrational zeros get continued-fraction-like brackets such as
-  `[1393/985, 1970/1393]` for √2. Each result has one of these kinds:
-  - `exact`: the zero is a rational, found exactly.
-  - `sign-change`: the interval certainly contains a zero.
-  - `possible`: no proof either way.
-  - `undefined`: the bracket holds a pole of a rational function.
+- **Zeros** come from analytic (see above). Graphics keeps its own
+  Stern–Brocot zero search for domain ends. It splits each bracket at the
+  simplest rational inside it, so ends like `4` or `-5/7` are found exactly
+  and irrational ones get continued-fraction-like brackets such as
+  `[1393/985, 1970/1393]` for √2.
 
 Measured in this container at 800×400 pixels: a sketch takes 0.2–1 ms, and a
 fully certified plot takes 10–60 ms for the curves in the tests (polynomials,
@@ -194,6 +202,7 @@ Core `Rational`s.
 ## Demo
 
 ```sh
+git submodule update --init   # vendor/analytic
 bun install
 bun run demo:build
 cd demo && python3 -m http.server 4180   # then open http://localhost:4180
@@ -224,4 +233,4 @@ These are next in roughly this order:
 - intersections of two curves (the zeros of f − g, with the same machinery)
 - exact algebraic forms for irrational points of polynomials (√2 rather than a bracket)
 - a Worker wrapper with a Stop button
-- hooks so `@ratmath/analytic` functions can supply their own enclosures
+- hooks so `@ratmath/analytic` special functions can supply their own enclosures

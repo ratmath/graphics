@@ -53,7 +53,7 @@ function yOf(r) {
 export function markerList(features) {
   const out = [];
   for (const z of features.zeros ?? []) {
-    if (typeof z === "number" || z.kind === "exact" || z.kind === "sign-change") out.push({ x: xOf(z), y: 0, role: "zero", filled: true });
+    if (typeof z === "number" || z.kind === "exact" || z.kind === "sign-change" || z.kind === "isolated") out.push({ x: xOf(z), y: 0, role: "zero", filled: true });
   }
   for (const e of features.extrema ?? []) {
     if (e.kind === "max" || e.kind === "min") out.push({ x: xOf(e), y: yOf(e), role: "extremum", filled: true });

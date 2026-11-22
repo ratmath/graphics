@@ -70,7 +70,8 @@ const update = live(
 
 const featureText = document.getElementById("zeros");
 const mid = (r) => (r.exact ? r.at.toNumber() : (r.lo.toNumber() + r.hi.toNumber()) / 2);
-const where = (r) => (r.exact ? `${r.at}` : `[${r.lo}, ${r.hi}]`);
+// Brackets from analytic can be far narrower than needed; show them as decimals.
+const where = (r) => (r.exact ? `${r.at}` : r.hi.subtract(r.lo).toNumber() < 1e-4 ? `≈ ${((r.lo.toNumber() + r.hi.toNumber()) / 2).toFixed(5)}` : `[${r.lo}, ${r.hi}]`);
 const yval = (r) => (r.value ? `${r.value}` : r.valueLo ? `≈ ${((r.valueLo.toNumber() + r.valueHi.toNumber()) / 2).toFixed(6)}` : "?");
 const updateFeatures = live(
   (params) => features(ast, params, [-8, 8], { tolerance: "1/10000" }),
@@ -84,12 +85,13 @@ const updateFeatures = live(
       marks = v;
       const line = (label, list, fmt) => `<div><b>${label}</b> ${list.length ? list.map(fmt).join(" · ") : "none"}</div>`;
       featureText.innerHTML =
-        line("zeros", v.zeros, (r) => (r.kind === "exact" ? `${r.at} (exact)` : r.kind === "sign-change" ? `in ${where(r)}` : `maybe in ${where(r)}`)) +
+        line("zeros", v.zeros, (r) => (r.kind === "exact" ? `${r.at} (exact)` : r.kind === "sign-change" || r.kind === "isolated" ? `in ${where(r)}${r.unique ? "" : " (at least one)"}` : `maybe in ${where(r)}`)) +
         line("poles", v.poles, (p) => `${p.kind === "log" ? "log " : ""}${where(p)}${p.certain ? "" : " (unsettled)"}`) +
-        line("holes", v.holes, (h) => `${h.at}, y ≈ ${Number(h.valueApprox.toPrecision(10))}`) +
+        line("holes", v.holes, (h) => `${where(h)}, y ${h.value ? "= " + h.value : "≈ " + Number(h.valueApprox.toPrecision(10))}`) +
         line("domain ends", v.endpoints, (e) => `${where(e)} (${e.included ? "included" : "excluded"})`) +
-        line("max / min", v.extrema, (e) => `${e.kind} at ${where(e)}, y = ${yval(e)}`) +
-        line("inflections", v.inflections, (e) => `${e.kind === "possible" ? "maybe " : ""}${where(e)}`);
+        line("max / min", v.extrema.filter((e) => e.kind === "max" || e.kind === "min"), (e) => `${e.kind} at ${where(e)}, y = ${yval(e)}`) +
+        line("unsettled", [...v.extrema.filter((e) => e.kind === "critical"), ...v.inflections.filter((e) => e.kind === "possible")].slice(0, 6), (e) => `${e.kind === "critical" ? "f'" : "f''"} ${e.touching ? "touches 0 without changing sign" : "= 0"} near ${where(e)}`) +
+        line("inflections", v.inflections.filter((e) => e.kind !== "possible"), (e) => `${e.kind === "possible" ? "maybe " : ""}${where(e)}`);
     }
     redraw();
   },

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Rational } from "@ratmath/core";
-import { parse, compileFloat, compileExact, isRationalOnly, freeVariables, findZeros, zeros, viewport, precisionFor } from "../index.js";
+import { parse, compileFloat, compileExact, isRationalOnly, freeVariables, findZeros, findPoles, zeros, viewport, precisionFor } from "../index.js";
 import { simplestBetween } from "../src/roots.js";
 
 const R = (n, d = 1) => new Rational(BigInt(n), BigInt(d));
@@ -71,7 +71,7 @@ describe("zeros", () => {
     expect(s[0].hi.toNumber()).toBeGreaterThan(Math.PI);
   });
   test("poles are not zeros", () => {
-    expect(findZeros("1/x", {}, [-1, 1]).map((r) => `${r.kind} ${r.at}`)).toEqual(["undefined 0"]);
+    expect(findZeros("1/x", {}, [-1, 1])).toEqual([]);
     // Near the pole of tan at pi/2 the enclosure is unbounded, so the most
     // honest answer is "possible", never a certified zero.
     expect(findZeros("tan(x)", {}, [1, 2]).every((r) => r.kind === "possible")).toBe(true);
@@ -93,11 +93,9 @@ describe("viewport", () => {
 });
 
 describe("zeros near poles of rational functions", () => {
-  test("the pole is reported as undefined, not as a zero", () => {
+  test("the pole is reported as a pole, not as a zero", () => {
     const rs = findZeros("1/(x - 1/3) + x^2/8 - 2", {}, [-8, 8], { tolerance: "1/10000" });
-    const kinds = rs.map((r) => r.kind);
-    expect(kinds.filter((k) => k === "sign-change").length).toBe(3);
-    const pole = rs.find((r) => r.kind === "undefined");
-    expect(String(pole.at)).toBe("1/3");
+    expect(rs.map((r) => r.kind)).toEqual(["sign-change", "sign-change", "sign-change"]);
+    expect(findPoles("1/(x - 1/3) + x^2/8 - 2", {}, [-8, 8]).map((p) => String(p.at))).toEqual(["1/3"]);
   });
 });

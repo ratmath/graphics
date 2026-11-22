@@ -15,6 +15,7 @@ import { Rational } from "@ratmath/core";
 import { compileExact, compileFloat, compileInterval, integerExponent, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import * as I from "./interval.js";
 import { Refinement } from "./refine.js";
+import { zerosGenerator2 } from "./features.js";
 
 /** The rational with the smallest denominator in [lo, hi] (Stern–Brocot descent). */
 export function simplestBetween(lo, hi) {
@@ -267,20 +268,26 @@ function mergeResults(results) {
   return out;
 }
 
-/** Synchronous: all zeros of f on [a, b]. */
+// The public zero finder is @ratmath/analytic's (see features.js). The
+// search above stays for graphics' own use: domain ends (zeros of sqrt
+// arguments, classified by side).
+
+/** Synchronous: all zeros of f on [a, b], certified by @ratmath/analytic. */
 export function findZeros(f, params, range, options) {
-  const gen = zerosGenerator(f, params, range, options);
+  const gen = zerosGenerator2(f, params, range, options);
   let s;
   while (!(s = gen.next()).done);
-  return s.value.value;
+  return s.value;
 }
 
-/** Zeros as a Refinement: quick float guesses, then certified results. */
+/** Zeros as a Refinement: quick float guesses, then certified results (from analytic). */
 export function zeros(f, params, range, options = {}) {
   const ast = typeof f === "string" ? parse(f) : f;
   return new Refinement(
     () => ({ value: floatZeros(ast, params, range, options), trust: "rough" }),
-    () => zerosGenerator(ast, params, range, options),
+    function* () {
+      return { value: yield* zerosGenerator2(ast, params, range, options), via: "analytic-roots" };
+    },
   );
 }
 

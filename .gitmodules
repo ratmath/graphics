@@ -1,0 +1,3 @@
+[submodule "vendor/analytic"]
+	path = vendor/analytic
+	url = https://github.com/ratmath/analytic

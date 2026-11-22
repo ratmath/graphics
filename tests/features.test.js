@@ -151,3 +151,13 @@ test("marker roles and fills follow the convention", () => {
   expect(shade("#2563eb", -0.5)).toBe("rgb(19, 50, 118)");
   expect(shade("#000", 1)).toBe("rgb(255, 255, 255)");
 });
+
+test("a hole does not starve the rest of the range (per-piece work budget)", () => {
+  const v = features("(x^2 - 1)/(x - 1) + sin(2x)/2", {}, [-8, 8], { tolerance: "1/10000" }).exact();
+  // f'' = -2 sin(2x): inflections at k*pi/2 for |k| <= 5, on both sides of the hole at 1.
+  expect(v.inflections.length).toBe(11);
+  for (let k = -5; k <= 5; k++) {
+    expect(v.inflections.some((r) => r.lo.toNumber() <= (k * Math.PI) / 2 + 1e-9 && r.hi.toNumber() >= (k * Math.PI) / 2 - 1e-9)).toBe(true);
+  }
+  expect(v.holes.map((h) => String(h.at))).toEqual(["1"]);
+});

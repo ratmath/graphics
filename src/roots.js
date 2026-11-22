@@ -92,9 +92,12 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
   const two = new Rational(2);
 
   let spent = 0;
+  const pieceBudget = Math.max(400, Math.floor(budget / pieces));
   const work = (lo, hi, sLo, sHi, depth) => {
-    if (++spent > budget) {
-      // Out of budget (f may vanish on a whole stretch): say so honestly.
+    if (++spent > pieceBudget) {
+      // Out of budget for this piece (f may vanish on a whole stretch, or
+      // a hole may defeat interval bounds): say so honestly. The budget is
+      // per piece, so one hard spot cannot starve the rest of the range.
       results.push({ kind: "possible", lo, hi });
       return;
     }
@@ -181,6 +184,7 @@ export function* zerosGenerator(f, params, [a, b], { variable = "x", tolerance =
   for (let i = 0; i < pieces; i++) {
     const right = i === pieces - 1 ? hi0 : lo0.add(step.multiply(new Rational(i + 1)));
     const sRight = signAt(ctx, enclose, exact, P, rp, right);
+    spent = 0;
     work(left, right, sLeft, sRight, 0);
     left = right;
     sLeft = sRight;

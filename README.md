@@ -100,10 +100,10 @@ Graph frames list holes too. Interval arithmetic cannot bound `x/x` tightly
 over a column that contains 0, so that column comes out tall. The renderer
 draws it faint and lets the open dot show the missing point.
 
-Known limit: expressions with heavy dependency, such as a rational function
-with a hole plus a trigonometric term, can leave some zeros of f'' unsettled
-on one side. Mean-value or Taylor-model enclosures would fix this. They
-belong with the analytic work.
+The zero search gives each starting piece its own work budget. A hole or
+pole, where interval bounds are poor, therefore cannot use up the work
+meant for the rest of the range. A piece that runs out reports "possible"
+rather than guessing.
 
 ## The fast-then-exact shape
 

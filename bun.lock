@@ -1,0 +1,24 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "@ratmath/analytic": "workspace:*",
+        "@ratmath/core": "^0.8.0",
+      },
+    },
+    "vendor/analytic": {
+      "name": "@ratmath/analytic",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ratmath/core": "^0.8.0",
+      },
+    },
+  },
+  "packages": {
+    "@ratmath/analytic": ["@ratmath/analytic@workspace:vendor/analytic"],
+
+    "@ratmath/core": ["@ratmath/core@0.8.0", "", {}, "sha512-fNGxYTereQMpJBJPEAHAcpAPOLLmZr1SSJ4rDvfF//E5ZJ73Nmy5JLuGmNpKIPK5FJPHGsPmCOirymI/zgLB2w=="],
+  }
+}

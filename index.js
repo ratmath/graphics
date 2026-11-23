@@ -16,3 +16,18 @@ export * as interval from "./src/interval.js";
 export { drawCanvas, drawAsymptotes } from "./src/render/canvas.js";
 export { toSVG } from "./src/render/svg.js";
 export { drawMarkers, markerList, shade } from "./src/render/markers.js";
+
+// Exact geometry, regions and implicit curves, labels and scenes.
+export { Surd, surd, sqrt, squareFree } from "./src/surd.js";
+export {
+  Point, Line, Polygon, Circle, point, line, segment, ray, polygon, circle, circumcircle,
+  dist2, distance, midpoint, orientation, parallel, perpendicular, bisector, project, reflect,
+  signedArea, area, centroid, locate, convexHull, intersect,
+} from "./src/geometry.js";
+export { linearForm } from "./src/linear.js";
+export { parseCondition, atoms, dnf, negationFree } from "./src/condition.js";
+export { classify } from "./src/quadtree.js";
+export { region, implicit, sketchRegion, sketchImplicit, linearPieces, exactLinearRegion } from "./src/region.js";
+export {
+  label, texToText, primitives, axesPrimitives, niceStep, paint, drawScene, mountLabels, svgElements, sceneSVG, PALETTE,
+} from "./src/render/scene.js";

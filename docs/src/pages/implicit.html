@@ -1,0 +1,25 @@
+<section class="page" data-page="implicit">
+  <div class="eyebrow">Topic</div>
+  <h1>Implicit curves</h1>
+  <p class="lede">Curves given by an equation \(F(x, y) = 0\) rather than as \(y = f(x)\): circles, ellipses, cubics, lemniscates, the folium of Descartes.</p>
+  <div data-demo="implicit"></div>
+  <h2>How it is certified</h2>
+  <p>The viewport is split into boxes of pixels. For each box, the exact \(x\)- and \(y\)-intervals go through interval arithmetic. If the enclosure of \(F\) over the box excludes 0, the curve misses the whole box and it is dropped. Otherwise the box is split, down to single pixels and then a few levels below. A pixel that survives <em>may</em> contain part of the curve; a pixel that does not survive certainly contains none.</p>
+  <p>Some pixels are better than possible. If \(F\) is defined and continuous on a pixel (no square root of a negative, no division by an interval containing 0) and has opposite proven signs at two of its corners, then by the intermediate value theorem the curve passes through that pixel. Those are listed in <code>sure</code> and drawn darker above. Where the curve crosses itself or touches without crossing, as at the node of \(y^2 = x^3 - 2x + 1\) when the parameter makes one, pixels stay possible: no sign change proves them.</p>
+<pre><code>const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 400, height: 300 });
+const c = implicit("x^2/4 + y^2 = 1", {}, vp);
+c.quick.value;           // marching-squares segments, immediate
+const cells = c.exact(); // { kind: "cells", columns, sure }
+cells.sure.count;        // pixels proven to hold part of the curve</code></pre>
+  <p>The equation can be written with anything on either side (<code>y^2 = x^3 - x</code>), or as a bare expression meaning <code>= 0</code>. The quick sketch uses marching squares on a grid every 2 pixels, so it can miss small loops and join branches that cross; the certified frame cannot miss anything.</p>
+  <h2>Parameters</h2>
+  <p>Names other than <code>x</code> and <code>y</code> are parameters, given as exact rationals. The demo wires them to sliders with <code>live</code>, exactly as for graphs.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 420, height: 280 });
+const c = implicit("(x^2 + y^2)^2 = 4(x^2 - y^2)", {}, vp).exact();
+const all = c.columns.reduce((n, s) => { for (let k = 0; k < s.length; k += 2) n += s[k + 1] - s[k] + 1; return n; }, 0);
+PRINT(`${c.sure.count} of ${all} candidate pixels are proven to hold the curve`);
+SHOW(sceneSVG(vp, [{ item: c, color: "#9333ea" }, label([0, "1.5"], "(x^2+y^2)^2 = 4(x^2-y^2)")], { axes: true, background: "#fff" }));
+</template>

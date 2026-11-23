@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drawing and labels · RatMath graphics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=147b225b43">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="drawing" selected>Drawing and labels</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="drawing.html" class="on" aria-current="page">Drawing and labels</a>
+  </nav>
+</aside>
+<main>
+
+<section class="page" data-page="drawing">
+  <div class="eyebrow">Topic</div>
+  <h1>Drawing and labels</h1>
+  <p class="lede">The library computes; small renderers draw. One scene can go to a canvas for interactive use or to an SVG string for export, with labels in mathematical notation.</p>
+  <div data-demo="drawing"></div>
+  <h2>Canvas and SVG</h2>
+  <p>Interactive drawing uses the 2D canvas: it redraws a few thousand cells or a long polyline in well under a frame, which is what slider drags need. SVG is for export, printing, server-side rendering and tests, where a vector file and crisp text matter more than redraw speed. There is no WebGL; nothing so far needs it.</p>
+  <p>Both back ends share one step, <code>primitives(vp, layers)</code>, which is the only place exact values become floating-point pixel coordinates. It returns paths, rectangles, dots and labels; <code>paint(ctx2d, prims)</code> and <code>svgElements(prims)</code> only paint them. A native app can paint the same primitives with its own drawing API.</p>
+<pre data-norun><code>drawScene(ctx2d, vp, layers, { axes: true, scale: devicePixelRatio, background: "#fff" });
+const svg = sceneSVG(vp, layers, { axes: true, background: "#fff" });</code></pre>
+  <h2>Layers</h2>
+  <p>A layer is a geometry object, a frame from <code>graph</code>, <code>implicit</code> or <code>region</code> (quick or exact), a <code>label</code>, or <code>{ item, ...style }</code>. Style keys: <code>color</code>, <code>width</code>, <code>dash</code>, <code>fill</code>, <code>fillAlpha</code>, <code>radius</code> and <code>open</code> for points, <code>label</code> (TeX, or <code>true</code> for the object's own <code>toTeX()</code>), <code>anchor</code>, and for regions <code>corners</code> and <code>cornerLabels</code>.</p>
+  <h2>Labels with mathematical notation</h2>
+  <p><code>label([x, y], tex, { anchor, color, size })</code> places LaTeX at a world point. Anchors <code>n ne e se s sw w nw c</code> say where the label sits relative to the point; labels that would run off the edge flip to the other side.</p>
+  <ul>
+    <li><strong>On a canvas</strong>, which cannot typeset TeX, <code>mountLabels(container, vp, prims, { katex })</code> places the labels in an HTML layer over the canvas and typesets them with KaTeX. Positions are in percent, so they follow the canvas when CSS scales it. Without KaTeX, labels fall back to a plain-text reading (<code>texToText</code>: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle scriptlevel="0" displaystyle="false"><mfrac><msup><mi>x</mi><mn>2</mn></msup><mn>9</mn></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\tfrac{x^2}{9}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.3629em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0179em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">9</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913em;"><span style="top:-2.931em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span> becomes <code>x²/9</code>).</li>
+    <li><strong>In SVG</strong>, pass <code>tex: (s) => katex.renderToString(s)</code> to <code>sceneSVG</code>, and labels go in as <code>foreignObject</code> HTML (the page needs KaTeX's stylesheet). Without it, they are <code>&lt;text&gt;</code> elements with the plain-text reading.</li>
+  </ul>
+  <p>These docs load KaTeX from <code>ratmath.com/assets/katex/0.19.1/</code>, shared by all the RatMath docs sites.</p>
+  <h2>Axes</h2>
+  <p><code>axes: true</code> (or <code>{ grid, axis, text }</code> colors) draws a grid at 1, 2 or 5 times a power of ten, axis lines through 0, and tick labels.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-1, 5], y: [-1, 4], width: 360, height: 300 });
+const r = region("y &lt;= 3 - x/2, y &gt;= x - 1, x &gt;= 0, y &gt;= 0", {}, vp).exact();
+const c = circle([2, 1], 1);
+const hits = intersect(line("y = x/2"), c);
+const layers = [{ item: r, color: "#0f766e" }, { item: c, color: "#dc2626" }, ...hits.map((p, i) =&gt; ({ item: p, color: "#dc2626", label: true, anchor: i ? "s" : "n" })), label([3, "3.4"], "y \\le 3 - \\tfrac{x}{2}")];
+PRINT(primitives(vp, layers).length, "primitives");
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="regions.html"><small>Previous</small>Regions and inequalities</a><span></span></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=147b225b43"></script>
+</body>
+</html>

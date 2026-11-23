@@ -1,0 +1,17 @@
+<section class="page wide" data-page="explore">
+  <div class="eyebrow">Explore</div>
+  <h1>Type something and look</h1>
+  <p class="lede">A graph \(y = f(x)\), a curve \(F(x, y) = 0\), or a region. Names other than \(x\) and \(y\) become sliders with exact steps of \(\tfrac{1}{8}\). Drag the plot to pan; the buttons zoom by exact factors of 2.</p>
+  <div data-demo="explore"></div>
+  <p>While you drag a slider or the plot, you see the float sketch (blue). When you stop, the certified version (green) replaces it. The status chip says which one is on screen.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 420, height: 315 });
+const layers = [
+  { item: region("y^2 <= x^3 - 2x + 1", {}, vp).exact(), color: "#9333ea" },
+  { item: implicit("x^3 + y^3 = 3x y", {}, vp).exact(), color: "#ea580c" },
+  { item: graph("sin(2x)", {}, vp).exact(), color: "#2563eb" },
+];
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+</template>

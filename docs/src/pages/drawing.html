@@ -1,0 +1,32 @@
+<section class="page" data-page="drawing">
+  <div class="eyebrow">Topic</div>
+  <h1>Drawing and labels</h1>
+  <p class="lede">The library computes; small renderers draw. One scene can go to a canvas for interactive use or to an SVG string for export, with labels in mathematical notation.</p>
+  <div data-demo="drawing"></div>
+  <h2>Canvas and SVG</h2>
+  <p>Interactive drawing uses the 2D canvas: it redraws a few thousand cells or a long polyline in well under a frame, which is what slider drags need. SVG is for export, printing, server-side rendering and tests, where a vector file and crisp text matter more than redraw speed. There is no WebGL; nothing so far needs it.</p>
+  <p>Both back ends share one step, <code>primitives(vp, layers)</code>, which is the only place exact values become floating-point pixel coordinates. It returns paths, rectangles, dots and labels; <code>paint(ctx2d, prims)</code> and <code>svgElements(prims)</code> only paint them. A native app can paint the same primitives with its own drawing API.</p>
+<pre data-norun><code>drawScene(ctx2d, vp, layers, { axes: true, scale: devicePixelRatio, background: "#fff" });
+const svg = sceneSVG(vp, layers, { axes: true, background: "#fff" });</code></pre>
+  <h2>Layers</h2>
+  <p>A layer is a geometry object, a frame from <code>graph</code>, <code>implicit</code> or <code>region</code> (quick or exact), a <code>label</code>, or <code>{ item, ...style }</code>. Style keys: <code>color</code>, <code>width</code>, <code>dash</code>, <code>fill</code>, <code>fillAlpha</code>, <code>radius</code> and <code>open</code> for points, <code>label</code> (TeX, or <code>true</code> for the object's own <code>toTeX()</code>), <code>anchor</code>, and for regions <code>corners</code> and <code>cornerLabels</code>.</p>
+  <h2>Labels with mathematical notation</h2>
+  <p><code>label([x, y], tex, { anchor, color, size })</code> places LaTeX at a world point. Anchors <code>n ne e se s sw w nw c</code> say where the label sits relative to the point; labels that would run off the edge flip to the other side.</p>
+  <ul>
+    <li><strong>On a canvas</strong>, which cannot typeset TeX, <code>mountLabels(container, vp, prims, { katex })</code> places the labels in an HTML layer over the canvas and typesets them with KaTeX. Positions are in percent, so they follow the canvas when CSS scales it. Without KaTeX, labels fall back to a plain-text reading (<code>texToText</code>: \(\tfrac{x^2}{9}\) becomes <code>x²/9</code>).</li>
+    <li><strong>In SVG</strong>, pass <code>tex: (s) => katex.renderToString(s)</code> to <code>sceneSVG</code>, and labels go in as <code>foreignObject</code> HTML (the page needs KaTeX's stylesheet). Without it, they are <code>&lt;text&gt;</code> elements with the plain-text reading.</li>
+  </ul>
+  <p>These docs load KaTeX from <code>ratmath.com/assets/katex/0.19.1/</code>, shared by all the RatMath docs sites.</p>
+  <h2>Axes</h2>
+  <p><code>axes: true</code> (or <code>{ grid, axis, text }</code> colors) draws a grid at 1, 2 or 5 times a power of ten, axis lines through 0, and tick labels.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-1, 5], y: [-1, 4], width: 360, height: 300 });
+const r = region("y <= 3 - x/2, y >= x - 1, x >= 0, y >= 0", {}, vp).exact();
+const c = circle([2, 1], 1);
+const hits = intersect(line("y = x/2"), c);
+const layers = [{ item: r, color: "#0f766e" }, { item: c, color: "#dc2626" }, ...hits.map((p, i) => ({ item: p, color: "#dc2626", label: true, anchor: i ? "s" : "n" })), label([3, "3.4"], "y \\le 3 - \\tfrac{x}{2}")];
+PRINT(primitives(vp, layers).length, "primitives");
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+</template>

@@ -23,6 +23,7 @@
   "sideEffects": false,
   "scripts": {
     "test": "bun test ./tests",
+    "docs:build": "bun scripts/build-docs.js",
     "demo:build": "bun build demo/main.js --outdir demo/dist --target browser",
     "demo": "bun run demo:build && bunx serve demo"
   },
@@ -47,6 +48,9 @@
   "dependencies": {
     "@ratmath/core": "^0.8.0",
     "@ratmath/analytic": "workspace:*"
+  },
+  "devDependencies": {
+    "katex": "0.19.1"
   },
   "workspaces": [
     "vendor/*"

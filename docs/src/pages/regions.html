@@ -1,0 +1,40 @@
+<section class="page" data-page="regions">
+  <div class="eyebrow">Topic</div>
+  <h1>Regions and inequalities</h1>
+  <p class="lede">Shade where a condition holds. Inequalities can be chained and joined with <code>and</code>, <code>or</code> and <code>not</code>. Regions bounded by lines are computed exactly, corners included; everything else is certified pixel by pixel.</p>
+  <div data-demo="regions"></div>
+  <h2>Writing conditions</h2>
+<pre data-norun><code>"x^2 + y^2 < 4"                    // one comparison
+"0 <= x <= 3"                      // chains mean "and"
+"y >= x and x + y <= 4"            // also &&, ||, !, and a comma for "and"
+"(y > 1 or y < -1) and x > 0"      // parentheses group logic
+"x != y"                           // ≤ ≥ ≠ work too</code></pre>
+  <p><code>parseCondition(text)</code> gives the tree; each comparison is normalized to \(F < 0\), \(F \le 0\), \(F = 0\) or \(F \ne 0\).</p>
+  <h2>Bounded by lines: exact polygons</h2>
+  <p>When every comparison is affine in \(x\) and \(y\) with rational coefficients, <code>region(...).exact()</code> splits the condition into "and" pieces, clips the viewport rectangle by each piece's half-planes with exact arithmetic, and returns</p>
+  <ul>
+    <li><code>pieces</code>: convex polygons with rational vertices and exact areas,</li>
+    <li><code>boundary</code>: the outer edges, each marked <code>strict</code> (from \(<\) or \(>\), drawn dashed) or not (solid). Edges shared by two pieces of a union are dropped,</li>
+    <li><code>corners</code>: points where two boundary lines meet, each with <code>included</code>, drawn as a filled or open dot, and</li>
+    <li><code>lines</code>: segments from equations such as <code>x - y = 1 and x >= 0</code>.</li>
+  </ul>
+<pre data-norun><code>const vp = viewport({ x: [-5, 5], y: [-4, 4], width: 400, height: 320 });
+const r = region("3x + 7y <= 5, x - 2y >= -1, y >= -1/3", {}, vp).exact();
+r.corners.map((c) => String(c.point));   // ["(22/9, -1/3)", "(3/13, 8/13)", "(-5/3, -1/3)"]
+String(r.pieces[0].area);</code></pre>
+  <h2>Anything else: certified pixels</h2>
+  <p>For other conditions the viewport is classified box by box with interval arithmetic, as for implicit curves. Each comparison is true on the whole box, false on the whole box, or undecided; <code>and</code>, <code>or</code> and <code>not</code> combine those three values, and decided parts are dropped as boxes shrink. The result lists <code>inside</code> rectangles, proven to lie entirely in the region, and <code>boundary</code> pixels that stay undecided. Every other pixel lies entirely outside. Where a function is undefined, such as \(\sqrt{x}\) for \(x < 0\), the condition is false.</p>
+<pre data-norun><code>const s = region("x^2 + y^2 < 9 and y > x^2 - 4", {}, vp).exact();
+s.kind;       // "region"
+s.inside;     // [x, y, w, h, ...] pixel rectangles, proven inside
+s.boundary;   // per column, rows still undecided</code></pre>
+  <p>To force the pixel method for a linear condition, pass <code>{ method: "pixels" }</code>.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-2, 5], y: [-2, 4], width: 420, height: 360 });
+const r = region("y >= x/2 - 1 and y <= 3 - x and y > -1", {}, vp).exact();
+for (const c of r.corners) PRINT(String(c.point), c.included ? "included" : "not included");
+PRINT("area:", r.pieces[0].area);
+SHOW(sceneSVG(vp, [{ item: r, color: "#0f766e", cornerLabels: true }], { axes: true, background: "#fff" }));
+</template>

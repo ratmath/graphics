@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Explore · RatMath graphics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=147b225b43">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore" selected>Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="drawing">Drawing and labels</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html" class="on" aria-current="page">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="drawing.html">Drawing and labels</a>
+  </nav>
+</aside>
+<main>
+
+<section class="page wide" data-page="explore">
+  <div class="eyebrow">Explore</div>
+  <h1>Type something and look</h1>
+  <p class="lede">A graph <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">y = f(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span>, a curve <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">F(x, y) = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1389em;">F</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>, or a region. Names other than <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span></span></span></span> become sliders with exact steps of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle scriptlevel="0" displaystyle="false"><mfrac><mn>1</mn><mn>8</mn></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\tfrac{1}{8}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">8</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>. Drag the plot to pan; the buttons zoom by exact factors of 2.</p>
+  <div data-demo="explore"></div>
+  <p>While you drag a slider or the plot, you see the float sketch (blue). When you stop, the certified version (green) replaces it. The status chip says which one is on screen.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 420, height: 315 });
+const layers = [
+  { item: region("y^2 &lt;= x^3 - 2x + 1", {}, vp).exact(), color: "#9333ea" },
+  { item: implicit("x^3 + y^3 = 3x y", {}, vp).exact(), color: "#ea580c" },
+  { item: graph("sin(2x)", {}, vp).exact(), color: "#2563eb" },
+];
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="reference.html"><small>Previous</small>Reference</a><a class="next" href="fast-certified.html"><small>Next</small>Fast, then certified</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=147b225b43"></script>
+</body>
+</html>

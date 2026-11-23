@@ -199,6 +199,67 @@ than the plotted variable (`x` by default, set with `{ variable }`) are
 parameters. Parameters can be numbers, `"p/q"` strings, decimal strings, or
 Core `Rational`s.
 
+## Exact geometry
+
+Points, lines, segments, rays, polygons and circles with coordinates in Q or
+Q(√d). A line meets a circle at points like p ± q√d, and two circles meet on
+their radical axis, so constructions from rational input stay exact.
+Numbers of the form a + b√d are `Surd`s with exact arithmetic, signs and
+comparisons; mixing two different roots (√2 + √3) throws, since that needs
+`@ratmath/algebraic`.
+
+```js
+const A = point(0, 0), B = point(4, 0), C = point(1, 3);
+line(A, C).toString();                       // "3x - y = 0"
+intersect(circle(A, 2), circle(B, 3));       // (11/8, -3√15/8), (11/8, 3√15/8)
+intersect(segment(A, C), segment(B, [0, 2])); // (4/7, 12/7)
+area(polygon([A, B, C]));                    // 6
+circumcircle(A, B, C).toTeX();               // "\left(x - 2\right)^2 + \left(y - 1\right)^2 = 5"
+```
+
+Also: `ray`, `midpoint`, `project`, `reflect`, `parallel`, `perpendicular`,
+`bisector`, `dist2`, `distance`, `centroid`, `orientation`, `locate`
+(inside/boundary/outside), `convexHull`.
+
+## Regions and implicit curves
+
+`region(condition, params, vp)` shades where a condition holds. Conditions
+chain (`0 <= x <= 3`) and join with `and`, `or`, `not` (or `&& || !`, and a
+comma for "and"). When every comparison is affine in x and y with rational
+coefficients, the exact stage is a `polygons` frame: convex pieces with
+rational corners and exact areas, the outer boundary with each edge marked
+strict (dashed) or not (solid), and the corners where two boundary lines meet,
+each marked included or not. Otherwise the exact stage is a certified pixel
+classification: `inside` rectangles lie entirely in the region, `boundary`
+pixels are undecided, and every other pixel lies entirely outside.
+
+`implicit("x^2 + y^2 = 4", params, vp)` draws a curve F(x, y) = 0. Its exact
+stage is a cells frame like a graph's: the curve passes through no unshaded
+pixel. Pixels listed in `sure` are proven to hold part of the curve (F is
+continuous there and has opposite signs at two corners).
+
+Both start with a float sketch (cell sampling and marching squares).
+
+## Drawing and labels
+
+`drawScene(ctx2d, vp, layers, { axes, scale })` and `sceneSVG(vp, layers,
+{ axes, tex })` draw any mix of geometry objects, graph, curve and region
+frames, and labels. Both go through `primitives(vp, layers)`, the one place
+exact values become float pixel coordinates; the back ends only paint.
+`label([x, y], "\\frac{1}{2}")` places TeX at a world point. On a canvas,
+`mountLabels(container, vp, prims, { katex })` typesets labels in an HTML
+layer over it; in SVG, pass `tex: (s) => katex.renderToString(s)`.
+
+## Docs
+
+The docs site lives in `docs/` (published at https://ratmath.com/graphics/):
+overview, reference, an explore page, and topic pages, each ending with a
+runnable code box (`SHOW(svg)` draws). Edit `docs/src/pages/*.html` and
+`docs/assets/pages.js`, then `bun run docs:build`, which bundles
+`docs/assets/graphics.js`, typesets math with KaTeX and runs every page's box.
+`docs/assets/runbox.js` and `scripts/docs-kit.js` are shared with the other
+RatMath docs sites (this copy of runbox.js adds `SHOW`).
+
 ## Demo
 
 ```sh
@@ -228,9 +289,9 @@ arithmetic and against itself at 240 bits.
 
 These are next in roughly this order:
 
-- implicit curves `f(x, y) = 0` and inequalities on a certified quadtree
 - parametric and polar curves
 - intersections of two curves (the zeros of f − g, with the same machinery)
+- regions bounded by circles and conics drawn exactly (arcs), not pixel by pixel
 - exact algebraic forms for irrational points of polynomials (√2 rather than a bracket)
 - a Worker wrapper with a Stop button
 - hooks so `@ratmath/analytic` special functions can supply their own enclosures

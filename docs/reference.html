@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reference · RatMath graphics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=147b225b43">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference" selected>Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="drawing">Drawing and labels</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html" class="on" aria-current="page">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="drawing.html">Drawing and labels</a>
+  </nav>
+</aside>
+<main>
+
+<section class="page" data-page="reference">
+  <div class="eyebrow">Reference</div>
+  <h1>Everything in the library</h1>
+  <p>Numbers can be JS numbers (read by their shortest spelling, so <code>0.1</code> is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle scriptlevel="0" displaystyle="false"><mfrac><mn>1</mn><mn>10</mn></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\tfrac{1}{10}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">10</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>), bigints, strings such as <code>"3/4"</code> or <code>"1.25"</code>, or Core <code>Rational</code>s. Functions marked <em>R</em> return a <a href="fast-certified.html">Refinement</a>: <code>.quick.value</code> is the float sketch; <code>.exact()</code> or <code>await .settle()</code> give the certified result.</p>
+  <h2>Viewports and Refinements</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>viewport({ x: [a, b], y: [c, d], width, height })</td><td>Exact rational world rectangle over a pixel grid; <code>dx</code>, <code>dy</code> are exact.</td></tr>
+    <tr><td>Refinement, live(compute, onStage, { idleMs, sliceMs, onProgress })</td><td>The fast-then-exact protocol shared with linalg and analytic; <code>live</code> wires it to input.</td></tr>
+    <tr><td>precisionFor(vp), columnRationals(vp, i)</td><td>Working precision for a viewport; the exact x-interval of a pixel column.</td></tr>
+  </table></div>
+  <h2>Expressions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>parse(text)</td><td>Calculator notation to a plain AST (<code>num var const op call</code>).</td></tr>
+    <tr><td>num, v, op, call</td><td>AST builders, for a calculator that has its own parser.</td></tr>
+    <tr><td>compileFloat, compileInterval, compileExact</td><td>Doubles; certified interval enclosures; exact rationals for rational-only expressions.</td></tr>
+    <tr><td>freeVariables(ast), isRationalOnly(ast), toRational(x)</td><td>Helpers.</td></tr>
+    <tr><td>derive(ast), format(ast)</td><td>Symbolic derivative and printing, from @ratmath/analytic.</td></tr>
+  </table></div>
+  <h2>Graphs and features</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>Exact value</th></tr>
+    <tr><td>graph(f, params, vp) <em>R</em></td><td>quick: polyline; exact: cells frame <code>{ columns, tight, asymptotes, holes }</code></td></tr>
+    <tr><td>zeros(f, params, [a, b]) <em>R</em></td><td><code>exact</code> rationals, <code>sign-change</code> brackets, or <code>possible</code></td></tr>
+    <tr><td>features(f, params, [a, b]) <em>R</em></td><td><code>{ zeros, poles, holes, endpoints, extrema, inflections }</code></td></tr>
+    <tr><td>findPoles, findHoles, findExtrema, findInflections, findEndpoints, findZeros</td><td>The same pieces, synchronously</td></tr>
+    <tr><td>sampleFloat, certifyGraph, floatZeros, floatFeatures, simplestBetween</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Implicit curves and regions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>Exact value</th></tr>
+    <tr><td>implicit(equation, params, vp) <em>R</em></td><td>quick: marching-squares segments; exact: cells frame with <code>sure</code> (proven pixels)</td></tr>
+    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, else <code>region</code> frame <code>{ inside, boundary }</code></td></tr>
+    <tr><td>parseCondition(text), atoms(tree), dnf(tree), negationFree(tree)</td><td>Conditions as trees of comparisons <code>F rel 0</code></td></tr>
+    <tr><td>linearForm(expr, params)</td><td><code>{ a, b, c }</code> with expr = a·x + b·y + c, or null</td></tr>
+    <tr><td>linearPieces, exactLinearRegion, classify, sketchRegion, sketchImplicit</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Exact numbers and geometry</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>surd(a), surd(a, b, d), sqrt(q), Surd</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>+</mo><mi>b</mi><msqrt><mi>d</mi></msqrt></mrow><annotation encoding="application/x-tex">a + b\sqrt{d}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.04em;vertical-align:-0.1078em;"></span><span class="mord mathnormal">b</span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9322em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord mathnormal">d</span></span></span><span style="top:-2.8922em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1078em;"><span></span></span></span></span></span></span></span></span>: add, subtract, multiply, divide, sign, compareTo, bounds(bits), toNumber, toTeX</td></tr>
+    <tr><td>point, line, segment, ray, polygon, circle</td><td>Immutable objects with <code>toString()</code> and <code>toTeX()</code></td></tr>
+    <tr><td>intersect(A, B)</td><td>Exact intersection list for any pair</td></tr>
+    <tr><td>midpoint, project, reflect, parallel, perpendicular, bisector, circumcircle</td><td>Constructions</td></tr>
+    <tr><td>dist2, distance, area, signedArea, centroid, orientation, locate, convexHull</td><td>Measurements and predicates, exact</td></tr>
+  </table></div>
+  <h2>Drawing</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>drawScene(ctx2d, vp, layers, { axes, scale, background, colors })</td><td>Draw layers on a canvas; returns the primitives</td></tr>
+    <tr><td>sceneSVG(vp, layers, { axes, background, tex })</td><td>A standalone SVG string</td></tr>
+    <tr><td>label(at, tex, { anchor, color, size })</td><td>A TeX label at a world point</td></tr>
+    <tr><td>mountLabels(container, vp, prims, { katex })</td><td>Typeset labels in an HTML layer over a canvas</td></tr>
+    <tr><td>primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE</td><td>The pieces under drawScene and sceneSVG</td></tr>
+    <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
+  </table></div>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 360, height: 240 });
+const g = graph("x^3 - x", {}, vp);
+PRINT("quick:", g.quick.value.kind, "| exact:", g.exact().kind);
+PRINT(line("2x - y = 3").toTeX(), "|", circle([1, -2], { r2: 2 }).toString());
+SHOW(sceneSVG(vp, [g.exact(), line("2x - y = 3"), { item: circle([1, -2], { r2: 2 }), color: "#dc2626" }], { axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="index.html"><small>Previous</small>Introduction</a><a class="next" href="explore.html"><small>Next</small>Explore</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=147b225b43"></script>
+</body>
+</html>

@@ -264,7 +264,7 @@ export function niceStep(span, target = 8) {
 }
 
 function fmtTick(v, step) {
-  const digits = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  const digits = Math.max(0, Math.ceil(-Math.log10(step) - 1e-9));
   const s = v.toFixed(digits);
   return s === "-0" ? "0" : s.replace(/^-/, "−");
 }

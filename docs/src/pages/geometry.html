@@ -1,0 +1,57 @@
+<section class="page" data-page="geometry">
+  <div class="eyebrow">Topic</div>
+  <h1>Exact geometry</h1>
+  <p class="lede">Points, lines, segments, rays, polygons and circles with exact coordinates, and constructions whose answers stay exact: intersections, perpendiculars, reflections, areas, circumcircles.</p>
+  <div data-demo="geometry"></div>
+  <h2>Numbers: rationals and \(a + b\sqrt{d}\)</h2>
+  <p>Lines through rational points meet at rational points. A line meets a circle where a quadratic has its roots, so the coordinates have the form \(p \pm q\sqrt{d}\). Two circles meet on their radical axis, a line, so the same holds. These numbers are <code>Surd</code>s: \(a + b\sqrt{d}\) with rational \(a, b\) and a square-free integer \(d\). Arithmetic, signs and comparisons on them are exact (the sign of \(a + b\sqrt{d}\) comes from comparing \(a^2\) with \(b^2 d\)).</p>
+<pre><code>const x = surd("1/2").add(sqrt("9/8"));
+x.toString();          // "1/2 + 3√2/4"
+x.toTeX();             // "\frac{1}{2} + \frac{3\sqrt{2}}{4}"
+sqrt(2).subtract(surd("1.4142")).sign();   // 1, exactly
+sqrt(2).add(sqrt(3));  // throws: Q(√2, √3) needs @ratmath/algebraic</code></pre>
+  <p>Mixing two different square roots needs a bigger number field, which is the job of <a href="https://github.com/ratmath/algebraic">@ratmath/algebraic</a>; constructions that stay inside one \(\mathbb{Q}(\sqrt{d})\) work here.</p>
+  <h2>Objects</h2>
+<pre data-norun><code>const A = point(0, 0), B = point(4, 0), C = point(1, 3);
+line(A, C);                  // 3x - y = 0
+line("2x - y = 3");          // from an equation
+line({ a: 1, b: 1, c: 2 });  // a·x + b·y = c
+segment(A, B); ray(A, C);
+polygon([A, B, C]);
+circle(B, 3);                // center and radius
+circle(A, { r2: 2 });        // center and squared radius: radius √2</code></pre>
+  <p>Every object has <code>toString()</code> and <code>toTeX()</code>. Lines print as equations with integer coefficients; circles as \((x - h)^2 + (y - k)^2 = r^2\).</p>
+  <h2>Intersections</h2>
+  <p><code>intersect(P, Q)</code> takes any two objects and returns a list. Points come back exact. Collinear pieces that overlap come back as the shared segment, ray or line. A polygon intersects through its edges.</p>
+<pre data-norun><code>intersect(segment(A, C), segment(B, point(0, 2)));   // [(4/7, 12/7)]
+intersect(line("y = x"), circle([0, 0], 2));          // [(√2, √2), (-√2, -√2)]
+intersect(circle(A, 2), circle(B, 3));                // [(11/8, -3√15/8), (11/8, 3√15/8)]
+intersect(segment(A, B), segment(point(2, 0), point(6, 0)));   // [segment (2, 0)–(4, 0)]</code></pre>
+  <h2>Constructions and measurements</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>Result</th></tr>
+    <tr><td>midpoint(P, Q), project(P, L), reflect(P, L)</td><td>Point</td></tr>
+    <tr><td>parallel(L, P), perpendicular(L, P), bisector(P, Q)</td><td>Line</td></tr>
+    <tr><td>circumcircle(A, B, C)</td><td>Circle, or null for collinear points</td></tr>
+    <tr><td>dist2(P, Q), distance(P, Q)</td><td>squared distance; distance when \(|PQ|^2\) is rational</td></tr>
+    <tr><td>area(poly), signedArea(poly), centroid(poly)</td><td>exact, by the shoelace formula</td></tr>
+    <tr><td>orientation(P, Q, R)</td><td>1 counter-clockwise, −1 clockwise, 0 collinear</td></tr>
+    <tr><td>locate(poly, P)</td><td>"inside", "boundary" or "outside", exactly</td></tr>
+    <tr><td>convexHull(points)</td><td>counter-clockwise hull</td></tr>
+  </table></div>
+  <h2>Drawing</h2>
+  <p>Geometry objects are layers for <code>drawScene</code> and <code>sceneSVG</code>; give a style with <code>{ item, color, width, dash, fill, fillAlpha, label }</code>. <code>label: true</code> uses the object's own TeX. Lines and rays are clipped to the viewport only when drawn.</p>
+</section>
+
+<template data-runbox>
+const A = point(-3, -2), B = point(3, -1), C = point(0, 3);
+const cc = circumcircle(A, B, C);
+PRINT("circumcircle:", cc.toString());
+const L = line(point(-5, 1), point(5, "-1/2"));
+const hits = intersect(L, cc);
+PRINT("line:", L.toString());
+for (const p of hits) TEX(p.toTeX());
+PRINT("area of ABC:", area(polygon([A, B, C])));
+const vp = viewport({ x: [-6, 6], y: [-4, 4], width: 420, height: 280 });
+SHOW(sceneSVG(vp, [polygon([A, B, C]), { item: cc, color: "#dc2626" }, { item: L, color: "#ea580c" }, ...hits.map((p) => ({ item: p, color: "#111" }))], { axes: true, background: "#fff" }));
+</template>

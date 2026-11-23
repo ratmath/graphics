@@ -119,3 +119,104 @@ export function drawAsymptotes(ctx: CanvasRenderingContext2D | OffscreenCanvasRe
 export function toSVG(value: Polyline | Cells, options?: { width?: number; height?: number; color?: string; lineWidth?: number; background?: string }): string;
 
 export const interval: Record<string, unknown>;
+
+// ---- exact numbers a + b√d ----------------------------------------------------------
+export class Surd {
+  readonly a: Rational; readonly b: Rational; readonly d: bigint;
+  static from(x: RationalInput | Surd): Surd;
+  static sqrt(q: RationalInput | Surd): Surd;
+  readonly isRational: boolean; readonly isZero: boolean;
+  add(o: RationalInput | Surd): Surd; subtract(o: RationalInput | Surd): Surd; multiply(o: RationalInput | Surd): Surd; divide(o: RationalInput | Surd): Surd;
+  negate(): Surd; reciprocal(): Surd; square(): Surd; conjugate(): Surd; norm(): Rational; abs(): Surd; sqrt(): Surd;
+  sign(): -1 | 0 | 1; compareTo(o: RationalInput | Surd): -1 | 0 | 1; equals(o: RationalInput | Surd): boolean; lessThan(o: RationalInput | Surd): boolean;
+  toRational(): Rational; bounds(bits?: number): [Rational, Rational]; toNumber(): number; toString(): string; toTeX(): string;
+}
+export function surd(a: RationalInput | Surd, b?: RationalInput, d?: bigint | number): Surd;
+export function sqrt(q: RationalInput | Surd): Surd;
+export function squareFree(n: bigint): [bigint, bigint];
+
+// ---- geometry --------------------------------------------------------------------------
+type Coord = RationalInput | Surd;
+export type PointInput = Point | [Coord, Coord] | { x: Coord; y: Coord };
+export class Point { readonly type: "point"; readonly x: Surd; readonly y: Surd; equals(o: Point): boolean; toNumbers(): [number, number]; toString(): string; toTeX(): string }
+export class Line {
+  readonly type: "line" | "segment" | "ray"; readonly a: Surd; readonly b: Surd; readonly c: Surd; readonly p: Point; readonly q: Point;
+  readonly direction: [Surd, Surd]; readonly carrier: Line;
+  side(P: Point): -1 | 0 | 1; at(t: Coord): Point; paramOf(P: Point): Surd; allows(t: Surd): boolean; contains(P: Point): boolean; toString(): string; toTeX(): string;
+}
+export class Polygon { readonly type: "polygon"; readonly vertices: readonly Point[]; readonly edges: Line[]; toString(): string; toTeX(): string }
+export class Circle { readonly type: "circle"; readonly center: Point; readonly r2: Surd; readonly radius: Surd | null; side(P: Point): -1 | 0 | 1; contains(P: Point): boolean; toString(): string; toTeX(): string }
+export type Shape = Point | Line | Polygon | Circle;
+export function point(x: Coord | PointInput, y?: Coord): Point;
+export function line(P: PointInput | string | { a: Coord; b: Coord; c?: Coord }, Q?: PointInput): Line;
+export function segment(P: PointInput, Q: PointInput): Line;
+export function ray(P: PointInput, Q: PointInput): Line;
+export function polygon(vertices: PointInput[]): Polygon;
+export function circle(center: PointInput, radius: Coord | { r2: Coord }): Circle;
+export function circumcircle(A: PointInput, B: PointInput, C: PointInput): Circle | null;
+export function intersect(A: Shape, B: Shape): Shape[];
+export function dist2(P: PointInput, Q: PointInput): Surd;
+export function distance(P: PointInput, Q: PointInput): Surd;
+export function midpoint(P: PointInput, Q: PointInput): Point;
+export function orientation(P: PointInput, Q: PointInput, R: PointInput): -1 | 0 | 1;
+export function parallel(L: Line, P: PointInput): Line;
+export function perpendicular(L: Line, P: PointInput): Line;
+export function bisector(P: PointInput, Q: PointInput): Line;
+export function project(P: PointInput, L: Line): Point;
+export function reflect(P: PointInput, L: Line): Point;
+export function signedArea(poly: Polygon | PointInput[]): Surd;
+export function area(poly: Polygon | PointInput[]): Surd;
+export function centroid(poly: Polygon | PointInput[]): Point;
+export function locate(poly: Polygon, P: PointInput): "inside" | "boundary" | "outside";
+export function convexHull(points: PointInput[]): Point[];
+
+// ---- conditions, regions, implicit curves ------------------------------------------------
+export type Condition =
+  | { op: "and" | "or"; args: Condition[] }
+  | { op: "not"; arg: Condition }
+  | { op: "cmp"; rel: "<" | "<=" | "=" | "!="; F: Ast; text: string };
+export function parseCondition(text: string): Condition;
+export function atoms(tree: Condition): Extract<Condition, { op: "cmp" }>[];
+export function dnf(tree: Condition, limit?: number): Extract<Condition, { op: "cmp" }>[][];
+export function negationFree(tree: Condition): Condition;
+export function linearForm(f: string | Ast, params?: Params): { a: Rational; b: Rational; c: Rational } | null;
+
+export interface RegionSketch { kind: "region-sketch"; width: number; height: number; fill: number[]; edges: { strict: boolean; points: Float64Array }[] }
+export interface RegionCells { kind: "region"; width: number; height: number; inside: number[]; boundary: number[][]; boxes: number; complete: boolean }
+export interface RegionPolygons {
+  kind: "polygons"; viewport: Viewport; complete: true;
+  pieces: { vertices: Point[]; area: Surd }[];
+  boundary: { from: Point; to: Point; strict: boolean; text: string }[];
+  corners: { point: Point; included: boolean; between: [string, string] }[];
+  lines: ({ segment: Line; atom: unknown } | { point: Point; atom: unknown })[];
+}
+export interface ImplicitCells extends Cells { sure: number[][] & { count: number }; boxes: number }
+export interface RegionOptions { method?: "pixels"; subpixel?: number; tile?: number; extraBits?: number; step?: number }
+export function region(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<RegionSketch, RegionPolygons | RegionCells, RegionCells>;
+export function implicit(eq: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<Polyline, ImplicitCells>;
+export function sketchRegion(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: { step?: number }): RegionSketch;
+export function sketchImplicit(eq: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: { step?: number }): Polyline;
+export function classify(tree: Condition, params: Params, vp: Viewport, options?: RegionOptions): Generator<{ done: number; of: number; step: string; partial?: RegionCells }, RegionCells>;
+
+// ---- scenes and labels ----------------------------------------------------------------------
+export interface Label { type: "label"; x: number; y: number; tex: string; text: string; anchor: string; dx: number; dy: number; color?: string; size: number }
+export interface Style { color?: string; width?: number; dash?: number[]; fill?: string; fillAlpha?: number; radius?: number; open?: boolean; background?: string; label?: string | true; anchor?: string; corners?: boolean; cornerLabels?: boolean; asymptoteColor?: string }
+export type Layer = Shape | Label | Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | ({ item: Shape | Polyline | Cells | RegionSketch | RegionCells | RegionPolygons } & Style);
+export type Primitive =
+  | { t: "path"; subpaths: number[][]; closed?: boolean; fill?: string; fillAlpha?: number; stroke?: string | null; width?: number; dash?: number[]; alpha?: number }
+  | { t: "rects"; rects: number[]; fill: string; alpha?: number }
+  | { t: "dot"; x: number; y: number; r: number; fill: string; stroke: string; width?: number }
+  | { t: "label"; x: number; y: number; tex?: string; text: string; anchor: string; color?: string; size?: number; plain?: boolean };
+export interface AxesOptions { grid?: string | false; axis?: string; text?: string; ticks?: boolean; target?: number }
+export interface SceneOptions { axes?: boolean | AxesOptions; background?: string; scale?: number; colors?: string[]; labels?: boolean; font?: string }
+export function label(at: PointInput | [RationalInput, RationalInput], tex: string, options?: { anchor?: string; dx?: number; dy?: number; color?: string; size?: number; text?: string }): Label;
+export function texToText(tex: string): string;
+export function primitives(vp: Viewport, layers: Layer[], options?: { colors?: string[] }): Primitive[];
+export function axesPrimitives(vp: Viewport, options?: AxesOptions): Primitive[];
+export function niceStep(span: number, target?: number): number;
+export function paint(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, prims: Primitive[], options?: { scale?: number; background?: string; font?: string; labels?: boolean }): void;
+export function drawScene(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, vp: Viewport, layers: Layer[], options?: SceneOptions): Primitive[];
+export function mountLabels(container: HTMLElement, vp: Viewport, layersOrPrims: Layer[] | Primitive[], options?: { katex?: { render(tex: string, el: HTMLElement, opts?: object): void }; className?: string }): HTMLElement;
+export function svgElements(prims: Primitive[], options?: { tex?: (latex: string) => string; font?: string }): string;
+export function sceneSVG(vp: Viewport, layers: Layer[], options?: SceneOptions & { tex?: (latex: string) => string; width?: number; height?: number }): string;
+export const PALETTE: string[];

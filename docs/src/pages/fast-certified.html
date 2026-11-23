@@ -1,0 +1,37 @@
+<section class="page" data-page="fast-certified">
+  <div class="eyebrow">Ideas</div>
+  <h1>Fast, then certified</h1>
+  <p class="lede">Every computation answers twice. The first answer is a floating-point sketch, cheap enough for every frame of a slider drag. The second is certified: computed from the exact rational inputs with interval arithmetic that rounds outward, so its claims are proven.</p>
+  <div data-demo="fastCertified"></div>
+  <h2>What "certified" means for a graph</h2>
+  <p>The viewport has rational edges and a grid of pixel cells. Pixel column \(i\) covers the exact interval \([x_{\min} + i\,\Delta x,\ x_{\min} + (i+1)\,\Delta x]\). For each column, the library evaluates \(f\) over that whole interval with interval arithmetic, splitting the column where that tightens the result. The rows the enclosure touches are shaded. So:</p>
+  <ul>
+    <li>every point \((x, f(x))\) of the graph in view lies in a shaded cell, and</li>
+    <li>a cell that is not shaded contains no point of the graph.</li>
+  </ul>
+  <p>The sketch makes no such promise. Above, \(\sin(1/x)\) oscillates infinitely often near 0; the sketch shows a few zigzags, the certified cells shade the whole band. Zoom in and both sharpen.</p>
+  <h2>Refinements</h2>
+  <p>Functions like <code>graph</code>, <code>zeros</code>, <code>features</code>, <code>implicit</code> and <code>region</code> return a <code>Refinement</code>, the same protocol used by RatMath's linalg and analytic libraries.</p>
+<pre data-norun><code>const g = graph("a*x^2 - 3", { a: "1/2" }, vp);
+g.quick.value;           // float sketch, computed on creation
+g.quick.trust;           // "rough"
+g.exact();               // run the certified stage to the end, synchronously
+await g.settle({ signal, sliceMs: 8, onProgress });   // the same, in 8 ms slices</code></pre>
+  <p>Progress ticks carry a <code>partial</code> frame, so a page can show the certified picture filling in column by column.</p>
+  <h2>Sliders: live</h2>
+  <p><code>live(compute, onStage, { idleMs })</code> wires a Refinement to user input. Each call shows the sketch at once. Once input has been still for <code>idleMs</code>, the certified stage runs in time slices; newer input cancels it. Slider values should be exact rationals, such as integer steps of 1/8, so the certified picture is of exactly the function the label shows.</p>
+<pre data-norun><code>const update = live((a) => graph("a*x^2 - 3", { a }, vp), (stage) => {
+  draw(stage.value, stage.exact ? "teal" : "royalblue");
+}, { idleMs: 120 });
+slider.oninput = () => update(`${slider.value}/8`);</code></pre>
+  <h2>Exact versus certified</h2>
+  <p>Some results are exact: a rational zero, a polygon corner, an intersection point like \(\left(\tfrac{11}{8}, \tfrac{3\sqrt{15}}{8}\right)\). Others are certified enclosures: an irrational zero as a bracket \([lo, hi]\) proven to hold exactly one zero, a curve as the set of pixels it can touch. Both are trustworthy; the second is as sharp as the pixel grid or the tolerance you ask for.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-1, 1], y: ["-3/2", "3/2"], width: 400, height: 240 });
+const g = graph("sin(1/x)", {}, vp, { asymptotes: false });
+const cells = g.exact();
+PRINT("certified frame:", cells.width, "columns,", cells.evaluations, "interval evaluations, tight:", cells.tight);
+SHOW(sceneSVG(vp, [{ item: cells, color: "#0f766e" }, { item: g.quick.value, color: "#dc2626", width: 1 }], { axes: true, background: "#fff" }));
+</template>

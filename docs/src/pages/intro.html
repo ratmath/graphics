@@ -1,0 +1,52 @@
+<section class="page" data-page="intro">
+  <div class="hero">
+    <div class="eyebrow">@ratmath/graphics</div>
+    <h1>Plots that are fast, then certified</h1>
+    <p class="lede">A JavaScript plotting library for exact rational mathematics. Every picture is drawn twice: a floating-point sketch at once, then a certified version you can trust pixel by pixel.</p>
+  </div>
+  <div data-demo="hero"></div>
+  <p>Move a slider and the sketch follows your hand. When you stop, every pixel column is recomputed with interval arithmetic over the exact rational inputs. The shaded cells are then a guarantee: every point of the graph in view lies in a shaded cell, and an unshaded cell holds no point of the graph. Zeros, extrema and inflection points arrive as exact rationals or proven brackets, drawn as dots.</p>
+  <h2>What it draws</h2>
+  <ul>
+    <li><strong>Graphs</strong> \(y = f(x)\) with certified zeros, poles, holes, extrema, inflection points and domain ends. See <a href="graphs.html">Graphs and features</a>.</li>
+    <li><strong>Implicit curves</strong> \(F(x, y) = 0\), with each pixel either excluded, possible, or proven to hold part of the curve. See <a href="implicit.html">Implicit curves</a>.</li>
+    <li><strong>Exact geometry</strong>: points, lines, segments, rays, polygons and circles, with intersections in exact form such as \(\tfrac{11}{8} + \tfrac{3\sqrt{15}}{8}\). See <a href="geometry.html">Exact geometry</a>.</li>
+    <li><strong>Regions</strong> from inequalities joined by <code>and</code>, <code>or</code>, <code>not</code>. Regions bounded by lines are exact polygons with exact corners. Others are certified pixel by pixel. See <a href="regions.html">Regions and inequalities</a>.</li>
+    <li><strong>Labels with mathematical notation</strong>, typeset with KaTeX, on canvas and in SVG. See <a href="drawing.html">Drawing and labels</a>.</li>
+  </ul>
+  <h2>Computing is separate from drawing</h2>
+  <p>The library computes plain data: rational coordinates, exact points, pixel cells with a guarantee. Small renderers turn that data into pixels, on a 2D canvas for interactive use or as an SVG string for export, printing and tests. Nothing about the mathematics depends on the renderer, so a calculator app can draw the same results natively.</p>
+<pre data-norun><code>import { graph, region, intersect, line, circle, viewport, drawScene, sceneSVG } from "@ratmath/graphics";
+
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 480, height: 360 });
+
+const g = graph("x^3/4 - x", {}, vp);
+g.quick.value;              // float polyline, immediate
+await g.settle();           // certified cells, computed in time slices
+
+intersect(line("y = x"), circle([0, 0], 2));   // [(√2, √2), (-√2, -√2)], exact
+region("x + y <= 2, x >= 0, y > 0", {}, vp).exact().corners;  // exact corners, included or not
+
+drawScene(ctx, vp, [g.exact(), circle([0, 0], 2)], { axes: true });   // canvas
+sceneSVG(vp, [g.exact(), circle([0, 0], 2)], { axes: true });         // SVG string</code></pre>
+  <h2>Topics</h2>
+  <div class="cards">
+    <a href="explore.html"><strong>Explore</strong><span>Type a function, curve or region and pan around</span></a>
+    <a href="fast-certified.html"><strong>Fast, then certified</strong><span>Sketches, certified cells, Refinements, sliders</span></a>
+    <a href="graphs.html"><strong>Graphs and features</strong><span>Zeros, poles, holes, extrema, markers</span></a>
+    <a href="implicit.html"><strong>Implicit curves</strong><span>F(x, y) = 0, excluded, possible and proven pixels</span></a>
+    <a href="geometry.html"><strong>Exact geometry</strong><span>Lines, circles, polygons, exact intersections</span></a>
+    <a href="regions.html"><strong>Regions</strong><span>Inequalities, exact polygons, certified shading</span></a>
+    <a href="drawing.html"><strong>Drawing and labels</strong><span>Canvas, SVG, TeX labels</span></a>
+    <a href="reference.html"><strong>Reference</strong><span>Every export</span></a>
+  </div>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 400, height: 300 });
+const g = graph("x^3/4 - x", {}, vp);
+PRINT("zeros:", zeros("x^3/4 - x", {}, [-4, 4]).exact().map((z) => String(z.at)));
+const pts = intersect(line("y = x"), circle([0, 0], 2));
+PRINT("y = x meets the circle at", pts.map(String));
+SHOW(sceneSVG(vp, [g.exact(), { item: circle([0, 0], 2), color: "#dc2626" }, ...pts.map((p) => ({ item: p, color: "#111", label: true }))], { axes: true, background: "#fff" }));
+</template>

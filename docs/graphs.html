@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Graphs and features · RatMath graphics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=147b225b43">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs" selected>Graphs and features</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="drawing">Drawing and labels</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html" class="on" aria-current="page">Graphs and features</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="drawing.html">Drawing and labels</a>
+  </nav>
+</aside>
+<main>
+
+<section class="page" data-page="graphs">
+  <div class="eyebrow">Topic</div>
+  <h1>Graphs and features</h1>
+  <p class="lede"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">y = f(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> for expressions in calculator notation, with parameters, and the points that matter: zeros, poles, holes, maxima and minima, inflection points and the ends of the domain.</p>
+  <div data-demo="graphs"></div>
+  <h2>Expressions</h2>
+  <p>The parser reads <code>+ - * / ^</code>, parentheses, implicit multiplication after a number (<code>2x</code>, <code>3(x+1)</code>), decimals as exact rationals (<code>0.1</code> is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle scriptlevel="0" displaystyle="false"><mfrac><mn>1</mn><mn>10</mn></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\tfrac{1}{10}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">10</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>), the constants <code>pi</code> and <code>e</code>, and <code>sin cos tan exp ln log sqrt abs min max</code>. Any other name is a parameter, given in the params object as a number, a string such as <code>"3/4"</code>, or a Core <code>Rational</code>.</p>
+<pre><code>const vp = viewport({ x: [-8, 8], y: [-6, 6], width: 480, height: 360 });
+const g = graph("a*sin(b*x) + c*x", { a: 2, b: 1, c: "1/4" }, vp);
+g.exact().tight;      // true when every column reached two rows or fewer</code></pre>
+  <h2>Features</h2>
+  <p><code>features(f, params, [a, b])</code> returns a Refinement whose exact stage holds <code>{ zeros, poles, holes, endpoints, extrema, inflections }</code>. The work is done by <a href="https://ratmath.com/analytic/">@ratmath/analytic</a>: symbolic derivatives, exact gcd, square-free and Sturm steps for rational functions, and Krawczyk and Rolle tests for everything else, which prove that a bracket holds exactly one zero.</p>
+<pre><code>const f = features("x^3/8 - 2x", {}, [-8, 8]).exact();
+f.zeros.map((z) => String(z.at));        // ["-4", "0", "4"]
+f.extrema.map((e) => e.kind);            // ["max", "min"]
+f.inflections.map((i) => String(i.at));  // ["0"]</code></pre>
+  <p>Each record has <code>at</code> when the point is an exact rational, or <code>lo</code> and <code>hi</code> for a bracket that certainly holds it. <code>unique: true</code> means it is proven to be the only one in the bracket.</p>
+  <h2>Holes and poles</h2>
+  <div data-demo="graphsHole"></div>
+  <p>A <strong>pole</strong> is proven where a denominator has a proven zero and the numerator does not vanish there. Certified frames list poles as <code>asymptotes</code>, drawn dashed; unproven float guesses are drawn dotted. A <strong>hole</strong> is a point where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> is undefined but has a finite limit, as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn></mrow><mrow><mi>x</mi><mo>−</mo><mn>1</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{x^2-1}{x-1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.4213em;vertical-align:-0.4033em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0179em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913em;"><span style="top:-2.931em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4033em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span> at 1, with the limit given exactly when possible.</p>
+  <h2>Markers</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Feature</th><th>Dot</th></tr>
+    <tr><td>Zero</td><td>Filled, in the curve's color</td></tr>
+    <tr><td>Max or min</td><td>Filled, darker than the curve</td></tr>
+    <tr><td>Inflection point</td><td>Filled, lighter than the curve</td></tr>
+    <tr><td>Hole</td><td>Open (the function is not defined there)</td></tr>
+    <tr><td>Domain end, included</td><td>Filled</td></tr>
+    <tr><td>Domain end, excluded</td><td>Open</td></tr>
+  </table></div>
+  <p><code>drawMarkers(ctx2d, vp, features, { color, background, scale })</code> draws them; <code>markerList(features)</code> gives the same list as data for other renderers.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-6, 6], y: [-6, 8], width: 420, height: 380 });
+const f = "(x^2 - 1)/(x - 1) + 1/(x + 2)";
+const feats = features(f, {}, [-6, 6]).exact();
+PRINT("holes:", feats.holes.map((h) =&gt; `${h.at} (limit ${h.value})`));
+PRINT("poles:", feats.poles.map((p) =&gt; String(p.at)));
+PRINT("zeros:", feats.zeros.map((z) =&gt; z.at ? String(z.at) : `[${z.lo.toDecimal(6)}, ${z.hi.toDecimal(6)}]`));
+const marks = markerList(feats).map((m) =&gt; ({ item: point(String(m.x), String(m.y)), color: "#0f766e", open: !m.filled, radius: 4 }));
+SHOW(sceneSVG(vp, [{ item: graph(f, {}, vp).exact(), color: "#0f766e" }, ...marks], { axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="fast-certified.html"><small>Previous</small>Fast, then certified</a><a class="next" href="implicit.html"><small>Next</small>Implicit curves</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=147b225b43"></script>
+</body>
+</html>

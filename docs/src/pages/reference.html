@@ -1,0 +1,66 @@
+<section class="page" data-page="reference">
+  <div class="eyebrow">Reference</div>
+  <h1>Everything in the library</h1>
+  <p>Numbers can be JS numbers (read by their shortest spelling, so <code>0.1</code> is \(\tfrac{1}{10}\)), bigints, strings such as <code>"3/4"</code> or <code>"1.25"</code>, or Core <code>Rational</code>s. Functions marked <em>R</em> return a <a href="fast-certified.html">Refinement</a>: <code>.quick.value</code> is the float sketch; <code>.exact()</code> or <code>await .settle()</code> give the certified result.</p>
+  <h2>Viewports and Refinements</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>viewport({ x: [a, b], y: [c, d], width, height })</td><td>Exact rational world rectangle over a pixel grid; <code>dx</code>, <code>dy</code> are exact.</td></tr>
+    <tr><td>Refinement, live(compute, onStage, { idleMs, sliceMs, onProgress })</td><td>The fast-then-exact protocol shared with linalg and analytic; <code>live</code> wires it to input.</td></tr>
+    <tr><td>precisionFor(vp), columnRationals(vp, i)</td><td>Working precision for a viewport; the exact x-interval of a pixel column.</td></tr>
+  </table></div>
+  <h2>Expressions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>parse(text)</td><td>Calculator notation to a plain AST (<code>num var const op call</code>).</td></tr>
+    <tr><td>num, v, op, call</td><td>AST builders, for a calculator that has its own parser.</td></tr>
+    <tr><td>compileFloat, compileInterval, compileExact</td><td>Doubles; certified interval enclosures; exact rationals for rational-only expressions.</td></tr>
+    <tr><td>freeVariables(ast), isRationalOnly(ast), toRational(x)</td><td>Helpers.</td></tr>
+    <tr><td>derive(ast), format(ast)</td><td>Symbolic derivative and printing, from @ratmath/analytic.</td></tr>
+  </table></div>
+  <h2>Graphs and features</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>Exact value</th></tr>
+    <tr><td>graph(f, params, vp) <em>R</em></td><td>quick: polyline; exact: cells frame <code>{ columns, tight, asymptotes, holes }</code></td></tr>
+    <tr><td>zeros(f, params, [a, b]) <em>R</em></td><td><code>exact</code> rationals, <code>sign-change</code> brackets, or <code>possible</code></td></tr>
+    <tr><td>features(f, params, [a, b]) <em>R</em></td><td><code>{ zeros, poles, holes, endpoints, extrema, inflections }</code></td></tr>
+    <tr><td>findPoles, findHoles, findExtrema, findInflections, findEndpoints, findZeros</td><td>The same pieces, synchronously</td></tr>
+    <tr><td>sampleFloat, certifyGraph, floatZeros, floatFeatures, simplestBetween</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Implicit curves and regions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>Exact value</th></tr>
+    <tr><td>implicit(equation, params, vp) <em>R</em></td><td>quick: marching-squares segments; exact: cells frame with <code>sure</code> (proven pixels)</td></tr>
+    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, else <code>region</code> frame <code>{ inside, boundary }</code></td></tr>
+    <tr><td>parseCondition(text), atoms(tree), dnf(tree), negationFree(tree)</td><td>Conditions as trees of comparisons <code>F rel 0</code></td></tr>
+    <tr><td>linearForm(expr, params)</td><td><code>{ a, b, c }</code> with expr = a·x + b·y + c, or null</td></tr>
+    <tr><td>linearPieces, exactLinearRegion, classify, sketchRegion, sketchImplicit</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Exact numbers and geometry</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>surd(a), surd(a, b, d), sqrt(q), Surd</td><td>\(a + b\sqrt{d}\): add, subtract, multiply, divide, sign, compareTo, bounds(bits), toNumber, toTeX</td></tr>
+    <tr><td>point, line, segment, ray, polygon, circle</td><td>Immutable objects with <code>toString()</code> and <code>toTeX()</code></td></tr>
+    <tr><td>intersect(A, B)</td><td>Exact intersection list for any pair</td></tr>
+    <tr><td>midpoint, project, reflect, parallel, perpendicular, bisector, circumcircle</td><td>Constructions</td></tr>
+    <tr><td>dist2, distance, area, signedArea, centroid, orientation, locate, convexHull</td><td>Measurements and predicates, exact</td></tr>
+  </table></div>
+  <h2>Drawing</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>drawScene(ctx2d, vp, layers, { axes, scale, background, colors })</td><td>Draw layers on a canvas; returns the primitives</td></tr>
+    <tr><td>sceneSVG(vp, layers, { axes, background, tex })</td><td>A standalone SVG string</td></tr>
+    <tr><td>label(at, tex, { anchor, color, size })</td><td>A TeX label at a world point</td></tr>
+    <tr><td>mountLabels(container, vp, prims, { katex })</td><td>Typeset labels in an HTML layer over a canvas</td></tr>
+    <tr><td>primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE</td><td>The pieces under drawScene and sceneSVG</td></tr>
+    <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
+  </table></div>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 360, height: 240 });
+const g = graph("x^3 - x", {}, vp);
+PRINT("quick:", g.quick.value.kind, "| exact:", g.exact().kind);
+PRINT(line("2x - y = 3").toTeX(), "|", circle([1, -2], { r2: 2 }).toString());
+SHOW(sceneSVG(vp, [g.exact(), line("2x - y = 3"), { item: circle([1, -2], { r2: 2 }), color: "#dc2626" }], { axes: true, background: "#fff" }));
+</template>

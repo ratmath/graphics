@@ -1,0 +1,43 @@
+<section class="page" data-page="graphs">
+  <div class="eyebrow">Topic</div>
+  <h1>Graphs and features</h1>
+  <p class="lede">\(y = f(x)\) for expressions in calculator notation, with parameters, and the points that matter: zeros, poles, holes, maxima and minima, inflection points and the ends of the domain.</p>
+  <div data-demo="graphs"></div>
+  <h2>Expressions</h2>
+  <p>The parser reads <code>+ - * / ^</code>, parentheses, implicit multiplication after a number (<code>2x</code>, <code>3(x+1)</code>), decimals as exact rationals (<code>0.1</code> is \(\tfrac{1}{10}\)), the constants <code>pi</code> and <code>e</code>, and <code>sin cos tan exp ln log sqrt abs min max</code>. Any other name is a parameter, given in the params object as a number, a string such as <code>"3/4"</code>, or a Core <code>Rational</code>.</p>
+<pre><code>const vp = viewport({ x: [-8, 8], y: [-6, 6], width: 480, height: 360 });
+const g = graph("a*sin(b*x) + c*x", { a: 2, b: 1, c: "1/4" }, vp);
+g.exact().tight;      // true when every column reached two rows or fewer</code></pre>
+  <h2>Features</h2>
+  <p><code>features(f, params, [a, b])</code> returns a Refinement whose exact stage holds <code>{ zeros, poles, holes, endpoints, extrema, inflections }</code>. The work is done by <a href="https://ratmath.com/analytic/">@ratmath/analytic</a>: symbolic derivatives, exact gcd, square-free and Sturm steps for rational functions, and Krawczyk and Rolle tests for everything else, which prove that a bracket holds exactly one zero.</p>
+<pre><code>const f = features("x^3/8 - 2x", {}, [-8, 8]).exact();
+f.zeros.map((z) => String(z.at));        // ["-4", "0", "4"]
+f.extrema.map((e) => e.kind);            // ["max", "min"]
+f.inflections.map((i) => String(i.at));  // ["0"]</code></pre>
+  <p>Each record has <code>at</code> when the point is an exact rational, or <code>lo</code> and <code>hi</code> for a bracket that certainly holds it. <code>unique: true</code> means it is proven to be the only one in the bracket.</p>
+  <h2>Holes and poles</h2>
+  <div data-demo="graphsHole"></div>
+  <p>A <strong>pole</strong> is proven where a denominator has a proven zero and the numerator does not vanish there. Certified frames list poles as <code>asymptotes</code>, drawn dashed; unproven float guesses are drawn dotted. A <strong>hole</strong> is a point where \(f\) is undefined but has a finite limit, as \(\frac{x^2-1}{x-1}\) at 1, with the limit given exactly when possible.</p>
+  <h2>Markers</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Feature</th><th>Dot</th></tr>
+    <tr><td>Zero</td><td>Filled, in the curve's color</td></tr>
+    <tr><td>Max or min</td><td>Filled, darker than the curve</td></tr>
+    <tr><td>Inflection point</td><td>Filled, lighter than the curve</td></tr>
+    <tr><td>Hole</td><td>Open (the function is not defined there)</td></tr>
+    <tr><td>Domain end, included</td><td>Filled</td></tr>
+    <tr><td>Domain end, excluded</td><td>Open</td></tr>
+  </table></div>
+  <p><code>drawMarkers(ctx2d, vp, features, { color, background, scale })</code> draws them; <code>markerList(features)</code> gives the same list as data for other renderers.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-6, 6], y: [-6, 8], width: 420, height: 380 });
+const f = "(x^2 - 1)/(x - 1) + 1/(x + 2)";
+const feats = features(f, {}, [-6, 6]).exact();
+PRINT("holes:", feats.holes.map((h) => `${h.at} (limit ${h.value})`));
+PRINT("poles:", feats.poles.map((p) => String(p.at)));
+PRINT("zeros:", feats.zeros.map((z) => z.at ? String(z.at) : `[${z.lo.toDecimal(6)}, ${z.hi.toDecimal(6)}]`));
+const marks = markerList(feats).map((m) => ({ item: point(String(m.x), String(m.y)), color: "#0f766e", open: !m.filled, radius: 4 }));
+SHOW(sceneSVG(vp, [{ item: graph(f, {}, vp).exact(), color: "#0f766e" }, ...marks], { axes: true, background: "#fff" }));
+</template>

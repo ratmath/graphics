@@ -102,7 +102,11 @@ export function sampleFloat(f, params, vp, { samplesPerPixel = 1, variable = "x"
   const asymptotes = [];
   for (const { D } of denominators(ast)) {
     for (const x of floatZeros(D, params, [vp.f.xmin, vp.f.xmax], { variable, samples: Math.max(64, vp.width >> 2) })) {
-      asymptotes.push({ px: toPixelX(vp, x), certain: false });
+      // Only where f really grows without bound: sin(1/x) and holes do not.
+      const h = (vp.f.xmax - vp.f.xmin) / (vp.width * 64);
+      const span = vp.f.ymax - vp.f.ymin;
+      const big = (t) => { const y = fn(t, p); return !Number.isFinite(y) || Math.abs(y) > 8 * span + Math.abs(vp.f.ymin) + Math.abs(vp.f.ymax); };
+      if (big(x - h) || big(x + h)) asymptotes.push({ px: toPixelX(vp, x), certain: false });
     }
   }
   return { kind: "polyline", points: pts.slice(0, k), asymptotes };
@@ -209,7 +213,7 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
   const ctx = I.context(precisionFor(vp, extraBits));
   const P = paramsToIntervals(ctx, paramsToRational(params));
   const columns = new Array(vp.width);
-  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false, asymptotes: [], holes: [] };
+  const frame = { kind: "cells", width: vp.width, height: vp.height, columns, tight: true, evaluations: 0, complete: false, asymptotes: [], holes: [], undefined: [] };
   for (let i = 0; i < vp.width; i++) {
     const X = columnInterval(ctx, vp, i);
     const r = certifyColumn(ctx, vp, enclose, P, X, { maxDepth });
@@ -226,9 +230,11 @@ export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, ext
     const at = (p) => toPixelX(vp, p.lo.add(p.hi).divide(new Rational(2n)).toNumber());
     frame.holes = [];
     frame.asymptotes = [];
+    frame.undefined = [];
     for (const p of poles) {
       if (p.kind === "hole") frame.holes.push({ ...p, px: at(p) });
-      else frame.asymptotes.push({ ...p, px: at(p) });
+      else if (p.certain) frame.asymptotes.push({ ...p, px: at(p) });
+      else frame.undefined.push({ ...p, px: at(p) });
     }
   }
   frame.complete = true;

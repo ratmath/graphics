@@ -203,3 +203,7 @@ section.page.wide + nav.pager { max-width: 72rem; }
 .seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .82rem; color: var(--muted); }
 .legend i { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; vertical-align: -.1rem; margin-right: .3rem; }
+.sitelinks { margin: 1.1rem .6rem 0; font-size: .8rem; line-height: 1.7; color: var(--muted); }
+.sitelinks a { color: var(--muted); }
+.sitelinks a:hover { color: var(--accent); }
+@media (max-width: 900px) { .sitelinks { margin: .6rem 0 0; } }

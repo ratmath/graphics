@@ -9,6 +9,9 @@
 // Intervals are plain objects `{ lo, hi }`. `null` is the empty interval (for
 // example sqrt of a negative interval: the function is not defined there).
 
+import { Rational } from "@ratmath/core";
+import { enclose as analytic } from "@ratmath/analytic";
+
 const NEG = -Infinity;
 const POS = Infinity;
 
@@ -526,6 +529,92 @@ export function powPos(ctx, a, c) {
 
 export function tan(ctx, a) {
   return div(ctx, sin(ctx, a), cos(ctx, a));
+}
+
+// ---- functions borrowed from @ratmath/analytic ------------------------------------
+//
+// atan, asin, acos, sinh, cosh, tanh, log1p, cbrt and erf are evaluated at the
+// two ends of the interval with analytic's certified point enclosures and
+// rounded outward to this precision. All of them are monotone (cosh on each
+// side of 0), so the ends give the range.
+
+/** Certified [lo, hi] of f at one finite endpoint. */
+function pointOf(ctx, name, m) {
+  const key = `${name}:${m}`;
+  let r = ctx.cache.get(key);
+  if (!r) {
+    const iv = analytic[name](new Rational(m, ctx.one), ctx.k + 8);
+    r = { lo: floorDiv(iv.low.numerator << ctx.K, iv.low.denominator), hi: ceilDiv(iv.high.numerator << ctx.K, iv.high.denominator) };
+    if (ctx.cache.size > 20000) ctx.cache.clear();
+    ctx.cache.set(key, r);
+  }
+  return r;
+}
+
+/** An increasing function from its values at the ends; `atNeg` / `atPos` are the limits at −∞ and +∞ as functions of ctx. */
+function increasing(name, atNeg, atPos) {
+  return (ctx, a) => {
+    if (!a) return null;
+    const lo = isFinite(a.lo) ? pointOf(ctx, name, a.lo).lo : atNeg(ctx);
+    const hi = isFinite(a.hi) ? pointOf(ctx, name, a.hi).hi : atPos(ctx);
+    return { lo, hi };
+  };
+}
+
+const halfPi = (ctx, sign) => {
+  const pi = piInterval(ctx);
+  return sign < 0 ? floorDiv(-pi.hi, 2n) : ceilDiv(pi.hi, 2n);
+};
+
+export const atan = increasing("atan", (c) => halfPi(c, -1), (c) => halfPi(c, 1));
+export const sinh = increasing("sinh", () => NEG, () => POS);
+export const tanh = increasing("tanh", (c) => -c.one, (c) => c.one);
+export const cbrt = increasing("cbrt", () => NEG, () => POS);
+export const erf = increasing("erf", (c) => -c.one, (c) => c.one);
+
+/** The part of a inside [-1, 1], flagging a cut. */
+function unitDomain(ctx, a) {
+  if (!a) return null;
+  if (a.lo < -ctx.one || a.hi > ctx.one) clipped = true;
+  if (a.hi < -ctx.one || a.lo > ctx.one) return null;
+  return { lo: a.lo < -ctx.one ? -ctx.one : a.lo, hi: a.hi > ctx.one ? ctx.one : a.hi };
+}
+
+export function asin(ctx, a) {
+  const d = unitDomain(ctx, a);
+  return d && { lo: pointOf(ctx, "asin", d.lo).lo, hi: pointOf(ctx, "asin", d.hi).hi };
+}
+
+export function acos(ctx, a) {
+  const d = unitDomain(ctx, a);
+  return d && { lo: pointOf(ctx, "acos", d.hi).lo, hi: pointOf(ctx, "acos", d.lo).hi };
+}
+
+export function cosh(ctx, a) {
+  const m = abs(ctx, a);
+  if (!m) return null;
+  return { lo: pointOf(ctx, "cosh", m.lo).lo, hi: isFinite(m.hi) ? pointOf(ctx, "cosh", m.hi).hi : POS };
+}
+
+export function log1p(ctx, a) {
+  if (!a) return null;
+  return log(ctx, add(ctx, a, { lo: ctx.one, hi: ctx.one }));
+}
+
+/** a^(p/q) for an odd q: the real root, defined for negative a (and for a = 0 when p > 0). */
+export function powOddRoot(ctx, a, p, q) {
+  if (!a) return null;
+  const root = (m, dir) => {
+    if (!isFinite(m)) return m;
+    if (m === 0n) return 0n;
+    if (q === 3) return dir < 0 ? pointOf(ctx, "cbrt", m).lo : pointOf(ctx, "cbrt", m).hi;
+    // |m|^(1/q) through exp and log, with the sign put back
+    const pos = m > 0n ? m : -m;
+    const e = fromRational(ctx, 1n, BigInt(q));
+    const r = exp(ctx, mul(ctx, e, log(ctx, { lo: pos, hi: pos })));
+    return m > 0n ? (dir < 0 ? r.lo : r.hi) : dir < 0 ? -r.hi : -r.lo;
+  };
+  return powInt(ctx, { lo: root(a.lo, -1), hi: root(a.hi, 1) }, p);
 }
 
 // ---- conversions ---------------------------------------------------------------

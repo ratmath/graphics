@@ -1,7 +1,7 @@
 {
   "name": "@ratmath/graphics",
   "version": "0.1.0",
-  "description": "Exact-rational graphics for RatMath: fast float sketches while exploring, certified pixel-exact plots when settled",
+  "description": "Exact-rational graphics for RatMath: fast float sketches while exploring, certified pixel-exact plots when settled; graphs, parametric and polar curves, regions, exact geometry, and exports to SVG, TikZ, PDF, PNG and text",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
@@ -11,13 +11,19 @@
       "import": "./index.js",
       "default": "./index.js"
     },
+    "./worker": {
+      "types": "./worker.d.ts",
+      "default": "./src/worker.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "index.d.ts",
+    "worker.d.ts",
     "src/",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": false,
@@ -46,7 +52,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@ratmath/core": "^0.8.0",
+    "@ratmath/core": "^0.9.0",
     "@ratmath/analytic": "workspace:*"
   },
   "devDependencies": {
@@ -54,5 +60,12 @@
   },
   "workspaces": [
     "vendor/*"
-  ]
+  ],
+  "homepage": "https://ratmath.com/graphics/",
+  "bugs": {
+    "url": "https://github.com/ratmath/graphics/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

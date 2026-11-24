@@ -11,171 +11,26 @@
 // parser instead of going through a string.
 
 import { Rational } from "@ratmath/core";
+import { num, v, op, call, toRational, parse, freeVariables, FUNCTIONS, CONSTANTS, erfFloat } from "@ratmath/analytic";
 import * as I from "./interval.js";
 
-// ---- AST builders -----------------------------------------------------------------
+// ---- AST, parser ------------------------------------------------------------------
+//
+// The grammar, the AST builders and the number reader live in
+// @ratmath/analytic, so both libraries read the same notation and can pass
+// parse trees to each other.
 
-export const num = (value) => ({ type: "num", value: toRational(value) });
-export const v = (name) => ({ type: "var", name });
-export const op = (o, ...args) => ({ type: "op", op: o, args });
-export const call = (name, ...args) => ({ type: "call", name, args });
+export { num, v, op, call, toRational, parse, freeVariables, FUNCTIONS, CONSTANTS };
 
-export function toRational(value) {
-  if (value instanceof Rational) return value;
-  if (typeof value === "bigint") return new Rational(value);
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new RangeError(`not a finite number: ${value}`);
-    // Use the shortest decimal that round-trips, so 0.1 means 1/10.
-    return parseDecimalString(String(value));
-  }
-  if (typeof value === "string") return parseDecimalString(value.trim());
-  if (value && typeof value.numerator === "bigint") return new Rational(value.numerator, value.denominator);
-  throw new TypeError(`cannot read ${value} as a rational`);
-}
+// Functions that are not rational even at rational points.
+const EXACT_CALLS = new Set(["abs", "min", "max"]);
 
-function parseDecimalString(s) {
-  const frac = /^([+-]?\d+)\s*\/\s*(\d+)$/.exec(s);
-  if (frac) return new Rational(BigInt(frac[1]), BigInt(frac[2]));
-  const m = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(s);
-  if (!m || (m[2] === "" && (m[3] ?? "") === "")) throw new SyntaxError(`not a number: ${s}`);
-  const digits = (m[2] || "0") + (m[3] ?? "");
-  let n = BigInt(digits) * (m[1] === "-" ? -1n : 1n);
-  let d = 10n ** BigInt((m[3] ?? "").length);
-  const e = m[4] ? Number(m[4]) : 0;
-  if (e > 0) n *= 10n ** BigInt(e);
-  else if (e < 0) d *= 10n ** BigInt(-e);
-  return new Rational(n, d);
-}
-
-// ---- parser -----------------------------------------------------------------------------
-
-export const FUNCTIONS = new Set(["sin", "cos", "tan", "exp", "ln", "log", "sqrt", "abs", "min", "max"]);
-export const CONSTANTS = new Set(["pi", "e"]);
-
-/**
- * Parse calculator notation: + - * / ^, parentheses, unary minus, implicit
- * multiplication between a number and what follows (`2x`, `3(x+1)`,
- * `2sin(x)`), decimals as exact rationals, and the functions in FUNCTIONS.
- * Names are maximal runs of letters, digits and _ starting with a letter, so
- * `ax` is one name; write `a x` or `a*x`. `^` is right-associative and binds
- * tighter than unary minus: `-x^2` is `-(x^2)`.
- */
-export function parse(text) {
-  const toks = tokenize(text);
-  let i = 0;
-  const peek = () => toks[i];
-  const next = () => toks[i++];
-  const expect = (t) => {
-    const k = next();
-    if (!k || k.t !== t) throw new SyntaxError(`expected ${t} at ${k ? k.pos : text.length} in ${text}`);
-    return k;
-  };
-
-  function expr() {
-    let left = term();
-    while (peek() && (peek().t === "+" || peek().t === "-")) {
-      const o = next().t;
-      left = op(o, left, term());
-    }
-    return left;
-  }
-
-  function startsFactor(k) {
-    return k && (k.t === "num" || k.t === "name" || k.t === "(");
-  }
-
-  function term() {
-    let left = unary();
-    for (;;) {
-      const k = peek();
-      if (k && (k.t === "*" || k.t === "/")) {
-        next();
-        left = op(k.t, left, unary());
-      } else if (startsFactor(k)) {
-        left = op("*", left, power());
-      } else return left;
-    }
-  }
-
-  function unary() {
-    if (peek() && peek().t === "-") {
-      next();
-      return op("neg", unary());
-    }
-    if (peek() && peek().t === "+") {
-      next();
-      return unary();
-    }
-    return power();
-  }
-
-  function power() {
-    const base = primary();
-    if (peek() && peek().t === "^") {
-      next();
-      return op("^", base, unary());
-    }
-    return base;
-  }
-
-  function primary() {
-    const k = next();
-    if (!k) throw new SyntaxError(`unexpected end of ${text}`);
-    if (k.t === "num") return { type: "num", value: parseDecimalString(k.v) };
-    if (k.t === "(") {
-      const e = expr();
-      expect(")");
-      return e;
-    }
-    if (k.t === "name") {
-      if (FUNCTIONS.has(k.v)) {
-        if (peek() && peek().t === "(") {
-          next();
-          const args = [expr()];
-          while (peek() && peek().t === ",") {
-            next();
-            args.push(expr());
-          }
-          expect(")");
-          return call(k.v, ...args);
-        }
-        // sin x  (function applied to the following power)
-        return call(k.v, power());
-      }
-      if (CONSTANTS.has(k.v)) return { type: "const", name: k.v };
-      return v(k.v);
-    }
-    throw new SyntaxError(`unexpected ${k.t} at ${k.pos} in ${text}`);
-  }
-
-  const result = expr();
-  if (i < toks.length) throw new SyntaxError(`unexpected ${toks[i].t} at ${toks[i].pos} in ${text}`);
-  return result;
-}
-
-function tokenize(text) {
-  const out = [];
-  const re = /\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z][A-Za-z0-9_]*)|(\*\*|[-+*/^(),]))/y;
-  let pos = 0;
-  while (pos < text.length) {
-    if (/^\s*$/.test(text.slice(pos))) break;
-    re.lastIndex = pos;
-    const m = re.exec(text);
-    if (!m) throw new SyntaxError(`cannot read ${JSON.stringify(text.slice(pos))}`);
-    const at = m.index + (m[0].length - (m[1] ?? m[2] ?? m[3]).length);
-    if (m[1]) out.push({ t: "num", v: m[1], pos: at });
-    else if (m[2]) out.push({ t: "name", v: m[2], pos: at });
-    else out.push({ t: m[3] === "**" ? "^" : m[3], pos: at });
-    pos = re.lastIndex;
-  }
-  return out;
-}
-
-/** Names used as variables in an expression (excluding functions and constants). */
-export function freeVariables(ast, out = new Set()) {
-  if (ast.type === "var") out.add(ast.name);
-  else if (ast.args) for (const a of ast.args) freeVariables(a, out);
-  return out;
+/** p/q for a constant exponent with an odd denominator q > 1 (a real root, defined for negative bases), else null. */
+export function oddRootExponent(ast) {
+  const c = constValue(ast);
+  if (!c || c.denominator === 1n || c.denominator % 2n === 0n) return null;
+  if (c.denominator > 99n || c.numerator > 4096n || c.numerator < -4096n) return null;
+  return { p: Number(c.numerator), q: Number(c.denominator) };
 }
 
 /** True when the expression uses only + - * / and integer powers (no pi, sin, ...). */
@@ -186,9 +41,7 @@ export function isRationalOnly(ast) {
       return true;
     case "const":
     case "call":
-      return ast.name === "abs" || ast.name === "min" || ast.name === "max"
-        ? ast.args.every(isRationalOnly)
-        : false;
+      return ast.type === "call" && EXACT_CALLS.has(ast.name) ? ast.args.every(isRationalOnly) : false;
     case "op":
       if (ast.op === "^") return integerExponent(ast.args[1]) !== null && isRationalOnly(ast.args[0]);
       return ast.args.every(isRationalOnly);
@@ -265,6 +118,15 @@ export function compileFloat(ast, variable = "x") {
             const k = integerExponent(n.args[1]);
             if (k === 2) return (x, p) => { const t = a(x, p); return t * t; };
             if (k !== null) return (x, p) => a(x, p) ** k;
+            const r = oddRootExponent(n.args[1]);
+            if (r) {
+              // the real root: (-8)^(1/3) = -2
+              return (x, p) => {
+                const t = a(x, p);
+                const root = t < 0 ? -Math.pow(-t, 1 / r.q) : Math.pow(t, 1 / r.q);
+                return root ** r.p;
+              };
+            }
             return (x, p) => Math.pow(a(x, p), b(x, p));
           }
         }
@@ -276,6 +138,8 @@ export function compileFloat(ast, variable = "x") {
         const f = {
           sin: Math.sin, cos: Math.cos, tan: Math.tan, exp: Math.exp,
           ln: Math.log, log: Math.log, sqrt: Math.sqrt, abs: Math.abs,
+          atan: Math.atan, asin: Math.asin, acos: Math.acos, sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+          log1p: Math.log1p, cbrt: Math.cbrt, erf: erfFloat,
         }[n.name];
         if (f) return (x, p) => f(a(x, p));
         if (n.name === "min") return (x, p) => Math.min(a(x, p), b(x, p));
@@ -328,6 +192,8 @@ export function compileInterval(ast, variable = "x") {
           case "^": {
             const k = integerExponent(n.args[1]);
             if (k !== null) return (c, X, P) => I.powInt(c, a(c, X, P), k);
+            const r = oddRootExponent(n.args[1]);
+            if (r) return (c, X, P) => I.powOddRoot(c, a(c, X, P), r.p, r.q);
             const cv = constValue(n.args[1]);
             if (cv !== null) {
               // Constant exponent: x^c is defined at x = 0 for c > 0.
@@ -346,6 +212,8 @@ export function compileInterval(ast, variable = "x") {
         const f = {
           sin: I.sin, cos: I.cos, tan: I.tan, exp: I.exp, ln: I.log, log: I.log,
           sqrt: I.sqrt, abs: I.abs,
+          atan: I.atan, asin: I.asin, acos: I.acos, sinh: I.sinh, cosh: I.cosh, tanh: I.tanh,
+          log1p: I.log1p, cbrt: I.cbrt, erf: I.erf,
         }[n.name];
         if (f) return (c, X, P) => f(c, a(c, X, P));
         if (n.name === "min") return (c, X, P) => I.min(c, a(c, X, P), b(c, X, P));
@@ -440,4 +308,20 @@ export function paramsToIntervals(ctx, rparams) {
   const out = {};
   for (const [k, val] of Object.entries(rparams)) out[k] = I.fromRational(ctx, val.numerator, val.denominator);
   return out;
+}
+
+/**
+ * Rewrite y = f(x) for logarithmic axes. With `x`, the plotted variable u
+ * stands for log10 of x (f is evaluated at 10^u); with `y`, the plotted value
+ * is log10 of f. Draw the result on a viewport in those coordinates with the
+ * axes options `xScale: "log"` / `yScale: "log"`.
+ */
+export function logScale(f, { x = false, y = false, variable = "x" } = {}) {
+  let ast = typeof f === "string" ? parse(f) : f;
+  if (x) {
+    const sub = (n) => (n.type === "var" && n.name === variable ? op("^", num(10), v(variable)) : n.args ? { ...n, args: n.args.map(sub) } : n);
+    ast = sub(ast);
+  }
+  if (y) ast = op("/", call("log", ast), call("log", num(10)));
+  return ast;
 }

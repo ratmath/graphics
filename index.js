@@ -2,14 +2,18 @@
 export { Refinement, live } from "./src/refine.js";
 export {
   parse, num, v, op, call, toRational, freeVariables, isRationalOnly,
-  compileFloat, compileInterval, compileExact, FUNCTIONS, CONSTANTS,
+  compileFloat, compileInterval, compileExact, FUNCTIONS, CONSTANTS, logScale,
 } from "./src/expr.js";
 export { viewport, precisionFor, columnRationals } from "./src/viewport.js";
 export { graph, sampleFloat, certifyGraph } from "./src/plot.js";
+export { parametric, polar, sampleParametric, certifyParametric } from "./src/curve.js";
+export { scatter, bars, histogram, slopeField, solutionCurve } from "./src/data.js";
+export { describe, describeFeatures } from "./src/describe.js";
 export { zeros, findZeros, floatZeros, zerosGenerator, simplestBetween } from "./src/roots.js";
 export {
   features, featuresGenerator, floatFeatures, findPoles, polesGenerator, findExtrema, extremaGenerator,
   findInflections, inflectionsGenerator, findHoles, denominators, findEndpoints, endpointsGenerator, domainArguments,
+  intersections, findIntersections, intersectionsGenerator,
 } from "./src/features.js";
 export { differentiate as derive, format } from "@ratmath/analytic";
 export * as interval from "./src/interval.js";
@@ -22,7 +26,7 @@ export { Surd, surd, sqrt, squareFree } from "./src/surd.js";
 export {
   Point, Line, Polygon, Circle, point, line, segment, ray, polygon, circle, circumcircle,
   dist2, distance, midpoint, orientation, parallel, perpendicular, bisector, project, reflect,
-  signedArea, area, centroid, locate, convexHull, intersect,
+  signedArea, area, isSimple, centroid, locate, convexHull, intersect,
 } from "./src/geometry.js";
 export { linearForm } from "./src/linear.js";
 export { parseCondition, atoms, dnf, negationFree } from "./src/condition.js";

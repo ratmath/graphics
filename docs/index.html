@@ -4,12 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RatMath Graphics</title>
+<meta name="description" content="RatMath Graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="RatMath Graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/site.css?v=0bd7f0c98c">
+<link rel="stylesheet" href="assets/site.css?v=62de0cea88">
 </head>
 <body>
 <div class="shell">
@@ -22,6 +27,7 @@
     <option value="explore">Explore</option>
     <option value="fast-certified">Fast, then certified</option>
     <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
     <option value="implicit">Implicit curves</option>
     <option value="geometry">Exact geometry</option>
     <option value="regions">Regions and inequalities</option>
@@ -36,12 +42,14 @@
     <a href="fast-certified.html">Fast, then certified</a>
     <div class="group">Topics</div>
     <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
     <a href="implicit.html">Implicit curves</a>
     <a href="geometry.html">Exact geometry</a>
     <a href="regions.html">Regions and inequalities</a>
     <a href="drawing.html">Drawing and labels</a>
     <a href="export.html">Exporting</a>
   </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
 </aside>
 <main>
 
@@ -114,6 +122,6 @@ SHOW(sceneSVG(vp, [g.exact(), { item: circle([0, 0], 2), color: "#dc2626" }, ...
 <nav class="pager" aria-label="Previous and next page"><span></span><a class="next" href="reference.html"><small>Next</small>Reference</a></nav>
 </main>
 </div>
-<script type="module" src="assets/pages.js?v=0bd7f0c98c"></script>
+<script type="module" src="assets/pages.js?v=62de0cea88"></script>
 </body>
 </html>

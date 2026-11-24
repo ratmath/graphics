@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Curves, data and slope fields · RatMath graphics</title>
+<meta name="description" content="Curves, data and slope fields · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Curves, data and slope fields · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/curves.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=62de0cea88">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves" selected>Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html" class="on" aria-current="page">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="curves">
+  <div class="eyebrow">Topic</div>
+  <h1>Curves, data and slope fields</h1>
+  <p class="lede">A graph y = f(x) is one kind of picture. This page covers the others: curves given by a parameter, polar curves, the points where two graphs meet, measured data, slope fields, solutions of differential equations, and a description of a graph in words.</p>
+
+  <h2>Parametric and polar curves</h2>
+  <p>A parametric curve gives both coordinates as functions of a parameter t. A polar curve gives the distance r from the origin as a function of the angle.</p>
+<pre data-norun><code>parametric({ x: "cos(3t)", y: "sin(2t)" }, {}, [0, "44/7"], vp);   // a Lissajous figure
+polar("1 + cos(t)", {}, [0, "44/7"], vp);                          // a cardioid
+polar("2cos(a*t)", { a: 3 }, [0, "22/7"], vp);                     // parameters work as in graph()</code></pre>
+  <p>Both return a Refinement, like <code>graph</code>. The quick stage is a float polyline. The exact stage is a <code>cells</code> frame with the same promise a certified graph makes: every point of the curve lies in a lit pixel.</p>
+  <p>The proof works on the parameter. The range of t is cut into pieces. For a piece T, interval arithmetic gives a box that contains <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x(t), y(t))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">))</span></span></span></span> for every t in T. A box that misses the screen is dropped. A box no larger than a pixel is lit. Any other box is cut in half and both halves are tried again. Because each box contains its part of the curve, nothing is missed, and because boxes shrink to a pixel, the curve stays one or two pixels thick. The frame's <code>tight</code> flag is false only if a piece could not be shrunk within the limits (<code>maxDepth</code>, <code>maxBoxes</code>).</p>
+
+  <h2>Where two graphs meet</h2>
+<pre data-norun><code>intersections("x^2", "x + 2", {}, [-3, 3]).exact();
+// [{ kind: "exact", at: -1, value: 1 }, { kind: "exact", at: 2, value: 4 }]
+intersections("sin(x)", "cos(x)", {}, [0, 7]).exact();
+// brackets around π/4 and 5π/4, each with an enclosure of the common value</code></pre>
+  <p>The meeting points of f and g are the zeros of f − g, so they come with the same proofs as zeros: exact rationals where they are rational, otherwise a bracket with a proven sign change, and <code>possible</code> where nothing could be decided. Each record also carries the common value, exactly or as an enclosure.</p>
+
+  <h2>Data</h2>
+<pre data-norun><code>scatter([[1, 2], [2, "7/2"], [3, 3]], { join: true });   // dots, joined in order
+bars([[1, 4], [2, 7], [3, 5]]);                          // one bar per [x, height]
+histogram(values, { bins: 8, range: [0, 4] });           // .counts and .edges</code></pre>
+  <p>These are frames in world coordinates that every renderer draws. Data is measured, so nothing here is a proof; it is drawn where the numbers say. A histogram value on an inner edge goes to the bin on its right, and the last bin includes its right end.</p>
+
+  <h2>Slope fields and solutions</h2>
+<pre data-norun><code>slopeField("x - y", {}, vp);                             // y′ = x − y
+solutionCurve({ f: "t - y", y0: 1, until: 3 }, vp);      // Refinement</code></pre>
+  <p>A slope field draws a short segment at each grid point with the slope the equation gives there. <code>solutionCurve</code> draws one solution. Its quick stage is a Runge–Kutta sketch. Its exact stage comes from the validated solver in <code>@ratmath/analytic</code>: for each pixel column, the lit span provably contains the solution over that column. If the solution blows up before the end, the frame has <code>complete: false</code> and a <code>reason</code>, and stops where the proof stops.</p>
+
+  <h2>A graph in words</h2>
+<pre data-norun><code>describe("x^3 - 3x", {}, [-3, 3]);</code></pre>
+  <p><code>describe</code> turns the certified features of a graph into sentences: where it meets the axis, its asymptotes and holes, its highest and lowest points, where it changes the way it bends, and where its domain ends. Use it for alt text. Every sentence comes from a proven record, and anything undecided is reported as undecided.</p>
+
+  <h2>Axes in π, fractions and powers of ten</h2>
+<pre data-norun><code>sceneSVG(vp, layers, { axes: { xUnit: "pi" } });           // ticks at π/2, π, 3π/2, …
+sceneSVG(vp, layers, { axes: { yUnit: "fraction" } });     // ticks at 1/4, 1/2, 3/4, …
+const g = graph(logScale("x^2", { x: true, y: true }), {}, logVp);
+sceneSVG(logVp, [g.exact()], { axes: { xScale: "log", yScale: "log" } });</code></pre>
+  <p>For logarithmic axes the viewport is in log<sub>10</sub> coordinates: <code>logScale</code> rewrites f so that the horizontal coordinate u stands for x = 10<sup>u</sup> and the vertical one for log<sub>10</sub> of the value. The picture is still certified, and the axes label whole powers of ten.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-2, 2], y: [-2, 2], width: 320, height: 320 });
+const rose = polar("2cos(3t)", {}, [0, "22/7"], vp).exact();
+const loop = parametric({ x: "3/2*cos(3t)", y: "3/2*sin(2t)" }, {}, [0, "44/7"], vp).exact();
+SHOW(sceneSVG(vp, [{ item: loop, color: "#94a3b8" }, { item: rose, color: "#0f766e" }], { axes: { xUnit: "fraction" } }));
+PRINT(findIntersections("x^2", "x + 2", {}, [-3, 3]).map((p) =&gt; `(${p.at}, ${p.value})`).join("  "));
+PRINT(describe("x^3 - 3x", {}, [-3, 3]));
+const field = viewport({ x: [0, 4], y: [-1, 3], width: 320, height: 320 });
+SHOW(sceneSVG(field, [{ item: slopeField("x - y", {}, field), color: "#94a3b8" }, { item: solutionCurve({ f: "t - y", y0: 1, until: 4 }, field).exact(), color: "#dc2626" }], { axes: true }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="graphs.html"><small>Previous</small>Graphs and features</a><a class="next" href="implicit.html"><small>Next</small>Implicit curves</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=62de0cea88"></script>
+</body>
+</html>

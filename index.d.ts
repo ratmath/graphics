@@ -28,7 +28,12 @@ export interface Cells {
   /** columns[i] = [top, bottom, top, bottom, ...], inclusive rows, 0 at the top. */
   columns: number[][];
   tight: boolean; evaluations: number; complete: boolean;
+  /** Certified vertical asymptotes. */
   asymptotes: Asymptote[];
+  /** Removable points, drawn as open dots. */
+  holes?: (Hole & { px: number })[];
+  /** Points where f has no value and no pole was proven (sin(1/x) at 0). */
+  undefined?: (UndefinedPoint & { px: number })[];
 }
 
 export type FloatStage<T> = { stage: "float"; exact: false; value: T; trust: "good" | "rough" | "unsure" };
@@ -56,16 +61,20 @@ export function graph(f: string | Ast, params: Params, vp: ViewportSpec | Viewpo
 export function sampleFloat(f: string | Ast, params: Params, vp: ViewportSpec | Viewport, options?: GraphOptions): Polyline;
 export function certifyGraph(f: string | Ast, params: Params, vp: ViewportSpec | Viewport, options?: GraphOptions): Generator<{ done: number; of: number; step: string; partial?: Cells }, { value: Cells; via: string }>;
 
-export type Zero =
-  | { kind: "exact"; at: Rational }
-  | { kind: "sign-change"; lo: Rational; hi: Rational }
-  | { kind: "possible"; lo: Rational; hi: Rational }
-  | { kind: "undefined"; at: Rational; lo: Rational; hi: Rational };
+/**
+ * A zero. "exact", "sign-change" and "isolated" are proven; "possible" could
+ * not be decided; "everywhere" means f is zero on all of [lo, hi].
+ */
+export interface Zero {
+  kind: "exact" | "sign-change" | "isolated" | "possible" | "everywhere";
+  exact: boolean; at?: Rational; lo: Rational; hi: Rational;
+  unique?: boolean; multiplicity?: number; atMost?: number;
+}
 export interface ZeroOptions { variable?: string; tolerance?: RationalInput; pieces?: number; maxDepth?: number; samples?: number }
 export function zeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Refinement<number[], Zero[]>;
 export function findZeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Zero[];
 export function floatZeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): number[];
-export function zerosGenerator(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, { value: Zero[]; via: string }>;
+export function zerosGenerator(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Zero[]>;
 
 export function simplestBetween(lo: Rational, hi: Rational): Rational;
 
@@ -73,10 +82,19 @@ export function simplestBetween(lo: Rational, hi: Rational): Rational;
 interface Located { exact: boolean; at?: Rational; lo: Rational; hi: Rational }
 /** f's value there: exact `value`, or a certified enclosure [valueLo, valueHi]. */
 interface Valued { value?: Rational; valueLo?: Rational | null; valueHi?: Rational | null }
-export interface Pole extends Located { kind: "pole" | "log"; certain: boolean; denominator: string }
-export interface Extremum extends Located, Valued { kind: "max" | "min" | "flat" | "critical" }
-export interface Inflection extends Located, Valued { kind: "convex-to-concave" | "concave-to-convex" | "possible" }
-export interface Features { zeros: Zero[]; poles: Pole[]; extrema: Extremum[]; inflections: Inflection[] }
+export interface Pole extends Located { kind: "pole" | "log"; certain: true; order?: number }
+export interface Hole extends Located, Valued { kind: "hole"; valueApprox?: number }
+/** f has no value there and no pole was proven. */
+export interface UndefinedPoint extends Located { kind: "undefined"; certain: false }
+export interface Endpoint extends Located, Valued { kind: "endpoint"; side: "left" | "right" | "isolated"; included: boolean }
+/** Where two graphs meet: a zero of f − g with the common value. */
+export type Intersection = Zero & Valued;
+export interface Extremum extends Located, Valued { kind: "max" | "min" | "flat" | "critical"; unique?: boolean }
+export interface Inflection extends Located, Valued { kind: "inflection" | "possible"; unique?: boolean }
+export interface Features {
+  zeros: Zero[]; poles: Pole[]; holes: Hole[]; undefined: UndefinedPoint[];
+  endpoints: Endpoint[]; extrema: Extremum[]; inflections: Inflection[];
+}
 export interface FloatFeatures {
   zeros: number[]; poles: { x: number }[];
   extrema: { kind: "max" | "min" | "flat"; x: number; y: number }[];
@@ -87,12 +105,56 @@ export function features(f: string | Ast, params: Params, range: Range, options?
 export function featuresGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, { value: Features; via: string }>;
 export function floatFeatures(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): FloatFeatures;
 export function findPoles(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Pole[];
-export function polesGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Pole[]>;
+export function findHoles(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Hole[];
+/** Poles, holes and undefined points together. */
+export function polesGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, (Pole | Hole | UndefinedPoint)[]>;
+/** Ends of the domain inside the range (sqrt, even roots, asin, acos). */
+export function findEndpoints(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Endpoint[];
+export function endpointsGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Endpoint[]>;
+/** Arguments u whose sign bounds the domain (u ≥ 0 required). */
+export function domainArguments(ast: Ast): Ast[];
+/** Where y = f(x) and y = g(x) meet. */
+export function intersections(f: string | Ast, g: string | Ast, params: Params, range: Range, options?: ZeroOptions): Refinement<{ x: number; y: number }[], Intersection[]>;
+export function findIntersections(f: string | Ast, g: string | Ast, params: Params, range: Range, options?: ZeroOptions): Intersection[];
+export function intersectionsGenerator(f: string | Ast, g: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Intersection[]>;
+
+// ---- parametric and polar curves ---------------------------------------------------------------
+export interface CurveOptions { variable?: string; samples?: number; maxDepth?: number; maxBoxes?: number; pieces?: number }
+/** The curve (x(t), y(t)) for t in [t0, t1]: float polyline, then certified cells. */
+export function parametric(curve: { x: string | Ast; y: string | Ast }, params: Params, range: Range, vp: ViewportSpec | Viewport, options?: CurveOptions): Refinement<Polyline, Cells>;
+/** The polar curve r = r(t): (r cos t, r sin t). */
+export function polar(r: string | Ast, params: Params, range: Range, vp: ViewportSpec | Viewport, options?: CurveOptions): Refinement<Polyline, Cells>;
+export function sampleParametric(curve: { x: string | Ast; y: string | Ast }, params: Params, range: Range, vp: ViewportSpec | Viewport, options?: CurveOptions): Polyline;
+export function certifyParametric(curve: { x: string | Ast; y: string | Ast }, params: Params, range: Range, vp: ViewportSpec | Viewport, options?: CurveOptions): Generator<{ done: number; of: number; step: string }, { value: Cells; via: string }>;
+
+// ---- data plots, slope fields, ODE solutions ---------------------------------------------------
+export type DataPoint = [RationalInput, RationalInput] | { x: RationalInput; y: RationalInput };
+/** Data points in world coordinates [x0, y0, x1, y1, …]. */
+export interface PointsFrame { kind: "points"; data: Float64Array; join: boolean }
+/** Bars as [x0, x1, y0, y1, …] in world coordinates. */
+export interface BarsFrame { kind: "bars"; bars: Float64Array; edges?: number[]; counts?: number[] }
+/** Segments as [x0, y0, x1, y1, …] in world coordinates. */
+export interface SegmentsFrame { kind: "segments"; segments: Float64Array }
+export function scatter(data: DataPoint[], options?: { join?: boolean }): PointsFrame;
+export function bars(data: DataPoint[], options?: { width?: RationalInput; baseline?: number }): BarsFrame;
+export function histogram(values: RationalInput[], options?: { bins?: number; range?: [RationalInput, RationalInput]; density?: boolean }): BarsFrame & { edges: number[]; counts: number[] };
+/** Slope field of y′ = f(x, y). */
+export function slopeField(f: string | Ast, params: Params, vp: ViewportSpec | Viewport, options?: { spacing?: number; length?: number; variables?: [string, string] }): SegmentsFrame;
+/** The solution of one ODE as a curve; `spec` is what @ratmath/analytic's ode.solve takes. */
+export function solutionCurve(spec: { f: string | Ast; y0: RationalInput; t0?: RationalInput; until: RationalInput; [option: string]: unknown }, vp: ViewportSpec | Viewport): Refinement<Polyline, Cells & { reason: string | null; final: unknown }>;
+
+// ---- descriptions ------------------------------------------------------------------------------
+export interface DescribeOptions extends ZeroOptions { digits?: number; max?: number }
+/** A plain-language description of the graph from its certified features (for alt text). */
+export function describe(f: string | Ast, params: Params, range: Range, options?: DescribeOptions): string;
+export function describeFeatures(f: string | Ast, range: Range, features: Partial<Features>, options?: DescribeOptions): string;
 export function findExtrema(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Extremum[];
 export function extremaGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Extremum[]>;
 export function findInflections(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Inflection[];
 export function inflectionsGenerator(f: string | Ast, params: Params, range: Range, options?: ZeroOptions): Generator<{ done: number; of: number; step: string }, Inflection[]>;
 export function denominators(ast: Ast): { D: Ast; N: Ast; kind: "pole" | "log" }[];
+/** f rewritten for logarithmic axes: u = log10 x on the x-axis, log10 f on the y-axis. */
+export function logScale(f: string | Ast, options?: { x?: boolean; y?: boolean; variable?: string }): Ast;
 export function derive(ast: Ast, variable?: string): Ast;
 export function format(ast: Ast): string;
 
@@ -115,6 +177,13 @@ export const FUNCTIONS: Set<string>;
 export const CONSTANTS: Set<string>;
 
 export function drawCanvas(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, value: Polyline | Cells, options?: { color?: string; lineWidth?: number; scale?: number; cellAlpha?: number; asymptoteColor?: string }): void;
+// ---- feature markers ---------------------------------------------------------------------------
+export interface Marker { x: number; y: number; role: "zero" | "extremum" | "inflection" | "hole" | "endpoint"; filled: boolean }
+/** The dots to draw for a features value (float estimates or certified). */
+export function markerList(features: Partial<Features> | Partial<FloatFeatures>): Marker[];
+export function drawMarkers(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, vp: Viewport, features: Partial<Features> | Partial<FloatFeatures>, options?: { color?: string; background?: string; scale?: number; radius?: number }): void;
+/** Mix a color toward black (amount < 0) or white (amount > 0). */
+export function shade(color: string, amount: number): string;
 export function drawAsymptotes(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, value: Polyline | Cells, options?: { color?: string; scale?: number }): void;
 export function toSVG(value: Polyline | Cells, options?: { width?: number; height?: number; color?: string; lineWidth?: number; background?: string }): string;
 
@@ -165,7 +234,10 @@ export function bisector(P: PointInput, Q: PointInput): Line;
 export function project(P: PointInput, L: Line): Point;
 export function reflect(P: PointInput, L: Line): Point;
 export function signedArea(poly: Polygon | PointInput[]): Surd;
+/** Area of a simple polygon; throws a RangeError when the boundary crosses or touches itself. */
 export function area(poly: Polygon | PointInput[]): Surd;
+/** True when no two edges meet except neighbours at their shared vertex. */
+export function isSimple(poly: Polygon | PointInput[]): boolean;
 export function centroid(poly: Polygon | PointInput[]): Point;
 export function locate(poly: Polygon, P: PointInput): "inside" | "boundary" | "outside";
 export function convexHull(points: PointInput[]): Point[];
@@ -194,6 +266,10 @@ export interface ImplicitCells extends Cells { sure: number[][] & { count: numbe
 export interface RegionOptions { method?: "pixels"; subpixel?: number; tile?: number; extraBits?: number; step?: number }
 export function region(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<RegionSketch, RegionPolygons | RegionCells, RegionCells>;
 export function implicit(eq: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<Polyline, ImplicitCells>;
+/** The condition as convex pieces with exact linear edges, or null when some part is not linear. */
+export function linearPieces(cond: string | Condition, params?: Params): unknown[] | null;
+/** The exact polygons of linear pieces clipped to the viewport. */
+export function exactLinearRegion(pieces: unknown[], vp: Viewport): RegionPolygons;
 export function sketchRegion(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: { step?: number }): RegionSketch;
 export function sketchImplicit(eq: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: { step?: number }): Polyline;
 export function classify(tree: Condition, params: Params, vp: Viewport, options?: RegionOptions): Generator<{ done: number; of: number; step: string; partial?: RegionCells }, RegionCells>;
@@ -201,13 +277,20 @@ export function classify(tree: Condition, params: Params, vp: Viewport, options?
 // ---- scenes and labels ----------------------------------------------------------------------
 export interface Label { type: "label"; x: number; y: number; tex: string; text: string; anchor: string; dx: number; dy: number; color?: string; size: number }
 export interface Style { color?: string; width?: number; dash?: number[]; fill?: string; fillAlpha?: number; radius?: number; open?: boolean; background?: string; label?: string | true; anchor?: string; corners?: boolean; cornerLabels?: boolean; asymptoteColor?: string }
-export type Layer = Shape | Label | Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | ({ item: Shape | Polyline | Cells | RegionSketch | RegionCells | RegionPolygons } & Style);
+export type Frame = Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | PointsFrame | BarsFrame | SegmentsFrame;
+export type Layer = Shape | Label | Frame | ({ item: Shape | Frame } & Style);
 export type Primitive =
   | { t: "path"; subpaths: number[][]; closed?: boolean; fill?: string; fillAlpha?: number; stroke?: string | null; width?: number; dash?: number[]; alpha?: number }
   | { t: "rects"; rects: number[]; fill: string; alpha?: number }
   | { t: "dot"; x: number; y: number; r: number; fill: string; stroke: string; width?: number }
   | { t: "label"; x: number; y: number; tex?: string; text: string; anchor: string; color?: string; size?: number; plain?: boolean };
-export interface AxesOptions { grid?: string | false; axis?: string; text?: string; ticks?: boolean; target?: number }
+export interface AxesOptions {
+  grid?: string | false; axis?: string; text?: string; ticks?: boolean; target?: number;
+  /** "pi" labels multiples of π, "fraction" labels fractions. */
+  xUnit?: "pi" | "fraction"; yUnit?: "pi" | "fraction";
+  /** "log": the coordinate is log10 of the quantity; ticks are powers of ten. */
+  xScale?: "log"; yScale?: "log";
+}
 export interface SceneOptions { axes?: boolean | AxesOptions; background?: string; scale?: number; colors?: string[]; labels?: boolean; font?: string }
 export function label(at: PointInput | [RationalInput, RationalInput], tex: string, options?: { anchor?: string; dx?: number; dy?: number; color?: string; size?: number; text?: string }): Label;
 export function texToText(tex: string): string;

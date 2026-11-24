@@ -210,7 +210,8 @@ const CSS = `
 .runbox-bar .runbox-meta { color: var(--muted, #5b6676); font-size: .78rem; margin-left: auto; font-family: var(--font-mono, monospace); }
 .runbox-out { display: flex; flex-direction: column; gap: .2rem; min-height: 1.5rem; font: .84rem/1.5 var(--font-mono, ui-monospace, monospace); overflow-x: auto; }
 .runbox-out:empty::before { content: "Output appears here."; color: var(--muted, #5b6676); font-family: var(--font-body, system-ui); }
-.runbox-out .rb-print { white-space: pre-wrap; overflow-wrap: anywhere; }
+.runbox-out .rb-print { white-space: pre-wrap; overflow-wrap: anywhere; font-variant-ligatures: none; }
+.runbox-out .rb-art { white-space: pre; overflow-wrap: normal; line-height: 1.2; font-family: var(--font-mono, ui-monospace, monospace), "DejaVu Sans Mono", "Segoe UI Symbol", "Apple Braille", monospace; }
 .runbox-out .rb-value { white-space: pre-wrap; overflow-wrap: anywhere; border-top: 1px dashed var(--line, #d9dee7); padding-top: .35rem; margin-top: .15rem; font-weight: 500; }
 .runbox-out .rb-value:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
 .runbox-out .rb-type { font: 600 .68rem/1 var(--font-body, system-ui); text-transform: uppercase; letter-spacing: .07em; color: var(--muted, #5b6676); margin-right: .5rem; }
@@ -258,7 +259,7 @@ function render(outEl, res) {
       if (/^\s*<svg[\s>]/i.test(p.text)) d.innerHTML = p.text;
       else d.textContent = p.text;
       outEl.append(d);
-    } else outEl.append(el("div", "rb-print", p.text));
+    } else outEl.append(el("div", p.text.includes("\n") ? "rb-print rb-art" : "rb-print", p.text));
   }
   if (res.error) {
     const e = res.error;

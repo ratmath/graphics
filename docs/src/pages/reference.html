@@ -50,9 +50,12 @@
     <tr><th>Name</th><th>What it does</th></tr>
     <tr><td>drawScene(ctx2d, vp, layers, { axes, scale, background, colors })</td><td>Draw layers on a canvas; returns the primitives</td></tr>
     <tr><td>sceneSVG(vp, layers, { axes, background, tex })</td><td>A standalone SVG string</td></tr>
+    <tr><td>sceneTikZ(vp, layers, { axes, width, height, standalone, background, pt })</td><td>A LaTeX tikzpicture in world coordinates, labels as real TeX (<a href="export.html">Exporting</a>)</td></tr>
+    <tr><td>sceneASCII(vp, layers, { axes, cols, rows, mode, border, color })</td><td>The scene as text: ASCII, Braille or block characters</td></tr>
     <tr><td>label(at, tex, { anchor, color, size })</td><td>A TeX label at a world point</td></tr>
     <tr><td>mountLabels(container, vp, prims, { katex })</td><td>Typeset labels in an HTML layer over a canvas</td></tr>
     <tr><td>primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE</td><td>The pieces under drawScene and sceneSVG</td></tr>
+    <tr><td>tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText</td><td>The pieces under sceneTikZ and sceneASCII</td></tr>
     <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
   </table></div>
 </section>

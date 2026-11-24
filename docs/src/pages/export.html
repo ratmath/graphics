@@ -1,0 +1,62 @@
+<section class="page" data-page="export">
+  <div class="eyebrow">Topic</div>
+  <h1>Exporting: SVG, TikZ and text</h1>
+  <p class="lede">Any scene that can be drawn on a canvas can also leave the browser: as SVG for the web, as TikZ for a LaTeX paper or worksheet, and as plain text for a terminal, a README or an email. All three take the same layers and options as <code>drawScene</code>.</p>
+<pre data-norun><code>const layers = [{ item: graph("x^3/4 - x", {}, vp).exact(), color: "#0f766e" }, label([2, 2], "y = \\tfrac{x^3}{4} - x")];
+sceneSVG(vp, layers, { axes: true });                  // an &lt;svg&gt; string
+sceneTikZ(vp, layers, { axes: true, width: 8 });       // a tikzpicture, 8 cm wide
+sceneASCII(vp, layers, { axes: true, cols: 72 });      // 72 columns of text</code></pre>
+
+  <h2>Which one to use</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Format</th><th>Good for</th><th>Labels</th></tr>
+    <tr><td>SVG</td><td>Web pages, slides, image editors, printing from a browser</td><td>KaTeX HTML (with <code>tex</code>) or plain text</td></tr>
+    <tr><td>TikZ</td><td>LaTeX documents: papers, exams, worksheets, Beamer slides. The figure uses the document's own fonts and can be edited by hand afterwards.</td><td>Real TeX, typeset by LaTeX</td></tr>
+    <tr><td>Text</td><td>Terminals and REPLs, code comments, plain-text email, quick checks in tests, screen readers that read text</td><td>Plain text (<code>x² ≤ 1/2</code>, or <code>x^2 &lt;= 1/2</code> in ASCII)</td></tr>
+  </table></div>
+
+  <h2>TikZ</h2>
+  <p><code>sceneTikZ(vp, layers, options)</code> returns a <code>tikzpicture</code>. Unlike the SVG, which is in pixels, its coordinates are the viewport's <em>world</em> coordinates: the picture sets TikZ's <code>x</code> and <code>y</code> units so the viewport is <code>width</code> centimetres wide, and a corner at \((4, 0)\) is written <code>(4,0)</code>. That makes the file readable and easy to adjust: move a label, add an arrow, change a color.</p>
+  <ul>
+    <li><strong>Exact pieces stay exact.</strong> Polygon corners, segment ends and tick marks are written at their values (rounded to a tenth of a pixel, so \(\tfrac{8}{3}\) shows as <code>2.667</code>). Circles are written as TikZ ellipses with their true center and radius, not as many-sided polygons. Labels keep their LaTeX, so a point labelled with <code>toTeX()</code> shows \(\left(2 + \tfrac{2\sqrt5}{5}, 1 + \tfrac{\sqrt5}{5}\right)\) set by LaTeX itself.</li>
+    <li><strong>Certified frames stay certified.</strong> Shaded cells from <code>exact()</code> become filled rectangles (side-by-side cells are merged), so the printed picture still provably contains the graph. Quick sketches become paths, with points that lie within a quarter pixel of a straight line dropped (<code>simplify</code>, in pixels; 0 keeps every point).</li>
+    <li><strong>Sizes.</strong> <code>width</code> and <code>height</code> are in centimetres (height defaults to the viewport's aspect ratio). Line widths, dashes and dot radii are given by the scene in pixels and written as <code>pt</code> times <code>pt</code> (default 0.5), so a 2-pixel curve is a 1&nbsp;pt line whatever the figure's size.</li>
+    <li><strong>Colors</strong> become <code>\definecolor</code> lines at the top of the picture (<code>rm1</code>, <code>rm2</code>, …); xcolor names such as <code>red</code> or <code>blue!50</code> pass through.</li>
+    <li><strong>A complete file.</strong> <code>standalone: true</code> wraps the picture in a <code>standalone</code> document that compiles with <code>pdflatex</code> as it is, giving a tightly cropped PDF. <code>preamble</code> adds lines to it. In your own document, load <code>tikz</code> (and <code>amsmath</code> if labels use it) and paste the picture.</li>
+    <li><code>axes: true</code> draws the grid, axes and tick labels at exact tick values. <code>background</code> fills the viewport; <code>clip: false</code> lets drawing run past its edges.</li>
+  </ul>
+<pre data-norun><code>import { writeFileSync } from "node:fs";
+writeFileSync("figure.tex", sceneTikZ(vp, layers, { axes: true, standalone: true }));
+// $ pdflatex figure.tex   -> figure.pdf</code></pre>
+  <p>The lower-level <code>tikzElements(vp, prims, options)</code> turns any list of primitives (from <code>primitives</code>, or your own) into TikZ commands without the surrounding picture.</p>
+
+  <h2>Text</h2>
+  <p><code>sceneASCII(vp, layers, options)</code> draws the scene with characters, <code>cols</code> wide (default 72) and <code>rows</code> tall (default: the viewport's shape, counting a character as twice as tall as it is wide). Three character sets:</p>
+  <div class="table-wrap"><table>
+    <tr><th>mode</th><th>Characters</th><th>Detail per character</th></tr>
+    <tr><td><code>"ascii"</code> (default)</td><td><code>- | / \ _</code> for curves, chosen by the curve's direction; <code>#</code> for solid blocks; <code>.</code> for shaded regions; <code>@</code> and <code>O</code> for filled and open dots; <code>- | +</code> for axes</td><td>1, with direction</td></tr>
+    <tr><td><code>"braille"</code></td><td>Unicode Braille patterns <code>⡇⠑⢄⣀</code>, <code>░</code> shading, <code>●○</code> dots, box-drawing axes</td><td>2 × 4 dots</td></tr>
+    <tr><td><code>"blocks"</code></td><td>Unicode quadrant blocks <code>▖▗▘▝▀▄▌▐█</code></td><td>2 × 2 blocks</td></tr>
+  </table></div>
+  <p>ASCII is safe everywhere, including old terminals and source files. Braille gives the smoothest curves but needs a font that has the patterns (most monospace fonts do). Labels are written last, so they stay readable; in ASCII mode they are spelled with 7-bit characters (<code>asciiText</code>: <code>x²</code> becomes <code>x^2</code>, <code>≤</code> becomes <code>&lt;=</code>). Tick labels give way to the picture when there is no room for them.</p>
+  <p><strong>Certified frames stay certified here too.</strong> A character is inked when any ink touches it, so every character the certified cells pass through is marked: the picture is coarser, never wrong. To get exactly one character per certified pixel, make the viewport <code>cols</code> by <code>rows</code> pixels.</p>
+  <p>Other options: <code>border: true</code> frames the picture, <code>color: true</code> adds 24-bit ANSI colors for terminals, <code>labels: false</code> leaves labels out. <code>asciiElements(vp, prims, options)</code> works on primitives directly.</p>
+<pre data-norun><code>// In a terminal (Node or Bun):
+console.log(sceneASCII(vp, [graph("sin(x)", {}, vp).exact()], { axes: true, mode: "braille", color: true }));</code></pre>
+  <p>The box below draws one scene three ways. Change <code>mode</code>, <code>cols</code> or the layers, and press Run.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 360, height: 240 });
+const f = "x^3/4 - x";
+const layers = [
+  { item: graph(f, {}, vp).exact(), color: "#0f766e" },
+  { item: circle([0, 0], 1), color: "#dc2626" },
+  label([1, "1.6"], "y = \\tfrac{x^3}{4} - x"),
+];
+PRINT(sceneASCII(vp, layers, { axes: true, cols: 60 }));
+PRINT(sceneASCII(vp, layers, { axes: true, cols: 60, mode: "blocks" }));   // or "braille"
+const tex = sceneTikZ(vp, layers, { axes: true, width: 8 });
+PRINT(tex.split("\n").slice(0, 12).join("\n") + "\n…");
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+</template>

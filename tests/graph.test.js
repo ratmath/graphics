@@ -97,6 +97,22 @@ describe("certified graphs are tight", () => {
     expect(frame.columns[poleColumn]).toEqual([0, vp.height - 1]);
     expect(frame.columns[poleColumn - 3].length).toBeLessThanOrEqual(4);
   });
+  test("a removable hole stays tight: its columns hold the limit, not the whole column", () => {
+    const v = viewport({ x: [-6, 6], y: [-6, 8], width: 420, height: 380 });
+    // x = 1 is a column boundary here, so two columns touch the hole.
+    const { frame } = runCertified("(x^2 - 1)/(x - 1) + 1/(x + 2)", {}, v);
+    expect(frame.holes.map((h) => String(h.at))).toEqual(["1"]);
+    for (const c of [244, 245]) {
+      const s = frame.columns[c];
+      expect(s[s.length - 1] - s[0]).toBeLessThanOrEqual(3);
+    }
+    // The limit 2 + 1/3 at x = 1 lies in those columns' rows: row of y = 7/3.
+    const row = Math.floor(((8 - 7 / 3) / 14) * 380);
+    expect(frame.columns[244][0] <= row && row <= frame.columns[245].at(-1)).toBe(true);
+    // with parameters, too
+    const p = runCertified("a*(x^2 - 4)/(x - 2)", { a: "1/2" }, v).frame;
+    expect(p.columns.every((s) => !s || s.at(-1) - s[0] <= 3)).toBe(true);
+  });
 });
 
 describe("float preview", () => {

@@ -4,7 +4,7 @@
 // code with the library in scope, shows the value of the last expression,
 // and shows each PRINT(...) line above it. TEX(latex) typesets a line of
 // math (KaTeX is loaded only then). SHOW(svg) shows a picture: an SVG
-// string or a DOM element (added for the graphics docs; harmless elsewhere). The same file is shared verbatim by
+// string, an <img> string, or a DOM element (added for the graphics docs; harmless elsewhere). The same file is shared verbatim by
 // core, analytic, linalg and algebraic (docs/assets/runbox.js): keep the
 // copies in sync.
 //
@@ -256,7 +256,7 @@ function render(outEl, res) {
         .catch(() => {});
     } else if (p.kind === "svg") {
       const d = el("div", "rb-svg");
-      if (/^\s*<svg[\s>]/i.test(p.text)) d.innerHTML = p.text;
+      if (/^\s*<(svg|img)[\s>]/i.test(p.text)) d.innerHTML = p.text;
       else d.textContent = p.text;
       outEl.append(d);
     } else outEl.append(el("div", p.text.includes("\n") ? "rb-print rb-art" : "rb-print", p.text));

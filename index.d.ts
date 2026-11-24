@@ -234,6 +234,7 @@ export interface TikZOptions extends SceneOptions {
   /** Header comment with the viewport (default true). */ comment?: boolean;
 }
 export function sceneTikZ(vp: Viewport, layers: Layer[], options?: TikZOptions): string;
+export function scenePGFPlots(vp: Viewport, layers: Layer[], options?: TikZOptions & { axisOptions?: string }): string;
 export function tikzElements(vp: Viewport, prims: Primitive[], options?: Omit<TikZOptions, "width" | "height" | "standalone" | "preamble" | "comment" | "axes"> & { colors?: Map<string, string>; before?: string[]; after?: string[] }): string;
 export function tikzAxes(vp: Viewport, axes?: AxesOptions, options?: { colors?: Map<string, string>; pt?: number; precision?: number }): { lines: string[]; labels: string[] };
 export function simplifyPolyline(points: number[], tolerance: number): number[];
@@ -248,3 +249,10 @@ export interface TextOptions extends SceneOptions {
 export function sceneASCII(vp: Viewport, layers: Layer[], options?: TextOptions): string;
 export function asciiElements(vp: Viewport, prims: Primitive[], options?: TextOptions): string;
 export function asciiText(text: string): string;
+export interface PNGOptions extends SceneOptions { scale?: number; engine?: "auto" | "canvas" | "software" }
+export function scenePNG(vp: Viewport, layers: Layer[], options?: PNGOptions): Promise<Uint8Array>;
+export function rasterize(vp: Viewport, prims: Primitive[], options?: { scale?: number; background?: string; labels?: boolean }): { width: number; height: number; data: Uint8ClampedArray };
+export function encodePNG(image: { width: number; height: number; data: Uint8Array | Uint8ClampedArray }, options?: { dpi?: number }): Promise<Uint8Array>;
+export function scenePDF(vp: Viewport, layers: Layer[], options?: SceneOptions & { pt?: number; title?: string }): Uint8Array;
+export function pdfContent(vp: Viewport, prims: Primitive[], options?: { background?: string; labels?: boolean }): { content: string; states: Map<string, string> };
+export function pdfTextRuns(text: string): [font: "F1" | "F2", bytes: string, width: number][];

@@ -1,17 +1,23 @@
 <section class="page" data-page="export">
   <div class="eyebrow">Topic</div>
-  <h1>Exporting: SVG, TikZ and text</h1>
-  <p class="lede">Any scene that can be drawn on a canvas can also leave the browser: as SVG for the web, as TikZ for a LaTeX paper or worksheet, and as plain text for a terminal, a README or an email. All three take the same layers and options as <code>drawScene</code>.</p>
+  <h1>Exporting: images, PDF, LaTeX and text</h1>
+  <p class="lede">Any scene that can be drawn on a canvas can also leave the browser: as an SVG or PNG image, as a PDF, as TikZ or PGFPlots for a LaTeX paper or worksheet, and as plain text for a terminal, a README or an email. All of them take the same layers and options as <code>drawScene</code>, and none needs anything installed.</p>
 <pre data-norun><code>const layers = [{ item: graph("x^3/4 - x", {}, vp).exact(), color: "#0f766e" }, label([2, 2], "y = \\tfrac{x^3}{4} - x")];
 sceneSVG(vp, layers, { axes: true });                  // an &lt;svg&gt; string
+await scenePNG(vp, layers, { axes: true, scale: 2 });  // PNG bytes, at twice the size
+scenePDF(vp, layers, { axes: true });                  // PDF bytes, vector
 sceneTikZ(vp, layers, { axes: true, width: 8 });       // a tikzpicture, 8 cm wide
+scenePGFPlots(vp, layers, { axes: true, width: 8 });   // a PGFPlots axis
 sceneASCII(vp, layers, { axes: true, cols: 72 });      // 72 columns of text</code></pre>
 
   <h2>Which one to use</h2>
   <div class="table-wrap"><table>
     <tr><th>Format</th><th>Good for</th><th>Labels</th></tr>
     <tr><td>SVG</td><td>Web pages, slides, image editors, printing from a browser</td><td>KaTeX HTML (with <code>tex</code>) or plain text</td></tr>
+    <tr><td>PNG</td><td>Anywhere an image goes: messages, documents, slides, social posts, app share sheets</td><td>Plain text</td></tr>
+    <tr><td>PDF</td><td>Printing, handouts, attaching a sharp figure without LaTeX</td><td>Plain text (Helvetica and Symbol)</td></tr>
     <tr><td>TikZ</td><td>LaTeX documents: papers, exams, worksheets, Beamer slides. The figure uses the document's own fonts and can be edited by hand afterwards.</td><td>Real TeX, typeset by LaTeX</td></tr>
+    <tr><td>PGFPlots</td><td>LaTeX documents whose other plots use PGFPlots: axes, ticks and grid in its house style, curves as <code>\addplot</code> you can restyle or add a legend to</td><td>Real TeX</td></tr>
     <tr><td>Text</td><td>Terminals and REPLs, code comments, plain-text email, quick checks in tests, screen readers that read text</td><td>Plain text (<code>x² ≤ 1/2</code>, or <code>x^2 &lt;= 1/2</code> in ASCII)</td></tr>
   </table></div>
 
@@ -30,6 +36,25 @@ writeFileSync("figure.tex", sceneTikZ(vp, layers, { axes: true, standalone: true
 // $ pdflatex figure.tex   -> figure.pdf</code></pre>
   <p>The lower-level <code>tikzElements(vp, prims, options)</code> turns any list of primitives (from <code>primitives</code>, or your own) into TikZ commands without the surrounding picture.</p>
 
+  <h2>PGFPlots</h2>
+  <p><code>scenePGFPlots(vp, layers, options)</code> puts the layers in a PGFPlots <code>axis</code> sized <code>width</code> × <code>height</code> cm with the viewport as its limits. PGFPlots draws the axes, ticks and grid itself (<code>axes: true</code>; otherwise the axis is hidden) and clips to the viewport. Curves become <code>\addplot coordinates</code>, so you can restyle them or add <code>\legend</code>; regions, certified cells, circles, points and labels are TikZ paths in axis coordinates, exactly as in the TikZ export. <code>axisOptions</code> adds keys to the axis (for example <code>"xlabel=$x$, ylabel=$y$"</code>). The document needs <code>\usepackage{pgfplots}</code> and <code>\pgfplotsset{compat=1.11}</code> or later; <code>standalone: true</code> includes both.</p>
+
+  <h2>PNG</h2>
+  <p><code>await scenePNG(vp, layers, options)</code> gives the bytes of a PNG file. <code>scale</code> multiplies the pixel size (2 for sharp images on high-density screens), and <code>background</code> fills it (it is transparent otherwise).</p>
+  <ul>
+    <li><strong>In a browser</strong> the scene is painted with <code>drawScene</code> on an <code>OffscreenCanvas</code>, so the PNG matches what is on screen.</li>
+    <li><strong>In Node, Bun or a worker without a canvas</strong>, a built-in renderer paints the same primitives with anti-aliased edges, and labels in a small built-in font (DejaVu Sans). Certified cells land exactly on their pixels. <code>engine: "software"</code> chooses it in a browser too; <code>rasterize</code> and <code>encodePNG</code> are its two halves.</li>
+  </ul>
+
+  <h2>PDF</h2>
+  <p><code>scenePDF(vp, layers, options)</code> gives the bytes of a one-page vector PDF the size of the viewport (<code>pt</code> points per pixel, default 0.75, so 96 pixels make an inch). Lines, regions and certified cells stay vector and print sharply at any size; circles are true curves. Labels use the PDF base fonts, Helvetica with Symbol for \(\le\), \(\pi\), \(\sqrt{\ }\) and Greek, so they are plain text, not typeset TeX. For TeX labels, export TikZ with <code>standalone: true</code> and run <code>pdflatex</code>.</p>
+<pre data-norun><code>import { writeFileSync } from "node:fs";
+writeFileSync("figure.png", await scenePNG(vp, layers, { axes: true, scale: 2, background: "#fff" }));
+writeFileSync("figure.pdf", scenePDF(vp, layers, { axes: true }));
+
+// In a browser: offer a download.
+const url = URL.createObjectURL(new Blob([scenePDF(vp, layers)], { type: "application/pdf" }));</code></pre>
+
   <h2>Text</h2>
   <p><code>sceneASCII(vp, layers, options)</code> draws the scene with characters, <code>cols</code> wide (default 72) and <code>rows</code> tall (default: the viewport's shape, counting a character as twice as tall as it is wide). Three character sets:</p>
   <div class="table-wrap"><table>
@@ -43,7 +68,7 @@ writeFileSync("figure.tex", sceneTikZ(vp, layers, { axes: true, standalone: true
   <p>Other options: <code>border: true</code> frames the picture, <code>color: true</code> adds 24-bit ANSI colors for terminals, <code>labels: false</code> leaves labels out. <code>asciiElements(vp, prims, options)</code> works on primitives directly.</p>
 <pre data-norun><code>// In a terminal (Node or Bun):
 console.log(sceneASCII(vp, [graph("sin(x)", {}, vp).exact()], { axes: true, mode: "braille", color: true }));</code></pre>
-  <p>The box below draws one scene three ways. Change <code>mode</code>, <code>cols</code> or the layers, and press Run.</p>
+  <p>The box below draws one scene several ways. Change <code>mode</code>, <code>cols</code> or the layers, and press Run.</p>
 </section>
 
 <template data-runbox>
@@ -58,5 +83,10 @@ PRINT(sceneASCII(vp, layers, { axes: true, cols: 60 }));
 PRINT(sceneASCII(vp, layers, { axes: true, cols: 60, mode: "blocks" }));   // or "braille"
 const tex = sceneTikZ(vp, layers, { axes: true, width: 8 });
 PRINT(tex.split("\n").slice(0, 12).join("\n") + "\n…");
-SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+const png = await scenePNG(vp, layers, { axes: true, background: "#fff" });
+const pdf = scenePDF(vp, layers, { axes: true });
+PRINT(`PNG: ${png.length} bytes, PDF: ${pdf.length} bytes`);
+let bin = "";
+for (const b of png) bin += String.fromCharCode(b);
+SHOW(`<img alt="the scene as a PNG" width="360" src="data:image/png;base64,${btoa(bin)}">`);
 </template>

@@ -20,6 +20,7 @@ import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as 
 import { denominators, polesGenerator } from "./features.js";
 import { floatZeros } from "./roots.js";
 import { Rational } from "@ratmath/core";
+import { fn as analyticFn } from "@ratmath/analytic";
 
 const compiled = new WeakMap();
 
@@ -34,6 +35,24 @@ function compile(ast, variable) {
 
 function asAst(f) {
   return typeof f === "string" ? parse(f) : f;
+}
+
+const regular = new WeakMap();
+/** The tree with holes of its rational summands cancelled (or the tree itself). */
+function regularAst(ast, params, variable) {
+  const key = JSON.stringify([variable, Object.entries(params ?? {}).map(([k, v]) => [k, String(v)])]);
+  let m = regular.get(ast);
+  if (!m) regular.set(ast, (m = new Map()));
+  if (!m.has(key)) {
+    let r = ast;
+    try {
+      r = analyticFn(ast, { variable, params: params ?? {} }).regular().ast;
+    } catch {
+      r = ast; // anything analytic cannot read is enclosed as written
+    }
+    m.set(key, r);
+  }
+  return m.get(key);
 }
 
 function asViewport(vp) {
@@ -181,7 +200,12 @@ function mergeSpans(flat) {
 export function* certifyGraph(f, params, vp, { variable = "x", maxDepth = 8, extraBits = 12, partialEvery = 16, asymptotes = true } = {}) {
   const ast = asAst(f);
   vp = asViewport(vp);
-  const enclose = compile(ast, variable).interval;
+  // Removable singularities (holes) of the rational part are cancelled first:
+  // (x^2 - 1)/(x - 1) is enclosed as x + 1, which equals it wherever it is
+  // defined. Otherwise every column whose x-interval touches the hole would
+  // be the whole column. At the hole itself the cells hold the limit, the
+  // closure of the graph; the hole is still reported in frame.holes.
+  const enclose = compile(regularAst(ast, params, variable), variable).interval;
   const ctx = I.context(precisionFor(vp, extraBits));
   const P = paramsToIntervals(ctx, paramsToRational(params));
   const columns = new Array(vp.width);

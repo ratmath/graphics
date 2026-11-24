@@ -23,7 +23,7 @@ import { Rational } from "@ratmath/core";
 import { compileExact, compileFloat, constValue, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import * as A from "@ratmath/analytic";
 import * as I from "./interval.js";
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { floatZeros, signAt } from "./roots.js";
 
 const asAst = (f) => (typeof f === "string" ? parse(f) : f);

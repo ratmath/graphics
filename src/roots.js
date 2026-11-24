@@ -6,7 +6,7 @@
 import { Rational } from "@ratmath/core";
 import { compileFloat, paramsToFloat, paramsToRational, parse, toRational } from "./expr.js";
 import * as I from "./interval.js";
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { zerosGenerator2 } from "./features.js";
 
 /** The rational with the smallest denominator in [lo, hi] (Stern–Brocot descent). */

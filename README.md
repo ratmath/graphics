@@ -136,7 +136,7 @@ rather than guessing.
 ## The fast-then-exact shape
 
 `graph()` and `zeros()` return a `Refinement`. This is the same class the
-linear algebra library (`ratmath/linalg`, `src/refine.js`) uses, so one
+linear algebra library uses (it lives in `@ratmath/core/refine`), so one
 `live()` loop can drive both.
 
 | Member | What it gives |

@@ -21,7 +21,7 @@ import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, params
 import { atoms, dnf, evalFloat, parseCondition } from "./condition.js";
 import { classify } from "./quadtree.js";
 import { linearForm } from "./linear.js";
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { viewport as makeViewport, precisionFor } from "./viewport.js";
 import { Point, point, segment } from "./geometry.js";
 import { surd } from "./surd.js";

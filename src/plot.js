@@ -13,7 +13,7 @@
 // work yields after each column so it can run in time slices, and each
 // progress tick carries the columns finished so far.
 
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse } from "./expr.js";
 import * as I from "./interval.js";
 import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";

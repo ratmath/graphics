@@ -12,7 +12,7 @@
 // (x(T), y(T)) with interval arithmetic; a box that misses the screen is
 // dropped, a box no larger than a pixel is lit, and anything else is split.
 
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { compileFloat, compileInterval, op, call, v, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import * as I from "./interval.js";
 import { precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";

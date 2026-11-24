@@ -1,5 +1,5 @@
 // @ratmath/graphics: exact-rational graphics with fast previews.
-export { Refinement, live } from "./src/refine.js";
+export { Refinement, live } from "@ratmath/core/refine";
 export {
   parse, num, v, op, call, toRational, freeVariables, isRationalOnly,
   compileFloat, compileInterval, compileExact, FUNCTIONS, CONSTANTS, logScale,

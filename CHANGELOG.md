@@ -17,13 +17,15 @@
 
 ### Changed
 
+- `Refinement` and `live` now come from `@ratmath/core/refine` (Core 0.10.0),
+  one class shared by every RatMath library. The exports here are unchanged.
 - The parser, AST builders and number reader are `@ratmath/analytic`'s; the
   local copy and the local certified zero finder are gone (about 380 lines).
   `zerosGenerator` is now the analytic-backed generator and returns the list.
 - `features` returns `undefined` next to `poles` and `holes`; `poles` holds
   proven poles only. Zeros may have kind `everywhere` (f is zero on a whole
   stretch).
-- Requires `@ratmath/core` ^0.9.0.
+- Requires `@ratmath/core` ^0.10.0.
 
 ### Added
 

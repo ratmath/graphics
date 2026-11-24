@@ -14,7 +14,7 @@
 
 import { RationalInterval } from "@ratmath/core";
 import { ode } from "@ratmath/analytic";
-import { Refinement } from "./refine.js";
+import { Refinement } from "@ratmath/core/refine";
 import { compileFloat, paramsToFloat, paramsToRational, parse, toRational } from "./expr.js";
 import * as I from "./interval.js";
 import { columnRationals, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";

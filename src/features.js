@@ -10,10 +10,12 @@
 // power crosses 0, with whether the end itself is included).
 //
 // Record shapes after adapting:
-//   zeros        { kind: "exact" | "sign-change" | "isolated" | "possible", at?, lo, hi, unique?, multiplicity? }
-//   poles        { kind: "pole" | "log", certain, exact, at?, lo, hi, order? }   (certain: false = unsettled spot)
+//   zeros        { kind: "exact" | "sign-change" | "isolated" | "possible" | "everywhere", at?, lo, hi, unique?, multiplicity? }
+//                ("everywhere": f is zero on all of [lo, hi])
+//   poles        { kind: "pole" | "log", certain: true, exact, at?, lo, hi, order? }
+//   undefined    { kind: "undefined", certain: false, exact, at?, lo, hi }    f has no value there and no pole was proven (sin(1/x) at 0)
 //   holes        { kind: "hole", exact, at?, lo, hi, value? | valueLo, valueHi, valueApprox }
-//   extrema      { kind: "max" | "min" | "flat" | "critical", exact, at?, lo, hi, value? | valueLo, valueHi, unique? }
+//   extrema      { kind: "max" | "min" | "flat" | "critical" | "constant", exact, at?, lo, hi, value? | valueLo, valueHi, unique? }
 //   inflections  { kind: "inflection" | "possible", exact, at?, lo, hi, value? | valueLo, valueHi, unique? }
 //   endpoints    { kind: "endpoint", side: "left" | "right" | "isolated", included, exact, at?, lo, hi, value... }
 
@@ -21,17 +23,10 @@ import { Rational } from "@ratmath/core";
 import { compileExact, compileFloat, constValue, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
 import * as A from "@ratmath/analytic";
 import * as I from "./interval.js";
-import { Refinement } from "./refine.js";
-import { floatZeros, signAt, simplestBetween, zerosGenerator } from "./roots.js";
+import { Refinement } from "@ratmath/core/refine";
+import { floatZeros, signAt } from "./roots.js";
 
 const asAst = (f) => (typeof f === "string" ? parse(f) : f);
-
-/** Run a generator to completion, re-yielding its progress under a step name. */
-function* run(gen, step) {
-  let s;
-  while (!(s = gen.next()).done) yield { ...s.value, step };
-  return s.value.value;
-}
 
 // ---- setup shared by the analyses ------------------------------------------------
 
@@ -168,12 +163,18 @@ export const findEndpoints = (f, params, range, options) => finish(endpointsGene
 
 // ---- domain endpoints and holes ----------------------------------------------------
 
-/** Arguments u that bound the domain from one side with u = 0 included: sqrt(u), u^c (c > 0 not an integer). */
+/** Arguments u that bound the domain from one side with u = 0 included: sqrt(u), u^c (c > 0 with an even denominator), 1 ± u for asin(u) and acos(u). */
 export function domainArguments(ast, out = []) {
   if (ast.type === "call" && ast.name === "sqrt") out.push(ast.args[0]);
   if (ast.type === "op" && ast.op === "^") {
     const c = constValue(ast.args[1]);
-    if (c !== null && c.numerator > 0n && c.denominator !== 1n) out.push(ast.args[0]);
+    // an even root ends the domain; an odd root (x^(1/3)) is defined on both sides
+    if (c !== null && c.numerator > 0n && c.denominator % 2n === 0n) out.push(ast.args[0]);
+  }
+  if (ast.type === "call" && (ast.name === "asin" || ast.name === "acos")) {
+    // defined for -1 <= u <= 1: both 1 - u and 1 + u must stay non-negative
+    const one = { type: "num", value: new Rational(1n) };
+    out.push({ type: "op", op: "-", args: [one, ast.args[0]] }, { type: "op", op: "+", args: [one, ast.args[0]] });
   }
   if (ast.args) for (const a of ast.args) domainArguments(a, out);
   return out;
@@ -203,7 +204,7 @@ export function* endpointsGenerator(f, params, [a, b], { variable = "x", toleran
   for (let k = 0; k < args.length; k++) {
     const u = args[k];
     const U = setup(u, params, tolerance, variable);
-    const zs = yield* run(zerosGenerator(u, params, [lo0, hi0], { variable, tolerance, pieces }), `domain ${k + 1}/${args.length}`);
+    const zs = yield* zerosGenerator2(u, params, [lo0, hi0], { variable, tolerance, pieces });
     for (const { z, left, right } of classify(U, zs, [lo0, hi0])) {
       const loc = location(z);
       if (loc.lo.equals(lo0) || loc.hi.equals(hi0)) continue; // the edge of the view, not of the domain
@@ -270,8 +271,9 @@ function adaptSingularity(p) {
     const mid = v.value ? v.value.toNumber() : v.valueLo ? (v.valueLo.toNumber() + v.valueHi.toNumber()) / 2 : undefined;
     return { kind: "hole", ...place(p), ...v, valueApprox: mid };
   }
-  const certain = p.kind === "pole";
-  return { kind: p.source === "log" ? "log" : "pole", certain, ...place(p), ...(p.order ? { order: p.order } : {}) };
+  // "undefined": f has no value there and no pole was proven (sin(1/x) at 0).
+  if (p.kind !== "pole") return { kind: "undefined", certain: false, ...place(p) };
+  return { kind: p.source === "log" ? "log" : "pole", certain: true, ...place(p), ...(p.order ? { order: p.order } : {}) };
 }
 
 function adaptPoint(r, kinds) {
@@ -291,7 +293,8 @@ export function* polesGenerator(f, params, range, options = {}) {
 
 export function* extremaGenerator(f, params, range, options = {}) {
   const list = yield* drive(A.extrema(asAst(f), range, aOpts(params, options)), "extrema");
-  return list.map((r) => adaptPoint(r, { possible: "critical" }));
+  // a constant stretch has no point to mark
+  return list.filter((r) => r.kind !== "constant").map((r) => adaptPoint(r, { possible: "critical" }));
 }
 
 export function* inflectionsGenerator(f, params, range, options = {}) {
@@ -299,10 +302,45 @@ export function* inflectionsGenerator(f, params, range, options = {}) {
   return list.map((r) => adaptPoint(r, {}));
 }
 
-export const findPoles = (f, params, range, options) => finish(polesGenerator(f, params, range, options)).filter((p) => p.kind !== "hole");
+export const findPoles = (f, params, range, options) => finish(polesGenerator(f, params, range, options)).filter((p) => p.certain);
 export const findHoles = (f, params, range, options) => finish(polesGenerator(f, params, range, options)).filter((p) => p.kind === "hole");
 export const findExtrema = (f, params, range, options) => finish(extremaGenerator(f, params, range, options));
 export const findInflections = (f, params, range, options) => finish(inflectionsGenerator(f, params, range, options));
+
+// ---- intersections of two graphs -----------------------------------------------------
+
+/**
+ * Where y = f(x) and y = g(x) meet on [a, b]: the zeros of f − g, each with
+ * the common value. Records: { kind (as for zeros), exact, at?, lo, hi,
+ * value? | valueLo, valueHi, unique?, multiplicity? }; a "touching" meeting
+ * (even multiplicity) has kind "isolated". "possible" could not be decided.
+ */
+export function* intersectionsGenerator(f, g, params, range, options = {}) {
+  const F = asAst(f);
+  const diff = { type: "op", op: "-", args: [F, asAst(g)] };
+  const zs = yield* zerosGenerator2(diff, params, range, options);
+  const S = setup(F, params, options.tolerance ?? "1/1000000", options.variable ?? "x");
+  return zs.map((z) => (z.kind === "everywhere" ? z : { ...z, ...valueAt(S, z) }));
+}
+
+export const findIntersections = (f, g, params, range, options) => finish(intersectionsGenerator(f, g, params, range, options));
+
+/** Intersections as a Refinement: float guesses { x, y } at once, certified records when settled. */
+export function intersections(f, g, params, range, options = {}) {
+  const F = asAst(f);
+  const G = asAst(g);
+  return new Refinement(
+    () => {
+      const fn = compileFloat(F, options.variable ?? "x");
+      const p = paramsToFloat(paramsToRational(params));
+      const xs = floatZeros({ type: "op", op: "-", args: [F, G] }, params, range, options);
+      return { value: xs.map((x) => ({ x, y: fn(x, p) })), trust: "rough" };
+    },
+    function* () {
+      return { value: yield* intersectionsGenerator(F, G, params, range, options), via: "analytic-roots" };
+    },
+  );
+}
 
 // ---- everything together ---------------------------------------------------------------
 
@@ -340,13 +378,14 @@ export function* featuresGenerator(f, params, range, options = {}) {
   const extrema = yield* extremaGenerator(ast, params, range, options);
   const inflections = yield* inflectionsGenerator(ast, params, range, options);
   const endpointList = yield* endpointsGenerator(ast, params, range, options);
-  const poles = singular.filter((p) => p.kind !== "hole");
+  const poles = singular.filter((p) => p.certain);
+  const undefinedAt = singular.filter((p) => p.kind === "undefined");
   const holes = singular.filter((p) => p.kind === "hole");
   const overlaps = (a, b) => !a.lo.greaterThan(b.hi) && !b.lo.greaterThan(a.hi);
   // An excluded end that blows up is drawn as an asymptote, not a dot.
   const endpoints = endpointList.filter((e) => !poles.some((p) => p.certain && overlaps(e, p)));
   return {
-    value: { zeros, poles, holes, endpoints, extrema, inflections },
+    value: { zeros, poles, holes, undefined: undefinedAt, endpoints, extrema, inflections },
     via: "analytic-roots",
   };
 }

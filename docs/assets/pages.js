@@ -1,6 +1,6 @@
 // Mounts the demos on each docs page.
-import * as G from "./graphics.js?v=0bd7f0c98c";
-import { mountRunboxes, KATEX_BASE } from "./runbox.js?v=0bd7f0c98c";
+import * as G from "./graphics.js?v=1c850fecab";
+import { mountRunboxes, KATEX_BASE } from "./runbox.js?v=1c850fecab";
 
 // ---------------------------------------------------------------- helpers
 

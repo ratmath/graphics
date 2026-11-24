@@ -225,6 +225,39 @@ function framePrimitives(out, vp, f, style) {
       out.push({ t: "rects", rects: cellRects(f.columns), fill: color, alpha: 1 });
       for (const a of f.asymptotes ?? []) out.push({ t: "path", subpaths: [[a.px, 0, a.px, vp.height]], stroke: style.asymptoteColor ?? color, width: 1, dash: a.certain ? [6, 4] : [2, 4], alpha: a.certain ? 0.9 : 0.45 });
       return;
+    case "points": {
+      // data points in world coordinates
+      const d = f.data;
+      if (f.join && d.length >= 4) {
+        const path = [];
+        for (let i = 0; i < d.length; i += 2) path.push(toPixelX(vp, d[i]), toPixelY(vp, d[i + 1]));
+        out.push({ t: "path", subpaths: [path], closed: false, stroke: color, width, dash: style.dash });
+      }
+      for (let i = 0; i < d.length; i += 2) {
+        out.push({ t: "dot", x: toPixelX(vp, d[i]), y: toPixelY(vp, d[i + 1]), r: style.radius ?? 3, fill: style.open ? style.background ?? "#fff" : color, stroke: color, width: 1.5 });
+      }
+      return;
+    }
+    case "bars": {
+      const b = f.bars;
+      const subs = [];
+      for (let i = 0; i < b.length; i += 4) {
+        const x0 = toPixelX(vp, b[i]);
+        const x1 = toPixelX(vp, b[i + 1]);
+        const y0 = toPixelY(vp, b[i + 2]);
+        const y1 = toPixelY(vp, b[i + 3]);
+        subs.push([x0, y0, x0, y1, x1, y1, x1, y0]);
+      }
+      if (subs.length) out.push({ t: "path", subpaths: subs, closed: true, fill: style.fill ?? color, fillAlpha: style.fillAlpha ?? 0.35, stroke: color, width: style.width ?? 1 });
+      return;
+    }
+    case "segments": {
+      const g = f.segments;
+      const subs = [];
+      for (let i = 0; i < g.length; i += 4) subs.push([toPixelX(vp, g[i]), toPixelY(vp, g[i + 1]), toPixelX(vp, g[i + 2]), toPixelY(vp, g[i + 3])]);
+      if (subs.length) out.push({ t: "path", subpaths: subs, closed: false, stroke: color, width: style.width ?? 1, alpha: style.alpha ?? 0.7 });
+      return;
+    }
     case "region-sketch":
       out.push({ t: "rects", rects: f.fill, fill: style.fill ?? color, alpha: fillAlpha });
       for (const e of f.edges) out.push({ t: "path", subpaths: polylineSubpaths(e.points), stroke: color, width, dash: e.strict ? [6, 4] : undefined });
@@ -270,30 +303,77 @@ function fmtTick(v, step) {
   return s === "-0" ? "0" : s.replace(/^-/, "−");
 }
 
-/** Grid, axis lines and tick labels as primitives. */
-export function axesPrimitives(vp, { grid = "#e5e7eb", axis = "#9ca3af", text = "#6b7280", ticks = true, target } = {}) {
+const SUPERSCRIPT = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+const gcdInt = (a, b) => (b ? gcdInt(b, a % b) : Math.abs(a));
+
+/** k·(p/q) as a reduced fraction label, with an optional unit symbol: 3/2, −π/2, 2π. */
+function fractionLabel(k, p, q, unit = "") {
+  let n = k * p;
+  let d = q;
+  const g = gcdInt(n, d) || 1;
+  n /= g;
+  d /= g;
+  const sign = n < 0 ? "−" : "";
+  n = Math.abs(n);
+  if (n === 0) return "0";
+  const top = unit ? (n === 1 ? unit : `${n}${unit}`) : String(n);
+  return d === 1 ? `${sign}${top}` : `${sign}${top}/${d}`;
+}
+
+// Steps for fraction and π ticks, as [p, q] (in units of 1 or of π).
+const FRACTION_STEPS = [[1, 16], [1, 8], [1, 6], [1, 4], [1, 3], [1, 2], [1, 1], [2, 1], [5, 1], [10, 1], [20, 1], [50, 1], [100, 1]];
+const PI_STEPS = [[1, 12], [1, 6], [1, 4], [1, 3], [1, 2], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [10, 1], [20, 1], [50, 1]];
+
+/** Tick positions and labels for one axis: [[value, label], ...] plus minor grid values. */
+function axisTicks(min, max, target, unit, scale) {
+  const ticks = [];
+  const minor = [];
+  if (scale === "log") {
+    // the coordinate is log10 of the quantity: label whole powers of ten
+    const stride = Math.max(1, Math.ceil((max - min) / target));
+    for (let k = Math.ceil(min); k <= max + 1e-12; k++) {
+      if (k % stride === 0) ticks.push([k, k >= 0 && k <= 3 ? String(10 ** k) : `10${String(k).split("").map((c) => SUPERSCRIPT[c]).join("")}`]);
+      if (stride === 1) for (let m = 2; m <= 9; m++) minor.push(k + Math.log10(m));
+    }
+    if (stride === 1) for (let m = 2; m <= 9; m++) minor.push(Math.ceil(min) - 1 + Math.log10(m));
+    return { ticks, minor: minor.filter((u) => u >= min && u <= max), step: stride };
+  }
+  if (unit === "pi" || unit === "fraction") {
+    const base = unit === "pi" ? Math.PI : 1;
+    const raw = (max - min) / target / base;
+    const steps = unit === "pi" ? PI_STEPS : FRACTION_STEPS;
+    const [p, q] = steps.find(([a, b]) => a / b >= raw) ?? steps[steps.length - 1];
+    const step = (p / q) * base;
+    for (let k = Math.ceil(min / step - 1e-9); k * step <= max + 1e-9; k++) ticks.push([k * step, fractionLabel(k, p, q, unit === "pi" ? "π" : "")]);
+    return { ticks, minor, step };
+  }
+  const step = niceStep(max - min, target);
+  for (let x = Math.ceil(min / step) * step; x <= max + 1e-12; x += step) ticks.push([x, fmtTick(x, step)]);
+  return { ticks, minor, step };
+}
+
+/**
+ * Grid, axis lines and tick labels as primitives. Per axis: `xUnit` /
+ * `yUnit` of "pi" labels multiples of π (π/2, π, 3π/2) and "fraction" labels
+ * fractions (1/2, 3/4); `xScale` / `yScale` of "log" treats the coordinate as
+ * log10 of the quantity and labels powers of ten (plot `logScale(f)`).
+ */
+export function axesPrimitives(vp, { grid = "#e5e7eb", axis = "#9ca3af", text = "#6b7280", ticks = true, target, xUnit, yUnit, xScale, yScale } = {}) {
   const out = [];
   const W = vp.width;
   const H = vp.height;
-  const sx = niceStep(vp.f.xmax - vp.f.xmin, target ?? Math.max(4, Math.round(W / 80)));
-  const sy = niceStep(vp.f.ymax - vp.f.ymin, target ?? Math.max(4, Math.round(H / 70)));
-  const gx = [];
-  const gy = [];
-  const xs = [];
-  const ys = [];
-  for (let x = Math.ceil(vp.f.xmin / sx) * sx; x <= vp.f.xmax + 1e-12; x += sx) {
-    const p = Math.round(toPixelX(vp, x)) + 0.5;
-    gx.push([p, 0, p, H]);
-    xs.push([x, p]);
-  }
-  for (let y = Math.ceil(vp.f.ymin / sy) * sy; y <= vp.f.ymax + 1e-12; y += sy) {
-    const p = Math.round(toPixelY(vp, y)) + 0.5;
-    gy.push([0, p, W, p]);
-    ys.push([y, p]);
-  }
+  const X = axisTicks(vp.f.xmin, vp.f.xmax, target ?? Math.max(4, Math.round(W / 80)), xUnit, xScale);
+  const Y = axisTicks(vp.f.ymin, vp.f.ymax, target ?? Math.max(4, Math.round(H / 70)), yUnit, yScale);
+  const colOf = (x) => Math.round(toPixelX(vp, x)) + 0.5;
+  const rowOf = (y) => Math.round(toPixelY(vp, y)) + 0.5;
+  const gx = X.ticks.map(([x]) => [colOf(x), 0, colOf(x), H]);
+  const gy = Y.ticks.map(([y]) => [0, rowOf(y), W, rowOf(y)]);
+  const minor = [...X.minor.map((x) => [colOf(x), 0, colOf(x), H]), ...Y.minor.map((y) => [0, rowOf(y), W, rowOf(y)])];
+  if (grid && minor.length) out.push({ t: "path", subpaths: minor, stroke: grid, width: 1, alpha: 0.5, role: "grid" });
   if (grid) out.push({ t: "path", subpaths: [...gx, ...gy], stroke: grid, width: 1, role: "grid" });
-  const ax = vp.f.xmin <= 0 && vp.f.xmax >= 0 ? Math.round(toPixelX(vp, 0)) + 0.5 : null;
-  const ay = vp.f.ymin <= 0 && vp.f.ymax >= 0 ? Math.round(toPixelY(vp, 0)) + 0.5 : null;
+  // On a log axis the line "0" has no meaning; the axis sits at the edge.
+  const ax = xScale !== "log" && vp.f.xmin <= 0 && vp.f.xmax >= 0 ? colOf(0) : null;
+  const ay = yScale !== "log" && vp.f.ymin <= 0 && vp.f.ymax >= 0 ? rowOf(0) : null;
   const axes = [];
   if (ax !== null) axes.push([ax, 0, ax, H]);
   if (ay !== null) axes.push([0, ay, W, ay]);
@@ -301,8 +381,16 @@ export function axesPrimitives(vp, { grid = "#e5e7eb", axis = "#9ca3af", text = 
   if (ticks) {
     const yLine = ay ?? H - 1;
     const xLine = ax ?? 1;
-    for (const [x, p] of xs) if (Math.abs(x) > sx / 2 && p > 12 && p < W - 12) out.push({ t: "label", x: p, y: yLine, text: fmtTick(x, sx), anchor: "s", color: text, size: 11, dx: 0, dy: 2, plain: true, value: x });
-    for (const [y, p] of ys) if (Math.abs(y) > sy / 2 && p > 10 && p < H - 10) out.push({ t: "label", x: xLine, y: p, text: fmtTick(y, sy), anchor: "e", color: text, size: 11, dx: 3, dy: 0, plain: true, value: y });
+    const skipX = (x) => xScale !== "log" && Math.abs(x) <= X.step / 2;
+    const skipY = (y) => yScale !== "log" && Math.abs(y) <= Y.step / 2;
+    for (const [x, label] of X.ticks) {
+      const p = colOf(x);
+      if (!skipX(x) && p > 12 && p < W - 12) out.push({ t: "label", x: p, y: yLine, text: label, anchor: "s", color: text, size: 11, dx: 0, dy: 2, plain: true, value: x });
+    }
+    for (const [y, label] of Y.ticks) {
+      const p = rowOf(y);
+      if (!skipY(y) && p > 10 && p < H - 10) out.push({ t: "label", x: xLine, y: p, text: label, anchor: "e", color: text, size: 11, dx: 3, dy: 0, plain: true, value: y });
+    }
   }
   return out;
 }

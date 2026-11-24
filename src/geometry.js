@@ -286,7 +286,40 @@ export function signedArea(poly) {
   return s.divide(TWO);
 }
 
-export const area = (poly) => signedArea(poly).abs();
+/**
+ * True when no two edges of the polygon meet except neighbours at their
+ * shared vertex (so the boundary does not cross or touch itself).
+ */
+export function isSimple(poly) {
+  const P = poly instanceof Polygon ? poly : polygon(poly);
+  const e = P.edges;
+  const n = e.length;
+  if (n < 3) return false;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const hits = intersect(e[i], e[j]);
+      const adjacent = j === i + 1 || (i === 0 && j === n - 1);
+      if (!adjacent) {
+        if (hits.length) return false;
+        continue;
+      }
+      // neighbours may share only their common vertex
+      const shared = j === i + 1 ? P.vertices[j] : P.vertices[0];
+      if (hits.length !== 1 || !(hits[0] instanceof Point) || !hits[0].equals(point(shared))) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Area of a simple polygon. A polygon whose boundary crosses itself has no
+ * single area, and the shoelace sum cancels parts of it (a bow tie gives 0),
+ * so that case is refused; `signedArea` returns the raw sum.
+ */
+export function area(poly) {
+  if (!isSimple(poly)) throw new RangeError("area: the polygon crosses or touches itself; use signedArea for the shoelace sum");
+  return signedArea(poly).abs();
+}
 
 /** Centroid of a polygon's area. */
 export function centroid(poly) {

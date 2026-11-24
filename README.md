@@ -3,6 +3,18 @@
 Graphs for the RatMath calculator that are fast while you explore and exact
 when you stop.
 
+Docs and live demos: https://ratmath.com/graphics/ · Source:
+https://github.com/ratmath/graphics · Siblings:
+[core](https://ratmath.com/core/), [analytic](https://ratmath.com/analytic/),
+[algebraic](https://ratmath.com/algebraic/), [linalg](https://ratmath.com/linalg/)
+
+```sh
+npm install @ratmath/graphics @ratmath/core
+```
+
+ES modules for Bun, Node 22+ and browsers, with TypeScript declarations.
+While the version is 0.x, a minor version may change an API.
+
 While a slider moves, you get a floating-point sketch in well under a
 millisecond. When the input settles, every pixel column is recomputed with
 certified interval arithmetic over exact rational inputs. The result is a set
@@ -49,8 +61,11 @@ steps. For everything else it uses Krawczyk and Rolle tests, which prove that
 a bracket holds exactly one zero.
 
 `features(f, params, [a, b])` returns a Refinement. Its quick stage holds
-float estimates. Its exact stage holds `{ zeros, poles, holes, endpoints,
-extrema, inflections }`:
+float estimates. Its exact stage holds `{ zeros, poles, holes, undefined,
+endpoints, extrema, inflections }`. `poles` are proven poles only; a point
+where f has no value and no pole was proven (`sin(1/x)` at 0) is listed under
+`undefined` and gets no asymptote line. A function that is zero on a whole
+stretch gives one zero of kind `everywhere`:
 
 ```js
 features("x^3/8 - 2x", {}, [-8, 8]).exact();
@@ -121,7 +136,7 @@ rather than guessing.
 ## The fast-then-exact shape
 
 `graph()` and `zeros()` return a `Refinement`. This is the same class the
-linear algebra library (`ratmath/linalg`, `src/refine.js`) uses, so one
+linear algebra library uses (it lives in `@ratmath/core/refine`), so one
 `live()` loop can drive both.
 
 | Member | What it gives |
@@ -183,9 +198,79 @@ fully certified plot takes 10–60 ms for the curves in the tests (polynomials,
 main thread, and the certified picture arrives about 120 ms after the slider
 stops.
 
+## Parametric and polar curves, intersections
+
+```js
+import { parametric, polar, intersections } from "@ratmath/graphics";
+
+parametric({ x: "cos(3t)", y: "sin(2t)" }, {}, [0, "44/7"], vp);   // Refinement
+polar("1 + cos(t)", {}, [0, "44/7"], vp);                          // r = r(t)
+intersections("sin(x)", "cos(x)", {}, [0, 7]).exact();
+// [{ kind: "sign-change", lo, hi, valueLo, valueHi }, …]   brackets around π/4 and 5π/4
+intersections("x^2", "x + 2", {}, [-3, 3]).exact();
+// [{ kind: "exact", at: -1, value: 1 }, { kind: "exact", at: 2, value: 4 }]
+```
+
+A curve's quick stage is a float polyline. Its exact stage is a `cells` frame
+like a certified graph's: the parameter range is bisected, each piece is
+enclosed as a box with interval arithmetic, boxes off screen are dropped and
+boxes no larger than a pixel are lit. Every point of the curve lies in a lit
+pixel. `intersections(f, g, …)` are the certified zeros of f − g with the
+common value attached.
+
+## Data, slope fields and ODE solutions
+
+```js
+import { scatter, bars, histogram, slopeField, solutionCurve } from "@ratmath/graphics";
+
+scatter([[1, 2], [2, "7/2"]], { join: true });     // dots, optionally connected
+bars([[1, 4], [2, 7]]);                             // one bar per [x, height]
+histogram(values, { bins: 8 });                     // .counts, .edges
+slopeField("x - y", {}, vp);                        // y′ = f(x, y)
+solutionCurve({ f: "t - y", y0: 1, until: 3 }, vp); // Refinement: RK4 sketch, then proven cells
+```
+
+Each is a frame that every renderer draws. `solutionCurve` uses analytic's
+validated ODE solver: in the exact frame each column's span provably holds
+the solution over that column.
+
+## Describing a graph in words
+
+`describe(f, params, [a, b])` returns sentences built from the certified
+features, for alt text and screen readers:
+
+```js
+describe("x^3 - 3x", {}, [-3, 3]);
+// "Graph of y = x^3 - 3*x for x from −3 to 3. It meets the x-axis 3 times, near
+//  x = −1.732, 0 and 1.732. It has one local maximum, at (−1, 2). It has one
+//  local minimum, at (1, −2). It changes the way it bends at one inflection point, at (0, 0)."
+```
+
+## In a Web Worker
+
+```js
+// worker.js
+import { serveGraphics } from "@ratmath/graphics/worker";
+serveGraphics(self);
+
+// page
+import { workerClient } from "@ratmath/graphics/worker";
+const gx = workerClient(new Worker("worker.js", { type: "module" }));
+const job = gx.graph("sin(x)/x", {}, vp);   // job.quick is ready now, computed here
+draw(await job.settle({ signal, onProgress }));   // the certified frame, computed in the worker
+```
+
+`graph`, `parametric`, `polar`, `region`, `implicit`, `features`, `zeros` and
+`intersections` are available. Exact values (Rational, Surd, Point, …) are
+rebuilt on arrival.
+
 ## Expressions
 
-`parse(text)` reads conventional calculator notation:
+`parse(text)` is `@ratmath/analytic`'s parser, so both libraries read the same
+notation and share parse trees. Functions: `sin cos tan asin acos atan sinh
+cosh tanh exp log ln log1p sqrt cbrt erf abs min max`. A power with an odd
+denominator, `x^(1/3)`, is the real root and is drawn for negative x. It reads
+conventional calculator notation:
 
 - `^` (or `**`) is right-associative, and `-x^2` means `-(x^2)`.
 - A number followed by a factor multiplies it: `2x`, `3(x+1)`, `2sin(x)`.
@@ -250,6 +335,15 @@ exact values become float pixel coordinates; the back ends only paint.
 `mountLabels(container, vp, prims, { katex })` typesets labels in an HTML
 layer over it; in SVG, pass `tex: (s) => katex.renderToString(s)`.
 
+Axes options: `xUnit` / `yUnit` of `"pi"` label multiples of π (π/2, π, 3π/2)
+and `"fraction"` label fractions. For logarithmic axes, plot
+`logScale(f, { x: true, y: true })` on a viewport in log10 coordinates and
+pass `xScale: "log"` / `yScale: "log"`, which labels powers of ten.
+
+`area(polygon)` refuses a polygon whose boundary crosses itself (the shoelace
+sum cancels there); `isSimple` tests for that and `signedArea` gives the raw
+sum.
+
 ## Exporting: SVG, PNG, PDF, TikZ, PGFPlots, text
 
 The same layers export several ways, with no dependencies:
@@ -312,11 +406,8 @@ arithmetic and against itself at 240 bits.
 
 ## Not yet
 
-These are next in roughly this order:
-
-- parametric and polar curves
-- intersections of two curves (the zeros of f − g, with the same machinery)
 - regions bounded by circles and conics drawn exactly (arcs), not pixel by pixel
-- exact algebraic forms for irrational points of polynomials (√2 rather than a bracket)
-- a Worker wrapper with a Stop button
-- hooks so `@ratmath/analytic` special functions can supply their own enclosures
+- exact algebraic forms for irrational points of polynomials (√2 rather than a
+  bracket); this needs `@ratmath/algebraic` as a dependency
+- parametric curves with features (self-intersections, cusps, arc length)
+- 3D surfaces, animation along a parameter

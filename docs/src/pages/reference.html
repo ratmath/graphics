@@ -23,7 +23,13 @@
     <tr><th>Name</th><th>Exact value</th></tr>
     <tr><td>graph(f, params, vp) <em>R</em></td><td>quick: polyline; exact: cells frame <code>{ columns, tight, asymptotes, holes }</code></td></tr>
     <tr><td>zeros(f, params, [a, b]) <em>R</em></td><td><code>exact</code> rationals, <code>sign-change</code> brackets, or <code>possible</code></td></tr>
-    <tr><td>features(f, params, [a, b]) <em>R</em></td><td><code>{ zeros, poles, holes, endpoints, extrema, inflections }</code></td></tr>
+    <tr><td>features(f, params, [a, b]) <em>R</em></td><td><code>{ zeros, poles, holes, undefined, endpoints, extrema, inflections }</code>. <code>poles</code> are proven; <code>undefined</code> lists points with no value and no proven pole (sin(1/x) at 0)</td></tr>
+    <tr><td>parametric({ x, y }, params, [t0, t1], vp) <em>R</em>, polar(r, params, [t0, t1], vp) <em>R</em></td><td>quick: polyline; exact: cells frame in which every point of the curve lies in a lit pixel</td></tr>
+    <tr><td>intersections(f, g, params, [a, b]) <em>R</em>, findIntersections</td><td>The zeros of f − g with the common value: <code>{ kind, at | lo, hi, value | valueLo, valueHi }</code></td></tr>
+    <tr><td>scatter(data, { join }), bars(data, { width, baseline }), histogram(values, { bins, range, density })</td><td>Data frames in world coordinates</td></tr>
+    <tr><td>slopeField(f, params, vp, { spacing, length }), solutionCurve(spec, vp) <em>R</em></td><td>The field of y′ = f(x, y), and one solution: an RK4 sketch, then cells that provably hold it</td></tr>
+    <tr><td>describe(f, params, [a, b], { digits, max }), describeFeatures</td><td>Sentences built from the certified features, for alt text</td></tr>
+    <tr><td>logScale(f, { x, y })</td><td>f rewritten for logarithmic axes (use with <code>axes: { xScale: "log" }</code>)</td></tr>
     <tr><td>findPoles, findHoles, findExtrema, findInflections, findEndpoints, findZeros</td><td>The same pieces, synchronously</td></tr>
     <tr><td>sampleFloat, certifyGraph, floatZeros, floatFeatures, simplestBetween</td><td>Lower-level stages</td></tr>
   </table></div>
@@ -43,7 +49,7 @@
     <tr><td>point, line, segment, ray, polygon, circle</td><td>Immutable objects with <code>toString()</code> and <code>toTeX()</code></td></tr>
     <tr><td>intersect(A, B)</td><td>Exact intersection list for any pair</td></tr>
     <tr><td>midpoint, project, reflect, parallel, perpendicular, bisector, circumcircle</td><td>Constructions</td></tr>
-    <tr><td>dist2, distance, area, signedArea, centroid, orientation, locate, convexHull</td><td>Measurements and predicates, exact</td></tr>
+    <tr><td>dist2, distance, area (simple polygons only), isSimple, signedArea, centroid, orientation, locate, convexHull</td><td>Measurements and predicates, exact</td></tr>
   </table></div>
   <h2>Drawing</h2>
   <div class="tablewrap"><table class="ref">

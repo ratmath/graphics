@@ -168,10 +168,19 @@ export function tikzElements(vp, prims, options = {}) {
         shapes.push(`\\path[${opts.join(", ")}] ${P(cx, cy)} ellipse [x radius=${fmt(rx * sx, d)}, y radius=${fmt(ry * sy, d)}];`);
         continue;
       }
+      // In PGFPlots, curves become \addplot coordinates (one per piece).
+      const asPlot = options.pgfplots && !p.closed && !filled && !p.role;
       const parts = [];
       for (const s of p.subpaths) {
         if (s.length < 4) continue;
         const pts = p.closed ? s : simplifyPolyline(s, simplify);
+        if (asPlot) {
+          const coords = [];
+          for (let i = 0; i < pts.length; i += 2) coords.push(P(pts[i], pts[i + 1]));
+          const uniq = coords.filter((c, i) => i === 0 || c !== coords[i - 1]);
+          if (uniq.length >= 2) shapes.push(`\\addplot[${opts.join(", ")}, no marks] coordinates {\n  ${wrap(uniq, 6)}\n};`);
+          continue;
+        }
         const coords = [];
         for (let i = 0; i < pts.length; i += 2) coords.push(P(pts[i], pts[i + 1]));
         // Drop repeated coordinates after rounding.
@@ -192,7 +201,7 @@ export function tikzElements(vp, prims, options = {}) {
   const out = [];
   if (background) out.push(`\\fill[${bg()}] (${fmt(xmin, d)},${fmt(ymin, d)}) rectangle (${fmt(xmax, d)},${fmt(ymax, d)});`);
   if (options.before) out.push(...options.before);
-  if (clip && shapes.length) {
+  if (clip && shapes.length && !options.pgfplots) {
     out.push("\\begin{scope}", `  \\clip (${fmt(xmin, d)},${fmt(ymin, d)}) rectangle (${fmt(xmax, d)},${fmt(ymax, d)});`);
     out.push(...shapes.map((s) => "  " + s.replace(/\n/g, "\n  ")));
     out.push("\\end{scope}");
@@ -276,6 +285,37 @@ export function tikzAxes(vp, { grid = "#e5e7eb", axis = "#9ca3af", text = "#6b72
     for (const y of ys) if (Math.abs(y) > sy / 2 && y > ymin + edgeY && y < ymax - edgeY) labels.push(`\\node[anchor=west, inner sep=1pt, text=${col(text)}, xshift=${fmt(3 * pt, 2)}pt] at (${xLine},${fmt(y, dy)}) {\\scriptsize $${fmt(y, dy)}$};`);
   }
   return { lines: out, labels };
+}
+
+/**
+ * A whole scene as a PGFPlots axis inside a tikzpicture. PGFPlots draws its
+ * own axes, ticks and grid (axes: true), clips to the viewport, and the layers
+ * go in axis coordinates: curves as \addplot coordinates, everything else as
+ * TikZ paths. Options as sceneTikZ, plus axisOptions (extra keys for the
+ * axis environment, a string). Needs \pgfplotsset{compat=1.11} or later,
+ * which standalone documents set (1.18).
+ */
+export function scenePGFPlots(vp, layers, options = {}) {
+  const { axes, width = 10, standalone = false, comment = true } = options;
+  const height = options.height ?? (width * vp.height) / vp.width;
+  const prims = primitives(vp, layers, options);
+  const colors = new Map();
+  const body = tikzElements(vp, prims, { ...options, colors, pgfplots: true, clip: false });
+  const d = Math.max(0, Math.ceil(-Math.log10(Math.min(vp.f.dx, vp.f.dy) / 10)));
+  const keys = [`width=${fmt(width, 3)}cm`, `height=${fmt(height, 3)}cm`, "scale only axis", `xmin=${fmt(vp.f.xmin, d)}`, `xmax=${fmt(vp.f.xmax, d)}`, `ymin=${fmt(vp.f.ymin, d)}`, `ymax=${fmt(vp.f.ymax, d)}`];
+  if (axes) {
+    const zero = vp.f.xmin <= 0 && vp.f.xmax >= 0 && vp.f.ymin <= 0 && vp.f.ymax >= 0;
+    keys.push(zero ? "axis lines=middle" : "axis lines=box", "grid=major", "major grid style={line width=0.25pt, draw=black!12}", "tick label style={font=\\scriptsize}", "axis line style={draw=black!45}");
+  } else keys.push("hide axis");
+  if (options.axisOptions) keys.push(options.axisOptions);
+  const lines = [];
+  if (comment) lines.push(`% @ratmath/graphics (PGFPlots): x in [${vp.xmin}, ${vp.xmax}], y in [${vp.ymin}, ${vp.ymax}]; needs \\pgfplotsset{compat=1.11} or later`);
+  lines.push("\\begin{tikzpicture}");
+  for (const [hex, name] of colors) lines.push(`\\definecolor{${name}}{HTML}{${hex}}`);
+  lines.push(`\\begin{axis}[\n  ${keys.join(",\n  ")}\n]`, body, "\\end{axis}", "\\end{tikzpicture}");
+  const pic = lines.join("\n");
+  if (!standalone) return pic;
+  return ["\\documentclass[tikz,border=2pt]{standalone}", "\\usepackage{amsmath,amssymb}", "\\usepackage{pgfplots}", "\\pgfplotsset{compat=1.18}", options.preamble ?? "", "\\begin{document}", pic, "\\end{document}", ""].filter((l) => l !== "").join("\n");
 }
 
 /**

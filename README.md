@@ -250,12 +250,15 @@ exact values become float pixel coordinates; the back ends only paint.
 `mountLabels(container, vp, prims, { katex })` typesets labels in an HTML
 layer over it; in SVG, pass `tex: (s) => katex.renderToString(s)`.
 
-## Exporting: SVG, TikZ, text
+## Exporting: SVG, PNG, PDF, TikZ, PGFPlots, text
 
-The same layers export three ways:
+The same layers export several ways, with no dependencies:
 
 ```js
 sceneSVG(vp, layers, { axes: true });                         // <svg> string
+await scenePNG(vp, layers, { axes: true, scale: 2 });         // PNG bytes (canvas in browsers, built-in renderer elsewhere)
+scenePDF(vp, layers, { axes: true });                         // one-page vector PDF bytes
+scenePGFPlots(vp, layers, { axes: true, standalone: true });  // PGFPlots axis, curves as \addplot
 sceneTikZ(vp, layers, { axes: true, width: 8 });              // LaTeX tikzpicture, 8 cm wide
 sceneTikZ(vp, layers, { standalone: true });                  // a whole file: pdflatex figure.tex
 sceneASCII(vp, layers, { axes: true, cols: 72 });             // 7-bit text
@@ -267,7 +270,10 @@ stay circles, labels stay real TeX, and certified cells become merged filled
 rectangles. Text marks every character any ink touches, so a certified frame
 is still certified at character resolution; modes are `"ascii"` (curves drawn
 with `- | / \ _` by direction), `"braille"` (2 x 4 dots per character) and
-`"blocks"` (2 x 2 quadrants).
+`"blocks"` (2 x 2 quadrants). PNG and PDF labels are plain text (PDF uses
+Helvetica and Symbol); for TeX labels use TikZ or SVG with KaTeX. The PNG
+font is DejaVu Sans, built into `src/render/font-data.js` by
+`scripts/build-font.cjs`.
 
 ## Docs
 

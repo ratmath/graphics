@@ -51,11 +51,14 @@
     <tr><td>drawScene(ctx2d, vp, layers, { axes, scale, background, colors })</td><td>Draw layers on a canvas; returns the primitives</td></tr>
     <tr><td>sceneSVG(vp, layers, { axes, background, tex })</td><td>A standalone SVG string</td></tr>
     <tr><td>sceneTikZ(vp, layers, { axes, width, height, standalone, background, pt })</td><td>A LaTeX tikzpicture in world coordinates, labels as real TeX (<a href="export.html">Exporting</a>)</td></tr>
+    <tr><td>scenePGFPlots(vp, layers, { axes, width, height, standalone, axisOptions })</td><td>A PGFPlots axis: its own axes and ticks, curves as <code>\addplot</code></td></tr>
+    <tr><td>scenePNG(vp, layers, { axes, scale, background, engine })</td><td>PNG bytes (a Promise): canvas in browsers, built-in renderer elsewhere</td></tr>
+    <tr><td>scenePDF(vp, layers, { axes, background, pt })</td><td>A one-page vector PDF (bytes)</td></tr>
     <tr><td>sceneASCII(vp, layers, { axes, cols, rows, mode, border, color })</td><td>The scene as text: ASCII, Braille or block characters</td></tr>
     <tr><td>label(at, tex, { anchor, color, size })</td><td>A TeX label at a world point</td></tr>
     <tr><td>mountLabels(container, vp, prims, { katex })</td><td>Typeset labels in an HTML layer over a canvas</td></tr>
     <tr><td>primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE</td><td>The pieces under drawScene and sceneSVG</td></tr>
-    <tr><td>tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText</td><td>The pieces under sceneTikZ and sceneASCII</td></tr>
+    <tr><td>tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText, rasterize, encodePNG, pdfContent, pdfTextRuns</td><td>The pieces under the exporters</td></tr>
     <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
   </table></div>
 </section>

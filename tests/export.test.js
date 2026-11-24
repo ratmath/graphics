@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   viewport, graph, region, implicit, circle, point, segment, label, sceneTikZ, tikzElements, simplifyPolyline,
-  sceneASCII, asciiText, primitives,
+  sceneASCII, asciiText, primitives, scenePGFPlots, scenePDF, pdfTextRuns, scenePNG, rasterize, encodePNG, polygon,
 } from "../index.js";
 
 const vp = viewport({ x: [-1, 5], y: [-1, 4], width: 360, height: 300 });
@@ -175,5 +175,126 @@ describe("ASCII export", () => {
     expect(s).toContain("\x1b[38;2;220;38;38m");
     expect(s).toContain("\x1b[0m");
     expect(asciiText("x² + y³⁴ ≤ π·r")).toBe("x^2 + y^34 <= pi*r");
+  });
+});
+
+describe("PGFPlots export", () => {
+  test("an axis environment with curves as \\addplot", () => {
+    const v = viewport({ x: [-4, 4], y: [-3, 3], width: 320, height: 240 });
+    const tex = scenePGFPlots(v, [graph("x^3/4 - x", {}, v).quick.value, { item: circle([0, 0], 1), color: "#dc2626" }, label([1, 2], "y = \\tfrac{x^3}{4} - x")], { axes: true, width: 8 });
+    expect(tex).toContain("\\begin{axis}[");
+    expect(tex).toContain("xmin=-4");
+    expect(tex).toContain("ymax=3");
+    expect(tex).toContain("axis lines=middle");
+    expect(tex).toMatch(/\\addplot\[draw=rm1, [^\]]*no marks\] coordinates \{/);
+    expect(tex).toContain("(0,0) ellipse [x radius=1, y radius=1]");
+    expect(tex).not.toContain("\\clip");
+    expect(balanced(tex)).toBe(true);
+    expect(scenePGFPlots(v, [], {})).toContain("hide axis");
+  });
+  const pdflatex = spawnSync("pdflatex", ["--version"]).status === 0;
+  test.skipIf(!pdflatex)("compiles with pdflatex", () => {
+    const v = viewport({ x: [-6, 6], y: [-6, 8], width: 420, height: 380 });
+    const dir = mkdtempSync(join(tmpdir(), "rm-pgf-"));
+    const layers = [{ item: graph("(x^2 - 1)/(x - 1) + 1/(x + 2)", {}, v).exact() }, { item: region("x^2 + y^2 < 4", {}, v).exact(), color: "#2563eb" }, { item: point(1, "7/3"), open: true }, label([2, 6], "\\frac{x^2-1}{x-1}")];
+    writeFileSync(join(dir, "fig.tex"), scenePGFPlots(v, layers, { axes: true, standalone: true }));
+    const run = spawnSync("pdflatex", ["-interaction=nonstopmode", "-halt-on-error", "fig.tex"], { cwd: dir, encoding: "utf8" });
+    if (run.status !== 0) console.error(run.stdout.slice(-2000));
+    expect(run.status).toBe(0);
+  }, 60000);
+});
+
+describe("PDF export", () => {
+  const text = (bytes) => String.fromCharCode(...bytes);
+  test("a valid one-page PDF with a correct cross-reference table", () => {
+    const bytes = scenePDF(vp, [{ item: triangle, color: "#0f766e" }, circle([2, 1], 1), label([3, "3.4"], "y \\le 3 - \\tfrac{x}{2}")], { axes: true, background: "#fff" });
+    const s = text(bytes);
+    expect(s.startsWith("%PDF-1.4")).toBe(true);
+    expect(s.trimEnd().endsWith("%%EOF")).toBe(true);
+    expect(s).toContain("/MediaBox [0 0 270 225]");
+    const xref = Number(/startxref\n(\d+)/.exec(s)[1]);
+    expect(s.slice(xref, xref + 4)).toBe("xref");
+    const offsets = [...s.slice(xref).matchAll(/^(\d{10}) 00000 n $/gm)].map((m) => Number(m[1]));
+    offsets.forEach((o, i) => expect(s.slice(o).startsWith(`${i + 1} 0 obj\n`)).toBe(true));
+    const len = Number(/\/Length (\d+) >>\nstream\n/.exec(s)[1]);
+    const start = s.indexOf("stream\n") + 7;
+    expect(s.slice(start + len, start + len + 9)).toBe("endstream");
+    expect(s).toMatch(/ c\n?/); // Bézier circle
+    expect(s).toContain("/F2 14 Tf (\xa3) Tj"); // ≤ from the Symbol font
+    expect(s).toContain("/ca 0.22");
+  });
+  test("text runs pick Helvetica or Symbol", () => {
+    expect(pdfTextRuns("x² ≤ π")).toEqual([["F1", "x\xb2 ", 500 + 333 + 278], ["F2", "\xa3", 549], ["F1", " ", 278], ["F2", "p", 549]]);
+  });
+  const pdftoppm = spawnSync("pdftoppm", ["-v"]).status === 0;
+  test.skipIf(!pdftoppm)("renders with poppler", () => {
+    const dir = mkdtempSync(join(tmpdir(), "rm-pdf-"));
+    writeFileSync(join(dir, "f.pdf"), scenePDF(vp, [{ item: triangle, color: "#0f766e" }], { axes: true }));
+    expect(spawnSync("pdftoppm", ["-png", join(dir, "f.pdf"), join(dir, "f")]).status).toBe(0);
+  });
+});
+
+describe("PNG export", () => {
+  async function decode(png) {
+    const dv = new DataView(png.buffer, png.byteOffset);
+    expect([...png.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    const width = dv.getUint32(16);
+    const height = dv.getUint32(20);
+    let o = 8;
+    const idat = [];
+    while (o < png.length) {
+      const len = dv.getUint32(o);
+      const type = String.fromCharCode(...png.slice(o + 4, o + 8));
+      if (type === "IDAT") idat.push(png.slice(o + 8, o + 8 + len));
+      o += 12 + len;
+    }
+    const stream = new Blob(idat).stream().pipeThrough(new DecompressionStream("deflate"));
+    const raw = new Uint8Array(await new Response(stream).arrayBuffer());
+    const px = new Uint8Array(width * height * 4);
+    for (let y = 0; y < height; y++) {
+      const r = y * (width * 4 + 1);
+      expect(raw[r]).toBe(1);
+      for (let i = 0; i < width * 4; i++) px[y * width * 4 + i] = (raw[r + 1 + i] + (i >= 4 ? px[y * width * 4 + i - 4] : 0)) & 0xff;
+    }
+    return { width, height, at: (x, y) => [...px.slice((y * width + x) * 4, (y * width + x) * 4 + 4)] };
+  }
+
+  test("software rendering: fills, strokes, background, scale", async () => {
+    const v = viewport({ x: [0, 10], y: [0, 10], width: 100, height: 100 });
+    const sq = polygon([[2, 2], [8, 2], [8, 8], [2, 8]]);
+    const img = await decode(await scenePNG(v, [{ item: sq, color: "#ff0000", fillAlpha: 1 }], { background: "#ffffff" }));
+    expect([img.width, img.height]).toEqual([100, 100]);
+    expect(img.at(50, 50)).toEqual([255, 0, 0, 255]);
+    expect(img.at(5, 5)).toEqual([255, 255, 255, 255]);
+    const hi = await decode(await scenePNG(v, [{ item: sq, color: "#0000ff", fillAlpha: 0 }], { scale: 2 }));
+    expect([hi.width, hi.height]).toEqual([200, 200]);
+    expect(hi.at(100, 100)[3]).toBe(0); // transparent inside an unfilled square
+    expect(hi.at(40, 100)).toEqual([0, 0, 255, 255]); // on its left edge, 2 px wide
+  });
+
+  test("certified cells are painted exactly on their pixels", async () => {
+    const v = viewport({ x: [-3, 3], y: [-2, 2], width: 60, height: 40 });
+    const g = graph("x^3/4 - x", {}, v).exact();
+    const img = await decode(await scenePNG(v, [{ item: g, color: "#000000" }], { background: "#ffffff" }));
+    g.columns.forEach((spans, i) => {
+      for (let j = 0; spans && j < spans.length; j += 2) for (let r = spans[j]; r <= spans[j + 1]; r++) expect(img.at(i, r)).toEqual([0, 0, 0, 255]);
+    });
+  });
+
+  test("labels and tick labels are drawn", async () => {
+    const v = viewport({ x: [-1, 5], y: [-1, 4], width: 180, height: 150 });
+    const plain = await decode(await scenePNG(v, [], { background: "#fff" }));
+    const withText = await decode(await scenePNG(v, [label([2, 2], "x^2 \\le \\pi")], { axes: true, background: "#fff" }));
+    let changed = 0;
+    for (let y = 0; y < 150; y++) for (let x = 0; x < 180; x++) if (withText.at(x, y)[0] !== plain.at(x, y)[0]) changed++;
+    expect(changed).toBeGreaterThan(200);
+  });
+
+  test("rasterize and encodePNG work on their own", async () => {
+    const v = viewport({ x: [0, 1], y: [0, 1], width: 3, height: 2 });
+    const img = rasterize(v, [], { background: "#102030" });
+    expect([...img.data.slice(0, 4)]).toEqual([16, 32, 48, 255]);
+    const back = await decode(await encodePNG(img));
+    expect(back.at(2, 1)).toEqual([16, 32, 48, 255]);
   });
 });

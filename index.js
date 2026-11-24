@@ -31,5 +31,7 @@ export { region, implicit, sketchRegion, sketchImplicit, linearPieces, exactLine
 export {
   label, texToText, primitives, axesPrimitives, niceStep, paint, drawScene, mountLabels, svgElements, sceneSVG, PALETTE,
 } from "./src/render/scene.js";
-export { sceneTikZ, tikzElements, tikzAxes, simplifyPolyline } from "./src/render/tikz.js";
+export { sceneTikZ, scenePGFPlots, tikzElements, tikzAxes, simplifyPolyline } from "./src/render/tikz.js";
 export { sceneASCII, asciiElements, asciiText } from "./src/render/ascii.js";
+export { scenePDF, pdfContent, pdfTextRuns } from "./src/render/pdf.js";
+export { scenePNG, rasterize, encodePNG } from "./src/render/raster.js";

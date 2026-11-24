@@ -162,7 +162,8 @@ export function primitives(vp, layers, { colors = PALETTE } = {}) {
       const n = Math.max(32, Math.min(720, Math.ceil(2 * Math.PI * Math.max(r, ry) / 3)));
       const pts = [];
       for (let k = 0; k < n; k++) pts.push(cx + r * Math.cos((2 * Math.PI * k) / n), cy - ry * Math.sin((2 * Math.PI * k) / n));
-      out.push({ t: "path", subpaths: [pts], closed: true, fill: style.fill, fillAlpha: style.fillAlpha ?? (style.fill ? 0.15 : 0), stroke: color, width, dash });
+      // `ellipse` keeps the exact shape for vector back ends (TikZ) that can draw it.
+      out.push({ t: "path", subpaths: [pts], closed: true, fill: style.fill, fillAlpha: style.fillAlpha ?? (style.fill ? 0.15 : 0), stroke: color, width, dash, ellipse: [cx, cy, r, ry] });
       labelOf([cx + r * Math.SQRT1_2, cy - ry * Math.SQRT1_2]);
       continue;
     }
@@ -290,25 +291,25 @@ export function axesPrimitives(vp, { grid = "#e5e7eb", axis = "#9ca3af", text = 
     gy.push([0, p, W, p]);
     ys.push([y, p]);
   }
-  if (grid) out.push({ t: "path", subpaths: [...gx, ...gy], stroke: grid, width: 1 });
+  if (grid) out.push({ t: "path", subpaths: [...gx, ...gy], stroke: grid, width: 1, role: "grid" });
   const ax = vp.f.xmin <= 0 && vp.f.xmax >= 0 ? Math.round(toPixelX(vp, 0)) + 0.5 : null;
   const ay = vp.f.ymin <= 0 && vp.f.ymax >= 0 ? Math.round(toPixelY(vp, 0)) + 0.5 : null;
   const axes = [];
   if (ax !== null) axes.push([ax, 0, ax, H]);
   if (ay !== null) axes.push([0, ay, W, ay]);
-  if (axes.length) out.push({ t: "path", subpaths: axes, stroke: axis, width: 1 });
+  if (axes.length) out.push({ t: "path", subpaths: axes, stroke: axis, width: 1, role: "axis" });
   if (ticks) {
     const yLine = ay ?? H - 1;
     const xLine = ax ?? 1;
-    for (const [x, p] of xs) if (Math.abs(x) > sx / 2 && p > 12 && p < W - 12) out.push({ t: "label", x: p, y: yLine, text: fmtTick(x, sx), anchor: "s", color: text, size: 11, dx: 0, dy: 2, plain: true });
-    for (const [y, p] of ys) if (Math.abs(y) > sy / 2 && p > 10 && p < H - 10) out.push({ t: "label", x: xLine, y: p, text: fmtTick(y, sy), anchor: "e", color: text, size: 11, dx: 3, dy: 0, plain: true });
+    for (const [x, p] of xs) if (Math.abs(x) > sx / 2 && p > 12 && p < W - 12) out.push({ t: "label", x: p, y: yLine, text: fmtTick(x, sx), anchor: "s", color: text, size: 11, dx: 0, dy: 2, plain: true, value: x });
+    for (const [y, p] of ys) if (Math.abs(y) > sy / 2 && p > 10 && p < H - 10) out.push({ t: "label", x: xLine, y: p, text: fmtTick(y, sy), anchor: "e", color: text, size: 11, dx: 3, dy: 0, plain: true, value: y });
   }
   return out;
 }
 
 // ---- canvas back end -----------------------------------------------------------------------
 
-const ANCHOR = {
+export const ANCHOR = {
   n: [0, -1], ne: [1, -1], e: [1, 0], se: [1, 1], s: [0, 1], sw: [-1, 1], w: [-1, 0], nw: [-1, -1], c: [0, 0],
 };
 

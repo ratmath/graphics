@@ -31,3 +31,5 @@ export { region, implicit, sketchRegion, sketchImplicit, linearPieces, exactLine
 export {
   label, texToText, primitives, axesPrimitives, niceStep, paint, drawScene, mountLabels, svgElements, sceneSVG, PALETTE,
 } from "./src/render/scene.js";
+export { sceneTikZ, tikzElements, tikzAxes, simplifyPolyline } from "./src/render/tikz.js";
+export { sceneASCII, asciiElements, asciiText } from "./src/render/ascii.js";

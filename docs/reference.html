@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/site.css?v=147b225b43">
+<link rel="stylesheet" href="assets/site.css?v=ab997c5e29">
 </head>
 <body>
 <div class="shell">
@@ -26,6 +26,7 @@
     <option value="geometry">Exact geometry</option>
     <option value="regions">Regions and inequalities</option>
     <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting: SVG, TikZ, text</option>
   </select>
   <nav class="toc" aria-label="Contents">
     <a href="index.html">Introduction</a>
@@ -39,6 +40,7 @@
     <a href="geometry.html">Exact geometry</a>
     <a href="regions.html">Regions and inequalities</a>
     <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting: SVG, TikZ, text</a>
   </nav>
 </aside>
 <main>
@@ -106,9 +108,12 @@ M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">â€
     <tr><th>Name</th><th>What it does</th></tr>
     <tr><td>drawScene(ctx2d, vp, layers, { axes, scale, background, colors })</td><td>Draw layers on a canvas; returns the primitives</td></tr>
     <tr><td>sceneSVG(vp, layers, { axes, background, tex })</td><td>A standalone SVG string</td></tr>
+    <tr><td>sceneTikZ(vp, layers, { axes, width, height, standalone, background, pt })</td><td>A LaTeX tikzpicture in world coordinates, labels as real TeX (<a href="export.html">Exporting</a>)</td></tr>
+    <tr><td>sceneASCII(vp, layers, { axes, cols, rows, mode, border, color })</td><td>The scene as text: ASCII, Braille or block characters</td></tr>
     <tr><td>label(at, tex, { anchor, color, size })</td><td>A TeX label at a world point</td></tr>
     <tr><td>mountLabels(container, vp, prims, { katex })</td><td>Typeset labels in an HTML layer over a canvas</td></tr>
     <tr><td>primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE</td><td>The pieces under drawScene and sceneSVG</td></tr>
+    <tr><td>tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText</td><td>The pieces under sceneTikZ and sceneASCII</td></tr>
     <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
   </table></div>
 </section>
@@ -125,6 +130,6 @@ SHOW(sceneSVG(vp, [g.exact(), line("2x - y = 3"), { item: circle([1, -2], { r2: 
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="index.html"><small>Previous</small>Introduction</a><a class="next" href="explore.html"><small>Next</small>Explore</a></nav>
 </main>
 </div>
-<script type="module" src="assets/pages.js?v=147b225b43"></script>
+<script type="module" src="assets/pages.js?v=ab997c5e29"></script>
 </body>
 </html>

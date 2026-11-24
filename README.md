@@ -250,6 +250,25 @@ exact values become float pixel coordinates; the back ends only paint.
 `mountLabels(container, vp, prims, { katex })` typesets labels in an HTML
 layer over it; in SVG, pass `tex: (s) => katex.renderToString(s)`.
 
+## Exporting: SVG, TikZ, text
+
+The same layers export three ways:
+
+```js
+sceneSVG(vp, layers, { axes: true });                         // <svg> string
+sceneTikZ(vp, layers, { axes: true, width: 8 });              // LaTeX tikzpicture, 8 cm wide
+sceneTikZ(vp, layers, { standalone: true });                  // a whole file: pdflatex figure.tex
+sceneASCII(vp, layers, { axes: true, cols: 72 });             // 7-bit text
+sceneASCII(vp, layers, { mode: "braille", color: true });     // Unicode Braille, ANSI colors
+```
+
+TikZ is written in world coordinates (a corner at (4, 0) is `(4,0)`), circles
+stay circles, labels stay real TeX, and certified cells become merged filled
+rectangles. Text marks every character any ink touches, so a certified frame
+is still certified at character resolution; modes are `"ascii"` (curves drawn
+with `- | / \ _` by direction), `"braille"` (2 x 4 dots per character) and
+`"blocks"` (2 x 2 quadrants).
+
 ## Docs
 
 The docs site lives in `docs/` (published at https://ratmath.com/graphics/):

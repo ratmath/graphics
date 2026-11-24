@@ -220,3 +220,31 @@ export function mountLabels(container: HTMLElement, vp: Viewport, layersOrPrims:
 export function svgElements(prims: Primitive[], options?: { tex?: (latex: string) => string; font?: string }): string;
 export function sceneSVG(vp: Viewport, layers: Layer[], options?: SceneOptions & { tex?: (latex: string) => string; width?: number; height?: number }): string;
 export const PALETTE: string[];
+
+// ---- export: TikZ and text ----------------------------------------------------------------------
+export interface TikZOptions extends SceneOptions {
+  /** Picture width in cm (default 10). */ width?: number;
+  /** Picture height in cm (default keeps the viewport's aspect ratio). */ height?: number;
+  /** Points per scene pixel for line widths, dashes and dot radii (default 0.5). */ pt?: number;
+  /** Decimals in coordinates (default: a tenth of a pixel). */ precision?: number;
+  /** Polyline tolerance in pixels (default 0.25; 0 keeps every point). */ simplify?: number;
+  /** Clip drawing to the viewport (default true). */ clip?: boolean;
+  /** Wrap in a complete standalone LaTeX document. */ standalone?: boolean;
+  /** Extra preamble lines for standalone documents. */ preamble?: string;
+  /** Header comment with the viewport (default true). */ comment?: boolean;
+}
+export function sceneTikZ(vp: Viewport, layers: Layer[], options?: TikZOptions): string;
+export function tikzElements(vp: Viewport, prims: Primitive[], options?: Omit<TikZOptions, "width" | "height" | "standalone" | "preamble" | "comment" | "axes"> & { colors?: Map<string, string>; before?: string[]; after?: string[] }): string;
+export function tikzAxes(vp: Viewport, axes?: AxesOptions, options?: { colors?: Map<string, string>; pt?: number; precision?: number }): { lines: string[]; labels: string[] };
+export function simplifyPolyline(points: number[], tolerance: number): number[];
+export interface TextOptions extends SceneOptions {
+  /** Characters across (default 72). */ cols?: number;
+  /** Lines (default keeps the viewport's shape with 2:1 characters). */ rows?: number;
+  /** Character set (default "ascii"). */ mode?: "ascii" | "braille" | "blocks";
+  /** Frame the picture. */ border?: boolean;
+  /** 24-bit ANSI terminal colors. */ color?: boolean;
+  /** Axis character color with color: true. */ axisColor?: string;
+}
+export function sceneASCII(vp: Viewport, layers: Layer[], options?: TextOptions): string;
+export function asciiElements(vp: Viewport, prims: Primitive[], options?: TextOptions): string;
+export function asciiText(text: string): string;

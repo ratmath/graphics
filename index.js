@@ -52,3 +52,7 @@ export {
 
 // Animation along an exact parameter.
 export { animate, parameterSteps, animationSVG, animationPNG } from "./src/animate.js";
+
+// Closed forms for irrational points, from @ratmath/algebraic.
+export { withAlgebraicForms, featureLabels, radicalTeX } from "./src/exactform.js";
+export { rationalForm } from "./src/polyform.js";

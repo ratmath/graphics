@@ -26,16 +26,19 @@ function say(q, digits) {
   return minus(String(Number(q.toPrecision(digits))));
 }
 
-const xOf = (r, digits) => (r.at ? say(r.at, digits) : say((r.lo.toNumber() + r.hi.toNumber()) / 2, digits));
+// a closed form such as √2 is given with its decimal value
+const closed = (alg, digits) => `${alg.text} (about ${say(alg.value.toNumber(), digits)})`;
+const xOf = (r, digits) => (r.at ? say(r.at, digits) : r.algebraic?.closedForm ? closed(r.algebraic, digits) : say((r.lo.toNumber() + r.hi.toNumber()) / 2, digits));
 function yOf(r, digits) {
   if (r.value) return say(r.value, digits);
+  if (r.valueAlgebraic?.closedForm) return closed(r.valueAlgebraic, digits);
   if (!r.valueLo || !r.valueHi) return null;
   const lo = r.valueLo.toNumber();
   const hi = r.valueHi.toNumber();
   // an enclosure around 0 is reported as 0, not as its tiny midpoint
   return lo <= 0 && hi >= 0 ? "0" : say((lo + hi) / 2, digits);
 }
-const near = (r) => (r.at ? "at" : "near");
+const near = (r) => (r.at || r.algebraic?.closedForm ? "at" : "near");
 
 function list(items, max) {
   const shown = items.slice(0, max);

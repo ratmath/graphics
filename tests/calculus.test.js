@@ -191,3 +191,12 @@ describe("special functions in graphs", () => {
     expect(holds(30, 12)).toBe(false);
   });
 });
+
+test("tangent equations read naturally", () => {
+  expect(tangent("x^2/2 - x + 1", 2).equation).toBe("y = x - 1");
+  expect(tangent("-x^2/2", 1).equation).toBe("y = -x + 1/2");
+  expect(tangent("x^2", 0).equation).toBe("y = 0");
+  expect(tangent("x^2 + 3", 0).equation).toBe("y = 3");
+  expect(tangent("x^2/4", 1).equation).toBe("y = 1/2·x - 1/4");
+  expect(tangent("3x", 5).equation).toBe("y = 3x");
+});

@@ -74,7 +74,11 @@ export function tangent(f, x0, params = {}, { digits = 12, variable = "x" } = {}
   const L = line(P, point(x.add(new Rational(1n)), y.add(m)));
   const fmt = (q) => (exact ? q.toString() : q.toNumber().toPrecision(6).replace(/\.?0+$/, ""));
   const b = y.subtract(m.multiply(x));
-  const equation = `y = ${fmt(m)}x ${b.numerator < 0n ? "-" : "+"} ${fmt(b.abs())}`;
+  // y = 2x - 2, y = x + 1, y = -x, y = 3 (no "1x", no "+ 0")
+  const one = new Rational(1n);
+  const mx = m.numerator === 0n ? "" : m.equals(one) ? variable : m.equals(one.negate()) ? `-${variable}` : `${fmt(m)}${m.denominator === 1n || !exact ? "" : "·"}${variable}`;
+  const tail = b.numerator === 0n ? "" : mx ? ` ${b.numerator < 0n ? "-" : "+"} ${fmt(b.abs())}` : fmt(b);
+  const equation = `y = ${mx || tail ? mx + tail : "0"}`;
   return { x, value, slope, exact, point: P, line: L, equation, layers: [L, P] };
 }
 

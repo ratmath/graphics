@@ -1,0 +1,30 @@
+<section class="page" data-page="space">
+  <div class="eyebrow">Topic</div>
+  <h1>Surfaces and space curves</h1>
+  <p class="lede">Surfaces \(z = f(x, y)\), parametric surfaces and curves in space, projected to the plane. A 3D object is computed once and kept in space coordinates; turning the camera only repeats the projection, so dragging stays fast.</p>
+  <div data-demo="surface"></div>
+  <h2>Fast, then certified</h2>
+  <p><code>surface(f, params, { x, y, grid })</code> is a <a href="fast-certified.html">Refinement</a>. The quick stage is a float grid. The exact stage evaluates every vertex with interval arithmetic and reports <code>error</code>: each drawn height is within that distance of the true one. Vertices where \(f\) is undefined are left out, so a surface such as \(\sqrt{9 - x^2 - y^2}\) stops at the edge of its domain.</p>
+<pre data-norun><code>const cam = camera({ azimuth: 35, elevation: 25 });
+const s = surface("sin(x)*cos(y)", {}, { x: [-3, 3], y: [-3, 3], grid: 40 });
+const vp = spaceViewport(600, 450);
+drawScene(ctx, vp, [project3d(cam, [s.quick.value], { axes: true })]);   // at once
+drawScene(ctx, vp, [project3d(cam, [s.exact()], { axes: true })]);       // certified
+s.exact().error;                                                         // about 1e-14</code></pre>
+  <h2>Cameras</h2>
+  <p><code>camera({ azimuth, elevation, distance, zoom })</code> looks at the centre of the scene. <code>distance: Infinity</code>, the default, is a parallel projection; a finite distance gives perspective. <code>orbit(cam, dx, dy)</code> is the camera after a drag of that many pixels. The scene's box is drawn as a cube whatever its three ranges are, and <code>spaceViewport(width, height)</code> is a viewport the cube fits at every angle.</p>
+  <h2>Curves, points and arrows</h2>
+  <div data-demo="space-curve"></div>
+  <p><code>spaceCurve([x, y, z], params, { t })</code> and <code>parametricSurface([x, y, z], params, { u, v })</code> work the same way: a float sketch, then certified points. <code>points3d</code>, <code>segment3d</code> and <code>arrow3d</code> add marks. <code>tangentPlane(f, [x0, y0])</code> returns the plane as a small patch with the point of contact and the normal arrow.</p>
+  <h2>One frame for every exporter</h2>
+  <p><code>project3d(camera, items, { box, axes, light })</code> turns any mix of items into one <code>mesh</code> frame: faces and strokes in plane coordinates, sorted from far to near. It is an ordinary layer, so the same picture goes to canvas, SVG, TikZ, PDF, PNG and text. Styles per item: <code>color</code>, <code>opacity</code>, <code>wire</code>, <code>shading: "height"</code>.</p>
+</section>
+
+<template data-runbox>
+const cam = camera({ azimuth: 40, elevation: 28 });
+const s = surface("x^2/3 - y^2/3", {}, { x: [-2, 2], y: [-2, 2], grid: 20 }).exact();
+const t = tangentPlane("x^2/3 - y^2/3", [1, 1], {}, { size: "3/4" });
+PRINT("largest error of a vertex:", s.error);
+PRINT("tangent plane at (1, 1): height", t.point[2], "gradient", t.gradient);
+SHOW(sceneSVG(spaceViewport(420, 320), [project3d(cam, [{ item: s, shading: "height" }, ...t.layers], { axes: true })], { background: "#fff" }));
+</template>

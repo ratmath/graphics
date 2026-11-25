@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/site.css?v=1c850fecab">
+<link rel="stylesheet" href="assets/site.css?v=032c54d2fd">
 </head>
 <body>
 <div class="shell">
@@ -31,6 +31,9 @@
     <option value="implicit">Implicit curves</option>
     <option value="geometry">Exact geometry</option>
     <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
     <option value="drawing">Drawing and labels</option>
     <option value="export">Exporting</option>
   </select>
@@ -46,6 +49,9 @@
     <a href="implicit.html">Implicit curves</a>
     <a href="geometry.html">Exact geometry</a>
     <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
     <a href="drawing.html">Drawing and labels</a>
     <a href="export.html">Exporting</a>
   </nav>
@@ -70,6 +76,26 @@ f.zeros.map((z) => String(z.at));        // ["-4", "0", "4"]
 f.extrema.map((e) => e.kind);            // ["max", "min"]
 f.inflections.map((i) => String(i.at));  // ["0"]</code></pre>
   <p>Each record has <code>at</code> when the point is an exact rational, or <code>lo</code> and <code>hi</code> for a bracket that certainly holds it. <code>unique: true</code> means it is proven to be the only one in the bracket.</p>
+  <h2>Closed forms</h2>
+  <p>When <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> is a rational function, each zero, extremum, inflection point, pole and hole is a root of a polynomial with integer coefficients. <a href="https://ratmath.com/algebraic/">@ratmath/algebraic</a> picks out the root inside the certified bracket, and the record gets <code>algebraic</code>: the number in closed form where it has one, with its minimal polynomial. Heights get <code>valueAlgebraic</code> the same way, and <code>intersections(f, g, …)</code> does this for the points where two graphs meet.</p>
+<pre data-norun><code>const f = features("x^4 - 2x^2 - 1", {}, [-4, 4]).exact();
+f.zeros.map((z) => z.algebraic.text);        // ["−√(1 + √2)", "√(1 + √2)"]
+f.zeros[0].algebraic.tex;                    // "-\\sqrt{1 + \\sqrt{2}}"
+f.zeros[0].algebraic.polynomial;             // [-1n, 0n, -2n, 0n, 1n]
+f.inflections.map((p) => p.algebraic.text);  // ["−√3/3", "√3/3"], each at height −14/9
+intersections("x^2", "x + 1", {}, [-4, 4]).exact().map((p) => p.algebraic.text);   // ["(1 − √5)/2", "(1 + √5)/2"]</code></pre>
+  <p><code>featureLabels(features)</code> turns the records into labels for a scene, typeset as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">\sqrt{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.04em;vertical-align:-0.1328em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9072em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord">2</span></span></span><span style="top:-2.8672em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1328em;"><span></span></span></span></span></span></span></span></span> rather than 1.414…, and <code>describe()</code> uses the same forms in its sentences. A root with no closed form (most quintics) keeps its digits and its polynomial. Pass <code>{ forms: false }</code> to skip the step.</p>
   <h2>Holes and poles</h2>
   <div data-demo="graphsHole"></div>
   <p>A <strong>pole</strong> is proven where a denominator has a proven zero and the numerator does not vanish there. Certified frames list poles as <code>asymptotes</code>, drawn dashed; unproven float guesses are drawn dotted. A <strong>hole</strong> is a point where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> is undefined but has a finite limit, as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><msup><mi>x</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn></mrow><mrow><mi>x</mi><mo>−</mo><mn>1</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{x^2-1}{x-1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.4213em;vertical-align:-0.4033em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0179em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913em;"><span style="top:-2.931em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4033em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span> at 1, with the limit given exactly when possible.</p>
@@ -101,6 +127,6 @@ SHOW(sceneSVG(vp, [{ item: graph(f, {}, vp).exact(), color: "#0f766e" }, ...mark
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="fast-certified.html"><small>Previous</small>Fast, then certified</a><a class="next" href="curves.html"><small>Next</small>Curves, data and slope fields</a></nav>
 </main>
 </div>
-<script type="module" src="assets/pages.js?v=1c850fecab"></script>
+<script type="module" src="assets/pages.js?v=032c54d2fd"></script>
 </body>
 </html>

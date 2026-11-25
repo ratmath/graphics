@@ -1,0 +1,43 @@
+<section class="page" data-page="calculus">
+  <div class="eyebrow">Topic</div>
+  <h1>Calculus pictures</h1>
+  <p class="lede">Tangent lines, shaded areas, Riemann sums, Taylor polynomials, gradient fields and level curves. Each function returns layers to draw together with the numbers behind the picture: exact where they are rational, certified enclosures otherwise.</p>
+  <div data-demo="calculus"></div>
+  <h2>Tangents and secants</h2>
+  <p><code>tangent(f, x0)</code> gives the slope, the point of contact, the line and its equation. Where \(f\) and \(f'\) are rational at \(x_0\) the answer is exact; otherwise <code>slope</code> and <code>value</code> are <code>RationalInterval</code>s from <a href="https://ratmath.com/analytic/">@ratmath/analytic</a> that provably hold the true numbers.</p>
+<pre data-norun><code>const t = tangent("x^3 - x", 1);
+t.equation;            // "y = 2x - 2", exact
+tangent("sin(x)", 1).slope;   // an interval around cos(1), 12 digits wide
+secant("x^2", 0, 2).slope;    // 2
+drawScene(ctx, vp, [graph("x^3 - x", {}, vp).exact(), ...t.layers], { axes: true });</code></pre>
+  <h2>Areas and integrals</h2>
+  <p><code>areaUnder(f, [a, b], params, vp)</code> and <code>areaBetween(f, g, [a, b], params, vp)</code> are <a href="fast-certified.html">Refinements</a>. The quick stage shades the region and integrates in floats. The exact stage returns the same shading with <code>integral</code> exact (for polynomials and other rational cases) or a certified interval. Parts where \(f\) is below \(g\) are shaded in a second colour and count negative.</p>
+  <p>An end may be a constant such as <code>"pi/2"</code>, or <code>"inf"</code> and <code>"-inf"</code>. The integral is then improper: <code>improper</code> is true, and <code>integral</code> is <code>Infinity</code> when it is proven to diverge.</p>
+<pre data-norun><code>areaUnder("x^2", [0, 3], {}, vp).exact().integral;         // 9, a Rational
+areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral;   // an interval around 2
+areaUnder("1/x^2", [1, "inf"], {}, vp).exact().integral;   // an interval around 1
+areaUnder("1/x", [1, "inf"], {}, vp).exact().integral;     // Infinity</code></pre>
+  <p><code>riemannSum(f, [a, b], n, params, { rule })</code> draws the rectangles (or trapezoids) and adds them up. The sum is an exact <code>Rational</code> when \(f\) is rational at the sample points. Rules: <code>left</code>, <code>right</code>, <code>midpoint</code>, <code>trapezoid</code>, <code>lower</code>, <code>upper</code>.</p>
+  <h2>Taylor polynomials</h2>
+  <p><code>taylorPolynomial(f, c, n)</code> returns the coefficients of \((x - c)^k\), exact or enclosed, and an <code>expression</code> that <code>graph()</code> draws next to the function.</p>
+  <h2>Gradients, fields and level curves</h2>
+  <div data-demo="gradient"></div>
+  <p><code>vectorField([P, Q], params, vp)</code> and <code>gradientField(F, params, vp)</code> return a frame of arrows. <code>gradientAt(F, [x, y])</code> gives the certified gradient at a point with an arrow and the line tangent to the level curve there. <code>contours(F, levels, params, vp)</code> returns one <a href="implicit.html">implicit curve</a> per level.</p>
+<pre data-norun><code>const g = gradientAt("x^2 + y^2", [1, 2]);
+g.gradient.map(String);     // ["2", "4"], exact
+drawScene(ctx, vp, [gradientField("x^2 + y^2", {}, vp), ...contours("x^2 + y^2", [1, 4, 9], {}, vp).map((c) => c.curve.exact()), ...g.layers]);</code></pre>
+  <h2>How this connects to analytic</h2>
+  <p>The numbers come from @ratmath/analytic: derivatives by automatic differentiation, integrals by Taylor models, improper integrals by its tail bounds. Anything that library returns with an <code>.ast</code> (a function made with <code>fn()</code>, a derivative, a Taylor polynomial) can be passed straight to <code>graph()</code>, <code>tangent()</code> and the rest. Its special functions draw too: <code>gamma(x)</code>, <code>lgamma(x)</code>, <code>digamma(x)</code>, <code>besselJ(n, x)</code>, <code>Si(x)</code>, <code>fresnelS(x)</code> and <code>fresnelC(x)</code> work in <code>graph()</code> with certified pixels.</p>
+</section>
+
+<template data-runbox>
+const vp = viewport({ x: [-1, 4], y: [-1, 4], width: 420, height: 320 });
+const f = "x^2/2 - x + 1";
+const t = tangent(f, 2);
+const area = areaUnder(f, [0, 3], {}, vp).exact();
+const sum = riemannSum(f, [0, 3], 6, {}, { rule: "midpoint" });
+PRINT("tangent at 2:", t.equation);
+PRINT("integral from 0 to 3:", area.integral, "| midpoint sum with 6 pieces:", sum.sum);
+PRINT("sin from 0 to pi:", areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral.low.toDecimal(10), "…");
+SHOW(sceneSVG(vp, [area, { item: sum, color: "#ea580c" }, graph(f, {}, vp).exact(), ...t.layers], { axes: true, background: "#fff" }));
+</template>

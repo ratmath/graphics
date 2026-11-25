@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculus pictures · RatMath graphics</title>
+<meta name="description" content="Calculus pictures · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Calculus pictures · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/calculus.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=032c54d2fd">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="calculus" selected>Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html" class="on" aria-current="page">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="calculus">
+  <div class="eyebrow">Topic</div>
+  <h1>Calculus pictures</h1>
+  <p class="lede">Tangent lines, shaded areas, Riemann sums, Taylor polynomials, gradient fields and level curves. Each function returns layers to draw together with the numbers behind the picture: exact where they are rational, certified enclosures otherwise.</p>
+  <div data-demo="calculus"></div>
+  <h2>Tangents and secants</h2>
+  <p><code>tangent(f, x0)</code> gives the slope, the point of contact, the line and its equation. Where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>f</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup></mrow><annotation encoding="application/x-tex">f&#x27;</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.9463em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span> are rational at <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">x_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> the answer is exact; otherwise <code>slope</code> and <code>value</code> are <code>RationalInterval</code>s from <a href="https://ratmath.com/analytic/">@ratmath/analytic</a> that provably hold the true numbers.</p>
+<pre data-norun><code>const t = tangent("x^3 - x", 1);
+t.equation;            // "y = 2x - 2", exact
+tangent("sin(x)", 1).slope;   // an interval around cos(1), 12 digits wide
+secant("x^2", 0, 2).slope;    // 2
+drawScene(ctx, vp, [graph("x^3 - x", {}, vp).exact(), ...t.layers], { axes: true });</code></pre>
+  <h2>Areas and integrals</h2>
+  <p><code>areaUnder(f, [a, b], params, vp)</code> and <code>areaBetween(f, g, [a, b], params, vp)</code> are <a href="fast-certified.html">Refinements</a>. The quick stage shades the region and integrates in floats. The exact stage returns the same shading with <code>integral</code> exact (for polynomials and other rational cases) or a certified interval. Parts where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> is below <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi></mrow><annotation encoding="application/x-tex">g</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span></span></span></span> are shaded in a second colour and count negative.</p>
+  <p>An end may be a constant such as <code>"pi/2"</code>, or <code>"inf"</code> and <code>"-inf"</code>. The integral is then improper: <code>improper</code> is true, and <code>integral</code> is <code>Infinity</code> when it is proven to diverge.</p>
+<pre data-norun><code>areaUnder("x^2", [0, 3], {}, vp).exact().integral;         // 9, a Rational
+areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral;   // an interval around 2
+areaUnder("1/x^2", [1, "inf"], {}, vp).exact().integral;   // an interval around 1
+areaUnder("1/x", [1, "inf"], {}, vp).exact().integral;     // Infinity</code></pre>
+  <p><code>riemannSum(f, [a, b], n, params, { rule })</code> draws the rectangles (or trapezoids) and adds them up. The sum is an exact <code>Rational</code> when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span> is rational at the sample points. Rules: <code>left</code>, <code>right</code>, <code>midpoint</code>, <code>trapezoid</code>, <code>lower</code>, <code>upper</code>.</p>
+  <h2>Taylor polynomials</h2>
+  <p><code>taylorPolynomial(f, c, n)</code> returns the coefficients of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo><mi>c</mi><msup><mo stretchy="false">)</mo><mi>k</mi></msup></mrow><annotation encoding="application/x-tex">(x - c)^k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0315em;">k</span></span></span></span></span></span></span></span></span></span></span>, exact or enclosed, and an <code>expression</code> that <code>graph()</code> draws next to the function.</p>
+  <h2>Gradients, fields and level curves</h2>
+  <div data-demo="gradient"></div>
+  <p><code>vectorField([P, Q], params, vp)</code> and <code>gradientField(F, params, vp)</code> return a frame of arrows. <code>gradientAt(F, [x, y])</code> gives the certified gradient at a point with an arrow and the line tangent to the level curve there. <code>contours(F, levels, params, vp)</code> returns one <a href="implicit.html">implicit curve</a> per level.</p>
+<pre data-norun><code>const g = gradientAt("x^2 + y^2", [1, 2]);
+g.gradient.map(String);     // ["2", "4"], exact
+drawScene(ctx, vp, [gradientField("x^2 + y^2", {}, vp), ...contours("x^2 + y^2", [1, 4, 9], {}, vp).map((c) => c.curve.exact()), ...g.layers]);</code></pre>
+  <h2>How this connects to analytic</h2>
+  <p>The numbers come from @ratmath/analytic: derivatives by automatic differentiation, integrals by Taylor models, improper integrals by its tail bounds. Anything that library returns with an <code>.ast</code> (a function made with <code>fn()</code>, a derivative, a Taylor polynomial) can be passed straight to <code>graph()</code>, <code>tangent()</code> and the rest. Its special functions draw too: <code>gamma(x)</code>, <code>lgamma(x)</code>, <code>digamma(x)</code>, <code>besselJ(n, x)</code>, <code>Si(x)</code>, <code>fresnelS(x)</code> and <code>fresnelC(x)</code> work in <code>graph()</code> with certified pixels.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-1, 4], y: [-1, 4], width: 420, height: 320 });
+const f = "x^2/2 - x + 1";
+const t = tangent(f, 2);
+const area = areaUnder(f, [0, 3], {}, vp).exact();
+const sum = riemannSum(f, [0, 3], 6, {}, { rule: "midpoint" });
+PRINT("tangent at 2:", t.equation);
+PRINT("integral from 0 to 3:", area.integral, "| midpoint sum with 6 pieces:", sum.sum);
+PRINT("sin from 0 to pi:", areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral.low.toDecimal(10), "…");
+SHOW(sceneSVG(vp, [area, { item: sum, color: "#ea580c" }, graph(f, {}, vp).exact(), ...t.layers], { axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="regions.html"><small>Previous</small>Regions and inequalities</a><a class="next" href="space.html"><small>Next</small>Surfaces and space curves</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=032c54d2fd"></script>
+</body>
+</html>

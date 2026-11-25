@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/site.css?v=1c850fecab">
+<link rel="stylesheet" href="assets/site.css?v=032c54d2fd">
 </head>
 <body>
 <div class="shell">
@@ -31,6 +31,9 @@
     <option value="implicit">Implicit curves</option>
     <option value="geometry">Exact geometry</option>
     <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
     <option value="drawing">Drawing and labels</option>
     <option value="export">Exporting</option>
   </select>
@@ -46,6 +49,9 @@
     <a href="implicit.html">Implicit curves</a>
     <a href="geometry.html">Exact geometry</a>
     <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
     <a href="drawing.html">Drawing and labels</a>
     <a href="export.html">Exporting</a>
   </nav>
@@ -92,10 +98,50 @@
   <div class="tablewrap"><table class="ref">
     <tr><th>Name</th><th>Exact value</th></tr>
     <tr><td>implicit(equation, params, vp) <em>R</em></td><td>quick: marching-squares segments; exact: cells frame with <code>sure</code> (proven pixels)</td></tr>
-    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, else <code>region</code> frame <code>{ inside, boundary }</code></td></tr>
+    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, <code>conics</code> frame (exact arcs, corners in closed form) when bounded by conics, else <code>region</code> frame <code>{ inside, boundary }</code> of certified pixels</td></tr>
+    <tr><td>conicAtoms(tree, params), exactConicRegion(tree, atoms, vp), conicType(poly)</td><td>The conic method's pieces: comparisons as polynomials of degree ≤ 2, the decomposition, a curve's name</td></tr>
     <tr><td>parseCondition(text), atoms(tree), dnf(tree), negationFree(tree)</td><td>Conditions as trees of comparisons <code>F rel 0</code></td></tr>
     <tr><td>linearForm(expr, params)</td><td><code>{ a, b, c }</code> with expr = a·x + b·y + c, or null</td></tr>
     <tr><td>linearPieces, exactLinearRegion, classify, sketchRegion, sketchImplicit</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Calculus pictures</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it gives</th></tr>
+    <tr><td>tangent(f, x0, params), secant(f, a, b, params)</td><td>Slope, point, line, equation and <code>layers</code>; exact or certified</td></tr>
+    <tr><td>areaUnder(f, [a, b], params, vp), areaBetween(f, g, [a, b], params, vp) <em>R</em></td><td>An <code>area</code> frame with <code>integral</code>: a float, then exact or a certified interval; improper ends allowed</td></tr>
+    <tr><td>riemannSum(f, [a, b], n, params, { rule })</td><td>Rectangles or trapezoids as a frame, with the <code>sum</code></td></tr>
+    <tr><td>taylorPolynomial(f, c, n, params)</td><td>Coefficients and an <code>expression</code> to graph</td></tr>
+    <tr><td>vectorField([P, Q], params, vp), gradientField(F, params, vp)</td><td>An <code>arrows</code> frame</td></tr>
+    <tr><td>gradientAt(F, [x, y], params)</td><td>The certified gradient, an arrow and the level line</td></tr>
+    <tr><td>contours(F, levels, params, vp)</td><td>One implicit curve (<em>R</em>) per level</td></tr>
+    <tr><td>featureLabels(features), withAlgebraicForms, radicalTeX, rationalForm</td><td>Labels in closed form (<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">\sqrt2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.04em;vertical-align:-0.1328em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9072em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;">2</span></span><span style="top:-2.8672em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1328em;"><span></span></span></span></span></span></span></span></span> rather than 1.414…) for zeros, extrema, inflections and intersections; the pieces behind them</td></tr>
+  </table></div>
+  <h2>Three dimensions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>surface(f, params, { x, y, grid }) <em>R</em></td><td>z = f(x, y): a float grid, then certified heights with <code>error</code></td></tr>
+    <tr><td>parametricSurface([x, y, z], params, { u, v, grid }) <em>R</em>, spaceCurve([x, y, z], params, { t, samples }) <em>R</em></td><td>The same for parametric surfaces and curves</td></tr>
+    <tr><td>points3d, segment3d, arrow3d, tangentPlane(f, [x0, y0])</td><td>Marks, and the tangent plane with its normal</td></tr>
+    <tr><td>camera({ azimuth, elevation, distance, zoom }), orbit(cam, dx, dy), spaceViewport(w, h)</td><td>The view, a drag, and a viewport that fits the scene</td></tr>
+    <tr><td>project3d(cam, items, { box, axes, light })</td><td>One <code>mesh</code> frame for drawScene and every exporter</td></tr>
+  </table></div>
+  <h2>Animation</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>animate(draw, { from, to, steps, duration, loop, bounce, onSettle })</td><td>Plays a parameter through exact values; returns play, pause, toggle, seek, stop</td></tr>
+    <tr><td>parameterSteps(from, to, n)</td><td>The n + 1 exact values</td></tr>
+    <tr><td>animationSVG(vp, frames, options), animationPNG(vp, frames, options)</td><td>Frames as one animated SVG (a string) or animated PNG (bytes, a Promise)</td></tr>
   </table></div>
   <h2>Exact numbers and geometry</h2>
   <div class="tablewrap"><table class="ref">
@@ -147,6 +193,6 @@ SHOW(sceneSVG(vp, [g.exact(), line("2x - y = 3"), { item: circle([1, -2], { r2: 
 <nav class="pager" aria-label="Previous and next page"><a class="prev" href="index.html"><small>Previous</small>Introduction</a><a class="next" href="explore.html"><small>Next</small>Explore</a></nav>
 </main>
 </div>
-<script type="module" src="assets/pages.js?v=1c850fecab"></script>
+<script type="module" src="assets/pages.js?v=032c54d2fd"></script>
 </body>
 </html>

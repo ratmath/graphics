@@ -10,7 +10,7 @@
 // decided is reported as such, never guessed.
 
 import { format } from "@ratmath/analytic";
-import { parse, toRational } from "./expr.js";
+import { parse, toRational, toAst } from "./expr.js";
 import { features as featuresOf } from "./features.js";
 
 const minus = (s) => s.replace(/^-/, "−");
@@ -26,16 +26,19 @@ function say(q, digits) {
   return minus(String(Number(q.toPrecision(digits))));
 }
 
-const xOf = (r, digits) => (r.at ? say(r.at, digits) : say((r.lo.toNumber() + r.hi.toNumber()) / 2, digits));
+// a closed form such as √2 is given with its decimal value
+const closed = (alg, digits) => `${alg.text} (about ${say(alg.value.toNumber(), digits)})`;
+const xOf = (r, digits) => (r.at ? say(r.at, digits) : r.algebraic?.closedForm ? closed(r.algebraic, digits) : say((r.lo.toNumber() + r.hi.toNumber()) / 2, digits));
 function yOf(r, digits) {
   if (r.value) return say(r.value, digits);
+  if (r.valueAlgebraic?.closedForm) return closed(r.valueAlgebraic, digits);
   if (!r.valueLo || !r.valueHi) return null;
   const lo = r.valueLo.toNumber();
   const hi = r.valueHi.toNumber();
   // an enclosure around 0 is reported as 0, not as its tiny midpoint
   return lo <= 0 && hi >= 0 ? "0" : say((lo + hi) / 2, digits);
 }
-const near = (r) => (r.at ? "at" : "near");
+const near = (r) => (r.at || r.algebraic?.closedForm ? "at" : "near");
 
 function list(items, max) {
   const shown = items.slice(0, max);
@@ -51,7 +54,7 @@ const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
  * Options: `digits` (4), `max` (how many points to list of each kind, 6).
  */
 export function describeFeatures(f, range, feats, { digits = 4, max = 6, variable = "x" } = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   const [a, b] = range.map((t) => say(toRational(t), digits));
   const out = [`Graph of y = ${format(ast)} for ${variable} from ${a} to ${b}.`];
   const zeros = feats.zeros ?? [];
@@ -96,6 +99,6 @@ export function describeFeatures(f, range, feats, { digits = 4, max = 6, variabl
 
 /** Describe y = f(x) on a range from its certified features (this runs the certified search). */
 export function describe(f, params, range, options = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   return describeFeatures(ast, range, featuresOf(ast, params, range, options).exact(), options);
 }

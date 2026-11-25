@@ -314,7 +314,26 @@ comma for "and"). When every comparison is affine in x and y with rational
 coefficients, the exact stage is a `polygons` frame: convex pieces with
 rational corners and exact areas, the outer boundary with each edge marked
 strict (dashed) or not (solid), and the corners where two boundary lines meet,
-each marked included or not. Otherwise the exact stage is a certified pixel
+each marked included or not.
+
+When every comparison is a polynomial of degree at most two (circles,
+ellipses, parabolas, hyperbolas, pairs of lines), the exact stage is a
+`conics` frame. The plane is cut into strips at the algebraic numbers where
+curves meet, turn back or leave the picture; inside a strip the curves stack
+in a fixed order, so one exact evaluation settles each cell. The frame lists
+the `curves` with their types, the `arcs` that bound the region (strict ones
+dashed), the `corners` where arcs of different curves meet with exact
+coordinates in closed form, single `points` that differ from their
+surroundings, `fill` polygons for drawing and the `area` to about seven
+digits.
+
+```js
+const c = region("x^2 + y^2 <= 4 and y >= x^2 - 1", {}, vp).exact();
+c.curves.map((k) => k.type);    // ["circle", "parabola"]
+c.corners.map((k) => k.text);   // ["(−√(2 + 2√13)/2, (−1 + √13)/2)", "(√(2 + 2√13)/2, (−1 + √13)/2)"]
+```
+
+Otherwise (or with `{ method: "pixels" }`) the exact stage is a certified pixel
 classification: `inside` rectangles lie entirely in the region, `boundary`
 pixels are undecided, and every other pixel lies entirely outside.
 
@@ -324,6 +343,79 @@ pixel. Pixels listed in `sure` are proven to hold part of the curve (F is
 continuous there and has opposite signs at two corners).
 
 Both start with a float sketch (cell sampling and marching squares).
+
+## Closed forms for the points of a graph
+
+When f is a rational function, each zero, extremum, inflection point, pole and
+hole is a root of an integer polynomial. `@ratmath/algebraic` picks out the
+root inside the certified bracket and the record gets `algebraic: { text, tex,
+polynomial, degree, closedForm, value }`; heights get `valueAlgebraic`.
+`intersections` does the same for the points where two graphs meet.
+
+```js
+const f = features("x^4 - 2x^2 - 1", {}, [-4, 4]).exact();
+f.zeros.map((z) => z.algebraic.text);         // ["−√(1 + √2)", "√(1 + √2)"]
+f.inflections.map((p) => p.algebraic.text);   // ["−√3/3", "√3/3"], at height −14/9
+featureLabels(f);                              // TeX labels for a scene: \sqrt{1 + \sqrt{2}}
+```
+
+`describe()` uses the same forms. A root with no closed form keeps its digits
+and its polynomial. `{ forms: false }` skips the step.
+
+## Calculus pictures
+
+Each function returns layers to draw and the numbers behind the picture, exact
+where they are rational and certified enclosures (from `@ratmath/analytic`)
+otherwise.
+
+```js
+const t = tangent("x^3 - x", 1);                           // t.equation "y = 2x - 2", exact
+const a = areaUnder("sin(x)", [0, "pi"], {}, vp);          // a Refinement
+a.exact().integral;                                         // an interval around 2
+areaUnder("1/x^2", [1, "inf"], {}, vp).exact().integral;   // improper: an interval around 1
+riemannSum("x^2", [0, 1], 4, {}, { rule: "midpoint" }).sum;   // 21/64
+taylorPolynomial("exp(x)", 0, 3).coefficients;             // 1, 1, 1/2, 1/6
+gradientAt("x^2 + y^2", [1, 2]).gradient;                  // [2, 4]
+drawScene(ctx, vp, [graph("sin(x)", {}, vp).exact(), a.exact(), ...t.layers], { axes: true });
+```
+
+Also `secant`, `areaBetween(f, g, …)` (signed, two colours), `vectorField`,
+`gradientField` and `contours`. Anything analytic returns with an `.ast` (a
+function, a derivative, a Taylor polynomial) can be passed where an expression
+is expected, and analytic's special functions draw with certified pixels:
+`gamma lgamma digamma trigamma besselJ(n, x) Si fresnelS fresnelC`.
+
+## Surfaces and space curves
+
+```js
+const cam = camera({ azimuth: 35, elevation: 25 });
+const s = surface("sin(x)*cos(y)", {}, { x: [-3, 3], y: [-3, 3], grid: 40 });
+const c = spaceCurve(["cos(t)", "sin(t)", "t/4"], {}, { t: [0, 12] });
+const vp = spaceViewport(600, 450);
+drawScene(ctx, vp, [project3d(cam, [s.quick.value, c.quick.value], { axes: true })]);
+s.exact().error;    // every vertex is within this of the true surface
+```
+
+`surface`, `parametricSurface` and `spaceCurve` are Refinements: a float grid,
+then certified vertices. They stay in space coordinates; `project3d(camera,
+items)` makes one `mesh` frame (faces sorted far to near) that every exporter
+draws, so turning the camera (`orbit(cam, dx, dy)`) only repeats the
+projection. `tangentPlane`, `points3d`, `segment3d` and `arrow3d` add marks.
+
+## Animation
+
+```js
+const anim = animate((a) => drawScene(ctx, vp, [graph("sin(a*x)", { a }, vp).quick.value], { axes: true, background: "#fff" }),
+  { from: 1, to: 4, steps: 90, duration: 3000, bounce: true, onSettle: (a) => { /* draw the certified frame */ } });
+anim.play();
+
+const frames = parameterSteps(1, 4, 30).map((a) => [graph("sin(a*x)", { a }, vp).quick.value]);
+animationSVG(vp, frames, { duration: 3000, axes: true });   // one SVG that plays without script
+await animationPNG(vp, frames, { duration: 3000 });         // an animated PNG
+```
+
+The parameter takes exact rational values. `animate` returns play, pause,
+toggle, seek and stop; `onSettle` runs when it pauses or ends.
 
 ## Drawing and labels
 
@@ -382,7 +474,7 @@ RatMath docs sites (this copy of runbox.js adds `SHOW`).
 ## Demo
 
 ```sh
-git submodule update --init   # vendor/analytic
+git submodule update --init --recursive   # vendor/analytic, vendor/algebraic
 bun install
 bun run demo:build
 cd demo && python3 -m http.server 4180   # then open http://localhost:4180
@@ -406,8 +498,10 @@ arithmetic and against itself at 240 bits.
 
 ## Not yet
 
-- regions bounded by circles and conics drawn exactly (arcs), not pixel by pixel
-- exact algebraic forms for irrational points of polynomials (√2 rather than a
-  bracket); this needs `@ratmath/algebraic` as a dependency
+- conics in implicit() as exact arcs, and regions bounded by cubics or
+  higher curves (those are certified pixel by pixel)
 - parametric curves with features (self-intersections, cusps, arc length)
-- 3D surfaces, animation along a parameter
+- hidden-line removal for surfaces that pass through themselves (faces are
+  sorted by depth, which is right for graphs and convex shapes)
+- a geometry editor (constructions by pointing and dragging) belongs in an
+  app built on this library, not here

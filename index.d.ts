@@ -1,4 +1,4 @@
-import type { Rational } from "@ratmath/core";
+import type { Rational, RationalInterval } from "@ratmath/core";
 
 export type RationalInput = number | bigint | string | Rational;
 export type Params = Record<string, RationalInput>;
@@ -69,7 +69,16 @@ export interface Zero {
   kind: "exact" | "sign-change" | "isolated" | "possible" | "everywhere";
   exact: boolean; at?: Rational; lo: Rational; hi: Rational;
   unique?: boolean; multiplicity?: number; atMost?: number;
+  /** The zero in closed form (√2, ∛2, (1 + √5)/2), when f is a rational function. */
+  algebraic?: AlgebraicForm;
 }
+/**
+ * An algebraic number written out: `text` and `tex` are a closed form when
+ * `closedForm` is true and certified digits otherwise; `polynomial` is its
+ * minimal polynomial (integer coefficients, constant first) and `value` the
+ * AlgebraicReal from @ratmath/algebraic.
+ */
+export interface AlgebraicForm { value: unknown; text: string; tex: string; polynomial: bigint[]; degree: number; closedForm: boolean }
 export interface ZeroOptions { variable?: string; tolerance?: RationalInput; pieces?: number; maxDepth?: number; samples?: number }
 export function zeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Refinement<number[], Zero[]>;
 export function findZeros(f: string | Ast, params: Params, range: [RationalInput, RationalInput], options?: ZeroOptions): Zero[];
@@ -79,9 +88,9 @@ export function zerosGenerator(f: string | Ast, params: Params, range: [Rational
 export function simplestBetween(lo: Rational, hi: Rational): Rational;
 
 /** A located point: exact (`at`) or a certified bracket [lo, hi]. */
-interface Located { exact: boolean; at?: Rational; lo: Rational; hi: Rational }
+interface Located { exact: boolean; at?: Rational; lo: Rational; hi: Rational; /** The point in closed form, when f is a rational function. */ algebraic?: AlgebraicForm }
 /** f's value there: exact `value`, or a certified enclosure [valueLo, valueHi]. */
-interface Valued { value?: Rational; valueLo?: Rational | null; valueHi?: Rational | null }
+interface Valued { value?: Rational; valueLo?: Rational | null; valueHi?: Rational | null; /** The height in closed form. */ valueAlgebraic?: AlgebraicForm }
 export interface Pole extends Located { kind: "pole" | "log"; certain: true; order?: number }
 export interface Hole extends Located, Valued { kind: "hole"; valueApprox?: number }
 /** f has no value there and no pole was proven. */
@@ -263,8 +272,41 @@ export interface RegionPolygons {
   lines: ({ segment: Line; atom: unknown } | { point: Point; atom: unknown })[];
 }
 export interface ImplicitCells extends Cells { sure: number[][] & { count: number }; boxes: number }
-export interface RegionOptions { method?: "pixels"; subpixel?: number; tile?: number; extraBits?: number; step?: number }
-export function region(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<RegionSketch, RegionPolygons | RegionCells, RegionCells>;
+/** An exact coordinate: a Rational, or an algebraic number with its closed form. */
+export type ExactCoordinate = { value: Rational; text: string; tex: string; closedForm: true } | AlgebraicForm;
+/** A marked point of a conic region: floats for drawing, exact coordinates where they were found. */
+export interface ConicPoint { x: number; y: number; included: boolean; exact?: { x: ExactCoordinate; y: ExactCoordinate }; text?: string; tex?: string }
+/**
+ * A region bounded by conics, worked out exactly. `arcs` are the pieces of
+ * curve that bound it ("boundary"), are removed from it ("cut") or stand
+ * alone ("curve"): strict ones are not part of the region and draw dashed.
+ * `corners` are where arcs of different curves meet. `points` are single
+ * points that differ from their surroundings: "isolated" (in the region,
+ * alone), "puncture" (missing from its inside), "included" / "excluded" (on
+ * an arc that says otherwise) and "node" (where one curve crosses itself or
+ * ends). `fill` holds polygons (world coordinates, x then y) that draw the
+ * region, and `area` is its area to about seven digits.
+ */
+export interface RegionConics {
+  kind: "conics"; viewport: Viewport; complete: true;
+  curves: { text: string; type: ConicType }[];
+  fill: Float64Array[];
+  arcs: { curve: number; text: string; role: "boundary" | "cut" | "curve"; strict: boolean; closed: boolean; from: [number, number]; to: [number, number]; points: Float64Array }[];
+  corners: (ConicPoint & { between: string[] })[];
+  points: (ConicPoint & { kind: "isolated" | "puncture" | "included" | "excluded" | "node"; on?: string })[];
+  area: number;
+}
+export type ConicType = "circle" | "ellipse" | "parabola" | "hyperbola" | "two lines" | "parallel lines" | "point" | "empty" | "line" | "none";
+/** A polynomial in two variables: exponents "i,j" to coefficient. */
+export type Polynomial2 = Map<string, Rational>;
+/** The comparisons of a condition as polynomials of degree at most two, or null when it is not bounded by conics. */
+export function conicAtoms(tree: Condition, params?: Params): { atom: Extract<Condition, { op: "cmp" }>; poly: Polynomial2 }[] | null;
+/** The exact region for conicAtoms' result; throws NotConic when the method does not apply. */
+export function exactConicRegion(tree: Condition, atoms: { atom: unknown; poly: Polynomial2 }[], vp: Viewport, options?: { samples?: number }): RegionConics;
+export function conicType(poly: Polynomial2): ConicType;
+export class NotConic extends Error {}
+export interface RegionOptions { method?: "pixels"; subpixel?: number; tile?: number; extraBits?: number; step?: number; /** Points per strip on a conic arc. */ samples?: number }
+export function region(cond: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<RegionSketch, RegionPolygons | RegionConics | RegionCells, RegionCells>;
 export function implicit(eq: string | Condition, params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): Refinement<Polyline, ImplicitCells>;
 /** The condition as convex pieces with exact linear edges, or null when some part is not linear. */
 export function linearPieces(cond: string | Condition, params?: Params): unknown[] | null;
@@ -276,8 +318,8 @@ export function classify(tree: Condition, params: Params, vp: Viewport, options?
 
 // ---- scenes and labels ----------------------------------------------------------------------
 export interface Label { type: "label"; x: number; y: number; tex: string; text: string; anchor: string; dx: number; dy: number; color?: string; size: number }
-export interface Style { color?: string; width?: number; dash?: number[]; fill?: string; fillAlpha?: number; radius?: number; open?: boolean; background?: string; label?: string | true; anchor?: string; corners?: boolean; cornerLabels?: boolean; asymptoteColor?: string }
-export type Frame = Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | PointsFrame | BarsFrame | SegmentsFrame;
+export interface Style { color?: string; width?: number; dash?: number[]; fill?: string; fillAlpha?: number; radius?: number; open?: boolean; background?: string; label?: string | true; anchor?: string; corners?: boolean; cornerLabels?: boolean; labelColor?: string; negativeFill?: string; alpha?: number; asymptoteColor?: string }
+export type Frame = Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | RegionConics | PointsFrame | BarsFrame | SegmentsFrame | AreaFrame | ArrowsFrame | MeshFrame;
 export type Layer = Shape | Label | Frame | ({ item: Shape | Frame } & Style);
 export type Primitive =
   | { t: "path"; subpaths: number[][]; closed?: boolean; fill?: string; fillAlpha?: number; stroke?: string | null; width?: number; dash?: number[]; alpha?: number }
@@ -339,3 +381,92 @@ export function encodePNG(image: { width: number; height: number; data: Uint8Arr
 export function scenePDF(vp: Viewport, layers: Layer[], options?: SceneOptions & { pt?: number; title?: string }): Uint8Array;
 export function pdfContent(vp: Viewport, prims: Primitive[], options?: { background?: string; labels?: boolean }): { content: string; states: Map<string, string> };
 export function pdfTextRuns(text: string): [font: "F1" | "F2", bytes: string, width: number][];
+
+// ---- exact forms ------------------------------------------------------------------------------
+/** A string, a parsed tree, or an object carrying one in `.ast` (an @ratmath/analytic function). */
+export function toAst(f: string | Ast | { ast: Ast }): Ast;
+/** LaTeX for a closed form written with √, ∛ and fractions. */
+export function radicalTeX(text: string): string;
+/** The tree as a quotient of polynomials in one or two variables, or null when it is not one. */
+export function rationalForm(ast: Ast, variables: string[], params?: Params): { num: Polynomial2; den: Polynomial2 } | null;
+/** Attach closed forms to feature records of f (features() and intersections() already do). */
+export function withAlgebraicForms<T extends object>(records: T[], ast: Ast, params: Params, options?: { variable?: string; derivativeOrder?: number | "denominator"; values?: boolean; valueAst?: Ast | null; maxDegree?: number }): T[];
+/** Labels for the points in a features value, in exact form where one is known. */
+export function featureLabels(features: Partial<Features> & { intersections?: Intersection[] }, options?: { digits?: number; kinds?: string[]; anchor?: string; size?: number; color?: string }): Label[];
+
+// ---- calculus pictures --------------------------------------------------------------------------
+export type Fn = string | Ast | { ast: Ast };
+/** Exact when rational, a certified enclosure otherwise. */
+export type Certified = Rational | RationalInterval;
+export interface CalculusOptions { digits?: number; variable?: string }
+export interface Tangent { x: Rational; value: Certified; slope: Certified; exact: boolean; point: Point; line: Line; equation: string; layers: Layer[] }
+export function tangent(f: Fn, x0: RationalInput, params?: Params, options?: CalculusOptions): Tangent;
+export function secant(f: Fn, a: RationalInput, b: RationalInput, params?: Params, options?: CalculusOptions): { slope: Certified; exact: boolean; points: [Point, Point]; line: Line; layers: Layer[] };
+/** Shading between two graphs: polygons in world coordinates where f is above g and where it is below. */
+export interface AreaFrame { kind: "area"; above: Float64Array[]; below: Float64Array[]; outline?: boolean; from?: number; to?: number }
+export interface AreaSketch extends AreaFrame { integral: number }
+export interface AreaResult extends AreaFrame { integral: Certified | number; improper: boolean; certified: boolean }
+/** An end of an interval: a number, a fraction, a constant such as "pi/2", or "inf" / "-inf". */
+export type End = RationalInput;
+export function areaBetween(f: Fn, g: Fn, interval: [End, End], params: Params, vp: ViewportSpec | Viewport, options?: CalculusOptions & { samples?: number }): Refinement<AreaSketch, AreaResult>;
+export function areaUnder(f: Fn, interval: [End, End], params: Params, vp: ViewportSpec | Viewport, options?: CalculusOptions & { samples?: number }): Refinement<AreaSketch, AreaResult>;
+export type RiemannRule = "left" | "right" | "midpoint" | "trapezoid" | "lower" | "upper";
+export type RiemannSum = (BarsFrame | AreaFrame) & { sum: Rational | number; exact: boolean; rule: RiemannRule; n: number; width: Rational; heights?: (Rational | number)[] };
+export function riemannSum(f: Fn, interval: [RationalInput, RationalInput], n: number, params?: Params, options?: { rule?: RiemannRule; variable?: string }): RiemannSum;
+export function taylorPolynomial(f: Fn, c: RationalInput, n?: number, params?: Params, options?: CalculusOptions): { coefficients: Certified[]; exact: boolean; expression: string; ast: Ast };
+/** Arrows: segments [x0, y0, x1, y1, ...] in world coordinates, tail to head. */
+export interface ArrowsFrame { kind: "arrows"; segments: Float64Array; magnitudes?: number[] }
+export interface FieldOptions { spacing?: number; length?: number; normalize?: boolean; variables?: [string, string] }
+export function vectorField(field: [Fn, Fn], params: Params, vp: ViewportSpec | Viewport, options?: FieldOptions): ArrowsFrame;
+export function gradientField(F: Fn, params: Params, vp: ViewportSpec | Viewport, options?: FieldOptions): ArrowsFrame;
+export function gradientAt(F: Fn, at: [RationalInput, RationalInput], params?: Params, options?: { variables?: [string, string]; digits?: number; scale?: number }): { point: Point; value: Certified; gradient: [Certified, Certified]; exact: boolean; arrow: ArrowsFrame; level: Line | null; layers: Layer[] };
+export function contours(F: Fn, levels: RationalInput[], params: Params, vp: ViewportSpec | Viewport, options?: RegionOptions): { level: Rational; curve: Refinement<Polyline, ImplicitCells> }[];
+
+// ---- three dimensions -----------------------------------------------------------------------------
+export interface Camera { azimuth: number; elevation: number; distance: number; zoom: number }
+export function camera(options?: Partial<Camera>): Camera;
+export function orbit(cam: Camera, dx: number, dy: number, options?: { speed?: number }): Camera;
+export function spaceViewport(width?: number, height?: number): Viewport;
+/** A grid of (nu + 1) × (nv + 1) points in space, x, y, z in turn; NaN where undefined. */
+export interface Surface3d { kind: "surface3d"; nu: number; nv: number; points: Float64Array; graph: boolean; certified?: boolean; /** Every vertex is within this of the true surface. */ error?: number; undefined?: number }
+export interface Curve3d { kind: "curve3d"; points: Float64Array; certified?: boolean; error?: number }
+export interface Points3d { kind: "points3d"; points: Float64Array }
+export interface Arrow3d { kind: "arrow3d"; points: Float64Array }
+export type Item3d = Surface3d | Curve3d | Points3d | Arrow3d;
+export interface SurfaceOptions { grid?: number | [number, number]; bits?: number }
+export function surface(f: Fn, params?: Params, options?: SurfaceOptions & { x?: [RationalInput, RationalInput]; y?: [RationalInput, RationalInput]; variables?: [string, string] }): Refinement<Surface3d, Surface3d>;
+export function parametricSurface(xyz: [Fn, Fn, Fn], params?: Params, options?: SurfaceOptions & { u?: [RationalInput, RationalInput]; v?: [RationalInput, RationalInput]; variables?: [string, string] }): Refinement<Surface3d, Surface3d>;
+export function spaceCurve(xyz: [Fn, Fn, Fn], params?: Params, options?: { t?: [RationalInput, RationalInput]; variable?: string; samples?: number; bits?: number }): Refinement<Curve3d, Curve3d>;
+export function points3d(list: [number, number, number][]): Points3d;
+export function segment3d(a: [number, number, number], b: [number, number, number]): Curve3d;
+export function arrow3d(from: [number, number, number], to: [number, number, number]): Arrow3d;
+export interface Style3d { color?: string; opacity?: number; wire?: boolean; width?: number; shading?: "light" | "height" | "flat"; twoSided?: boolean; radius?: number }
+export function tangentPlane(f: Fn, at: [RationalInput, RationalInput], params?: Params, options?: { size?: number; variables?: [string, string]; normalLength?: number }): { point: [number, number, number]; gradient: [number, number]; normal: [number, number, number]; plane: Surface3d; layers: (Item3d | ({ item: Item3d } & Style3d))[] };
+/** Faces and strokes in plane coordinates, far to near, with labels for the axes. */
+export interface MeshFrame {
+  kind: "mesh";
+  faces: { depth: number; points: Float64Array; fill?: string; fillAlpha?: number; stroke?: string | null; width?: number; alpha?: number; dot?: number; closed?: boolean }[];
+  labels: { x: number; y: number; tex: string; text: string; anchor: string; color: string; size: number }[];
+  box: { x: [number, number]; y: [number, number]; z: [number, number] };
+  camera: Camera;
+}
+export function project3d(cam: Camera, items: (Item3d | ({ item: Item3d } & Style3d))[], options?: { box?: { x?: [number, number]; y?: [number, number]; z?: [number, number] }; axes?: boolean | { color?: string; labels?: [string, string, string] | false }; light?: [number, number, number]; colors?: string[] }): MeshFrame;
+
+// ---- animation ----------------------------------------------------------------------------------
+export function parameterSteps(from: RationalInput, to: RationalInput, n: number): Rational[];
+export interface AnimationInfo { index: number; steps: number; playing: boolean }
+export interface AnimationOptions {
+  from?: RationalInput; to?: RationalInput; steps?: number;
+  /** Milliseconds for one pass (default 3000). */ duration?: number;
+  loop?: boolean; bounce?: boolean;
+  /** Called when the animation pauses, is sought or finishes: the place to draw the certified stage. */
+  onSettle?: (value: Rational, info: AnimationInfo) => void;
+  clock?: { now(): number; request(fn: (t: number) => void): unknown; cancel(id: unknown): void };
+}
+export interface Animation {
+  readonly values: Rational[]; readonly playing: boolean; readonly index: number; readonly value: Rational;
+  play(): void; pause(): void; toggle(): void; seek(index: number): void; seekTo(fraction: number): void; stop(): void;
+}
+export function animate(draw: (value: Rational, info: AnimationInfo) => void, options?: AnimationOptions): Animation;
+export function animationSVG(vp: Viewport, frames: Layer[][], options?: SceneOptions & { duration?: number; loop?: boolean; tex?: (tex: string) => string; width?: number; height?: number }): string;
+export function animationPNG(vp: Viewport, frames: Layer[][], options?: SceneOptions & { duration?: number; loop?: boolean }): Promise<Uint8Array>;

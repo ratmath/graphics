@@ -13,11 +13,11 @@
 // dropped, a box no larger than a pixel is lit, and anything else is split.
 
 import { Refinement } from "@ratmath/core/refine";
-import { compileFloat, compileInterval, op, call, v, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
+import { compileFloat, compileInterval, op, call, v, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational, toAst } from "./expr.js";
 import * as I from "./interval.js";
 import { precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
 
-const asAst = (f) => (typeof f === "string" ? parse(f) : f);
+const asAst = (f) => (toAst(f));
 const asViewport = (vp) => (vp && vp.f ? vp : makeViewport(vp));
 
 /** Pixel columns (left, right inclusive, clipped) that the x-interval touches, or null when it misses the screen. */

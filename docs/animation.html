@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animation · RatMath graphics</title>
+<meta name="description" content="Animation · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Animation · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/animation.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=032c54d2fd">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation" selected>Animation</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html" class="on" aria-current="page">Animation</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="animation">
+  <div class="eyebrow">Topic</div>
+  <h1>Animation</h1>
+  <p class="lede">Let a parameter run. Every frame is drawn at an exact rational value, with the quick sketch while it plays and the certified picture when it stops.</p>
+  <div data-demo="animation"></div>
+  <h2>Playing a parameter</h2>
+  <p><code>animate(draw, { from, to, steps, duration, loop, bounce, onSettle })</code> calls <code>draw(value, info)</code> for each frame, where <code>value</code> is a Core <code>Rational</code>. It returns a controller with <code>play</code>, <code>pause</code>, <code>toggle</code>, <code>seek(index)</code>, <code>seekTo(fraction)</code> and <code>stop</code>. <code>onSettle</code> runs when the animation pauses, is sought or ends: that is the place to draw the exact stage.</p>
+<pre data-norun><code>const anim = animate((a) => {
+  drawScene(ctx, vp, [graph("sin(a*x)", { a }, vp).quick.value], { axes: true, background: "#fff" });
+}, {
+  from: 1, to: 4, steps: 90, duration: 3000, bounce: true,
+  onSettle: async (a) => drawScene(ctx, vp, [await graph("sin(a*x)", { a }, vp).settle()], { axes: true, background: "#fff" }),
+});
+anim.play();</code></pre>
+  <p><code>parameterSteps(from, to, n)</code> gives the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n + 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> exact values on their own. Anything can be drawn in a frame: a tangent sliding along a curve, a Riemann sum with more and more pieces, a surface with the camera turning.</p>
+  <h2>Animated files</h2>
+  <p><code>animationSVG(vp, frames, { duration, loop, axes })</code> writes one SVG that plays wherever SVG images do, with no script. <code>animationPNG(vp, frames, options)</code> writes an animated PNG, which browsers play in an <code>&lt;img&gt;</code>. <code>frames</code> is a list of layer lists, one per frame.</p>
+<pre data-norun><code>const frames = parameterSteps(1, 4, 30).map((a) => [graph("sin(a*x)", { a }, vp).quick.value]);
+const svg = animationSVG(vp, frames, { duration: 3000, axes: true, background: "#fff" });
+const png = await animationPNG(vp, frames, { duration: 3000, axes: true });</code></pre>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const vp = viewport({ x: [-2, 2], y: [-1, 4], width: 360, height: 280 });
+const f = "x^2";
+// a tangent line sliding along the parabola: one frame per exact point
+const frames = parameterSteps("-3/2", "3/2", 24).map((a) =&gt; {
+  const t = tangent(f, a);
+  return [graph(f, {}, vp).quick.value, { item: t.line, color: "#dc2626" }, { item: t.point, color: "#dc2626" }];
+});
+PRINT(frames.length, "frames; slope at the last one:", tangent(f, "3/2").slope);
+SHOW(animationSVG(vp, frames, { duration: 4000, axes: true, background: "#fff" }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="space.html"><small>Previous</small>Surfaces and space curves</a><a class="next" href="drawing.html"><small>Next</small>Drawing and labels</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=032c54d2fd"></script>
+</body>
+</html>

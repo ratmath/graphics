@@ -15,6 +15,15 @@ f.zeros.map((z) => String(z.at));        // ["-4", "0", "4"]
 f.extrema.map((e) => e.kind);            // ["max", "min"]
 f.inflections.map((i) => String(i.at));  // ["0"]</code></pre>
   <p>Each record has <code>at</code> when the point is an exact rational, or <code>lo</code> and <code>hi</code> for a bracket that certainly holds it. <code>unique: true</code> means it is proven to be the only one in the bracket.</p>
+  <h2>Closed forms</h2>
+  <p>When \(f\) is a rational function, each zero, extremum, inflection point, pole and hole is a root of a polynomial with integer coefficients. <a href="https://ratmath.com/algebraic/">@ratmath/algebraic</a> picks out the root inside the certified bracket, and the record gets <code>algebraic</code>: the number in closed form where it has one, with its minimal polynomial. Heights get <code>valueAlgebraic</code> the same way, and <code>intersections(f, g, …)</code> does this for the points where two graphs meet.</p>
+<pre data-norun><code>const f = features("x^4 - 2x^2 - 1", {}, [-4, 4]).exact();
+f.zeros.map((z) => z.algebraic.text);        // ["−√(1 + √2)", "√(1 + √2)"]
+f.zeros[0].algebraic.tex;                    // "-\\sqrt{1 + \\sqrt{2}}"
+f.zeros[0].algebraic.polynomial;             // [-1n, 0n, -2n, 0n, 1n]
+f.inflections.map((p) => p.algebraic.text);  // ["−√3/3", "√3/3"], each at height −14/9
+intersections("x^2", "x + 1", {}, [-4, 4]).exact().map((p) => p.algebraic.text);   // ["(1 − √5)/2", "(1 + √5)/2"]</code></pre>
+  <p><code>featureLabels(features)</code> turns the records into labels for a scene, typeset as \(\sqrt{2}\) rather than 1.414…, and <code>describe()</code> uses the same forms in its sentences. A root with no closed form (most quintics) keeps its digits and its polynomial. Pass <code>{ forms: false }</code> to skip the step.</p>
   <h2>Holes and poles</h2>
   <div data-demo="graphsHole"></div>
   <p>A <strong>pole</strong> is proven where a denominator has a proven zero and the numerator does not vanish there. Certified frames list poles as <code>asymptotes</code>, drawn dashed; unproven float guesses are drawn dotted. A <strong>hole</strong> is a point where \(f\) is undefined but has a finite limit, as \(\frac{x^2-1}{x-1}\) at 1, with the limit given exactly when possible.</p>

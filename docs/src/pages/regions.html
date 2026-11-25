@@ -1,7 +1,7 @@
 <section class="page" data-page="regions">
   <div class="eyebrow">Topic</div>
   <h1>Regions and inequalities</h1>
-  <p class="lede">Shade where a condition holds. Inequalities can be chained and joined with <code>and</code>, <code>or</code> and <code>not</code>. Regions bounded by lines are computed exactly, corners included; everything else is certified pixel by pixel.</p>
+  <p class="lede">Shade where a condition holds. Inequalities can be chained and joined with <code>and</code>, <code>or</code> and <code>not</code>. Regions bounded by lines are computed exactly, corners included. So are regions bounded by circles, ellipses, parabolas and hyperbolas, with corners such as \((\sqrt2, \sqrt2)\) in closed form. Everything else is certified pixel by pixel.</p>
   <div data-demo="regions"></div>
   <h2>Writing conditions</h2>
 <pre data-norun><code>"x^2 + y^2 < 4"                    // one comparison
@@ -22,19 +22,34 @@
 const r = region("3x + 7y <= 5, x - 2y >= -1, y >= -1/3", {}, vp).exact();
 r.corners.map((c) => String(c.point));   // ["(22/9, -1/3)", "(3/13, 8/13)", "(-5/3, -1/3)"]
 String(r.pieces[0].area);</code></pre>
+  <h2>Bounded by conics: exact arcs</h2>
+  <p>When every comparison is a polynomial of degree at most two with rational coefficients, the region is still worked out exactly. The plane is cut into strips at the places where something happens: two curves meet, a curve turns back, a curve leaves the picture. Those places are algebraic numbers, which <a href="https://ratmath.com/algebraic/">@ratmath/algebraic</a> finds and tells apart exactly. Inside a strip the curves never touch, so they stack in a fixed order and the condition is constant between two neighbours: one exact evaluation at a rational point settles a whole cell. The result has</p>
+  <ul>
+    <li><code>curves</code>: each comparison's curve with its type (circle, ellipse, parabola, hyperbola, two lines, …),</li>
+    <li><code>arcs</code>: the pieces of curve that bound the region, each <code>strict</code> (dashed, not part of the region) or not (solid),</li>
+    <li><code>corners</code>: where arcs of different curves meet, with <code>included</code> and exact coordinates in <code>text</code>, <code>tex</code> and <code>exact</code>,</li>
+    <li><code>points</code>: single points that differ from their surroundings, such as the two points of <code>x^2 + y^2 = 4 and y = x</code> or the missing centre of <code>x^2 + y^2 < 4 and (x != 0 or y != 0)</code>, and</li>
+    <li><code>fill</code> and <code>area</code>: polygons that draw the region, and its area to about seven digits.</li>
+  </ul>
+<pre data-norun><code>const c = region("x^2 + y^2 <= 4 and y >= x^2 - 1", {}, vp).exact();
+c.kind;                              // "conics"
+c.curves.map((k) => k.type);         // ["circle", "parabola"]
+c.corners.map((k) => k.text);        // ["(−√(2 + 2√13)/2, (−1 + √13)/2)", "(√(2 + 2√13)/2, (−1 + √13)/2)"]
+c.corners[0].exact.x.polynomial;     // [-3n, 0n, -1n, 0n, 1n]: a root of x⁴ − x² − 3</code></pre>
+  <p>The arcs themselves are drawn from the exact description at far below a pixel. If two curves share a whole line, the pixel method takes over.</p>
   <h2>Anything else: certified pixels</h2>
   <p>For other conditions the viewport is classified box by box with interval arithmetic, as for implicit curves. Each comparison is true on the whole box, false on the whole box, or undecided; <code>and</code>, <code>or</code> and <code>not</code> combine those three values, and decided parts are dropped as boxes shrink. The result lists <code>inside</code> rectangles, proven to lie entirely in the region, and <code>boundary</code> pixels that stay undecided. Every other pixel lies entirely outside. Where a function is undefined, such as \(\sqrt{x}\) for \(x < 0\), the condition is false.</p>
-<pre data-norun><code>const s = region("x^2 + y^2 < 9 and y > x^2 - 4", {}, vp).exact();
+<pre data-norun><code>const s = region("y^2 <= x^3 - 2x + 1", {}, vp).exact();
 s.kind;       // "region"
 s.inside;     // [x, y, w, h, ...] pixel rectangles, proven inside
 s.boundary;   // per column, rows still undecided</code></pre>
-  <p>To force the pixel method for a linear condition, pass <code>{ method: "pixels" }</code>.</p>
+  <p>To force the pixel method for any condition, pass <code>{ method: "pixels" }</code>.</p>
 </section>
 
 <template data-runbox>
-const vp = viewport({ x: [-2, 5], y: [-2, 4], width: 420, height: 360 });
-const r = region("y >= x/2 - 1 and y <= 3 - x and y > -1", {}, vp).exact();
-for (const c of r.corners) PRINT(String(c.point), c.included ? "included" : "not included");
-PRINT("area:", r.pieces[0].area);
+const vp = viewport({ x: [-3, 3], y: [-3, 3], width: 420, height: 420 });
+const r = region("x^2 + y^2 < 4 and y >= x^2 - 1", {}, vp).exact();
+for (const c of r.corners) PRINT(c.text, c.included ? "included" : "not included");
+PRINT("curves:", r.curves.map((c) => c.type).join(", "), "| area about", r.area.toFixed(6));
 SHOW(sceneSVG(vp, [{ item: r, color: "#0f766e", cornerLabels: true }], { axes: true, background: "#fff" }));
 </template>

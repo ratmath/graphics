@@ -37,10 +37,39 @@
   <div class="tablewrap"><table class="ref">
     <tr><th>Name</th><th>Exact value</th></tr>
     <tr><td>implicit(equation, params, vp) <em>R</em></td><td>quick: marching-squares segments; exact: cells frame with <code>sure</code> (proven pixels)</td></tr>
-    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, else <code>region</code> frame <code>{ inside, boundary }</code></td></tr>
+    <tr><td>region(condition, params, vp, { method }) <em>R</em></td><td>quick: region sketch; exact: <code>polygons</code> frame when bounded by lines, <code>conics</code> frame (exact arcs, corners in closed form) when bounded by conics, else <code>region</code> frame <code>{ inside, boundary }</code> of certified pixels</td></tr>
+    <tr><td>conicAtoms(tree, params), exactConicRegion(tree, atoms, vp), conicType(poly)</td><td>The conic method's pieces: comparisons as polynomials of degree ≤ 2, the decomposition, a curve's name</td></tr>
     <tr><td>parseCondition(text), atoms(tree), dnf(tree), negationFree(tree)</td><td>Conditions as trees of comparisons <code>F rel 0</code></td></tr>
     <tr><td>linearForm(expr, params)</td><td><code>{ a, b, c }</code> with expr = a·x + b·y + c, or null</td></tr>
     <tr><td>linearPieces, exactLinearRegion, classify, sketchRegion, sketchImplicit</td><td>Lower-level stages</td></tr>
+  </table></div>
+  <h2>Calculus pictures</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it gives</th></tr>
+    <tr><td>tangent(f, x0, params), secant(f, a, b, params)</td><td>Slope, point, line, equation and <code>layers</code>; exact or certified</td></tr>
+    <tr><td>areaUnder(f, [a, b], params, vp), areaBetween(f, g, [a, b], params, vp) <em>R</em></td><td>An <code>area</code> frame with <code>integral</code>: a float, then exact or a certified interval; improper ends allowed</td></tr>
+    <tr><td>riemannSum(f, [a, b], n, params, { rule })</td><td>Rectangles or trapezoids as a frame, with the <code>sum</code></td></tr>
+    <tr><td>taylorPolynomial(f, c, n, params)</td><td>Coefficients and an <code>expression</code> to graph</td></tr>
+    <tr><td>vectorField([P, Q], params, vp), gradientField(F, params, vp)</td><td>An <code>arrows</code> frame</td></tr>
+    <tr><td>gradientAt(F, [x, y], params)</td><td>The certified gradient, an arrow and the level line</td></tr>
+    <tr><td>contours(F, levels, params, vp)</td><td>One implicit curve (<em>R</em>) per level</td></tr>
+    <tr><td>featureLabels(features), withAlgebraicForms, radicalTeX, rationalForm</td><td>Labels in closed form (\(\sqrt2\) rather than 1.414…) for zeros, extrema, inflections and intersections; the pieces behind them</td></tr>
+  </table></div>
+  <h2>Three dimensions</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>surface(f, params, { x, y, grid }) <em>R</em></td><td>z = f(x, y): a float grid, then certified heights with <code>error</code></td></tr>
+    <tr><td>parametricSurface([x, y, z], params, { u, v, grid }) <em>R</em>, spaceCurve([x, y, z], params, { t, samples }) <em>R</em></td><td>The same for parametric surfaces and curves</td></tr>
+    <tr><td>points3d, segment3d, arrow3d, tangentPlane(f, [x0, y0])</td><td>Marks, and the tangent plane with its normal</td></tr>
+    <tr><td>camera({ azimuth, elevation, distance, zoom }), orbit(cam, dx, dy), spaceViewport(w, h)</td><td>The view, a drag, and a viewport that fits the scene</td></tr>
+    <tr><td>project3d(cam, items, { box, axes, light })</td><td>One <code>mesh</code> frame for drawScene and every exporter</td></tr>
+  </table></div>
+  <h2>Animation</h2>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>animate(draw, { from, to, steps, duration, loop, bounce, onSettle })</td><td>Plays a parameter through exact values; returns play, pause, toggle, seek, stop</td></tr>
+    <tr><td>parameterSteps(from, to, n)</td><td>The n + 1 exact values</td></tr>
+    <tr><td>animationSVG(vp, frames, options), animationPNG(vp, frames, options)</td><td>Frames as one animated SVG (a string) or animated PNG (bytes, a Promise)</td></tr>
   </table></div>
   <h2>Exact numbers and geometry</h2>
   <div class="tablewrap"><table class="ref">

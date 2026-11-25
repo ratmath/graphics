@@ -29,6 +29,29 @@
 
 ### Added
 
+- Regions bounded by conics are exact. When every comparison has degree at
+  most two, `region(...).exact()` returns a `conics` frame: arcs with strict
+  flags, corners in closed form such as (√2, √2), isolated and missing points,
+  fill polygons and the area. `conicAtoms`, `exactConicRegion`, `conicType`.
+- Closed forms for the points of a graph. Zeros, extrema, inflection points,
+  poles, holes and intersections of rational functions carry `algebraic`
+  (√2, ∛2, (1 + √5)/2, with the minimal polynomial) and `valueAlgebraic`.
+  `featureLabels`, `withAlgebraicForms`, `radicalTeX`, `rationalForm`;
+  `describe` uses the forms. `@ratmath/algebraic` is now a dependency.
+- Calculus pictures: `tangent`, `secant`, `areaUnder`, `areaBetween` (improper
+  integrals included), `riemannSum`, `taylorPolynomial`, `vectorField`,
+  `gradientField`, `gradientAt`, `contours`. Exact where rational, certified
+  otherwise.
+- Three dimensions: `surface`, `parametricSurface`, `spaceCurve` (float grid,
+  then certified vertices), `tangentPlane`, `points3d`, `segment3d`,
+  `arrow3d`, `camera`, `orbit`, `spaceViewport` and `project3d`, which makes a
+  `mesh` frame every exporter draws.
+- Animation: `animate`, `parameterSteps`, `animationSVG` (SMIL) and
+  `animationPNG` (APNG).
+- Special functions from analytic in graphs: `gamma lgamma digamma trigamma
+  besselJ Si fresnelS fresnelC`, with certified pixels.
+- Expressions may be given as anything with an `.ast` (an analytic function).
+- Docs pages for calculus pictures, surfaces and space curves, and animation.
 - Functions from analytic in graphs and regions: `asin acos atan sinh cosh
   tanh log1p cbrt erf`. `asin` and `acos` report their domain ends.
 - `parametric` and `polar` curves with certified cells.

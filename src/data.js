@@ -15,11 +15,11 @@
 import { RationalInterval } from "@ratmath/core";
 import { ode } from "@ratmath/analytic";
 import { Refinement } from "@ratmath/core/refine";
-import { compileFloat, paramsToFloat, paramsToRational, parse, toRational } from "./expr.js";
+import { compileFloat, paramsToFloat, paramsToRational, parse, toRational, toAst } from "./expr.js";
 import * as I from "./interval.js";
 import { columnRationals, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
 
-const asAst = (f) => (typeof f === "string" ? parse(f) : f);
+const asAst = (f) => (toAst(f));
 const asViewport = (vp) => (vp && vp.f ? vp : makeViewport(vp));
 const numberOf = (x) => (typeof x === "number" ? x : toRational(x).toNumber());
 

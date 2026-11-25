@@ -20,13 +20,14 @@
 //   endpoints    { kind: "endpoint", side: "left" | "right" | "isolated", included, exact, at?, lo, hi, value... }
 
 import { Rational } from "@ratmath/core";
-import { compileExact, compileFloat, constValue, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational } from "./expr.js";
+import { compileExact, compileFloat, constValue, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toRational, toAst } from "./expr.js";
 import * as A from "@ratmath/analytic";
 import * as I from "./interval.js";
 import { Refinement } from "@ratmath/core/refine";
 import { floatZeros, signAt } from "./roots.js";
+import { withAlgebraicForms } from "./exactform.js";
 
-const asAst = (f) => (typeof f === "string" ? parse(f) : f);
+const asAst = (f) => (toAst(f));
 
 // ---- setup shared by the analyses ------------------------------------------------
 
@@ -280,26 +281,40 @@ function adaptPoint(r, kinds) {
   return { kind: kinds[r.kind] ?? r.kind, ...place(r), ...valued(r.value), ...(r.unique ? { unique: true } : {}), ...(r.touching ? { touching: true } : {}) };
 }
 
+/** Closed forms (√2, not a bracket) for the points of a rational function; `forms: false` in the options turns this off. */
+function forms(records, ast, params, options, how) {
+  if (options.forms === false) return records;
+  try {
+    return withAlgebraicForms(records, ast, params, { variable: options.variable ?? "x", ...how });
+  } catch {
+    return records;
+  }
+}
+
 export function* zerosGenerator2(f, params, range, options = {}) {
-  const list = yield* drive(A.zeros(asAst(f), range, aOpts(params, options)), "zeros");
-  return list.filter((z) => z.kind !== "undefined").map(adaptZero);
+  const ast = asAst(f);
+  const list = yield* drive(A.zeros(ast, range, aOpts(params, options)), "zeros");
+  return forms(list.filter((z) => z.kind !== "undefined").map(adaptZero), ast, params, options, { derivativeOrder: 0 });
 }
 
 /** Poles and holes (holes carry kind "hole"). */
 export function* polesGenerator(f, params, range, options = {}) {
-  const list = yield* drive(A.poles(asAst(f), range, aOpts(params, options)), "poles");
-  return list.map(adaptSingularity);
+  const ast = asAst(f);
+  const list = yield* drive(A.poles(ast, range, aOpts(params, options)), "poles");
+  return forms(list.map(adaptSingularity), ast, params, options, { derivativeOrder: "denominator" });
 }
 
 export function* extremaGenerator(f, params, range, options = {}) {
-  const list = yield* drive(A.extrema(asAst(f), range, aOpts(params, options)), "extrema");
+  const ast = asAst(f);
+  const list = yield* drive(A.extrema(ast, range, aOpts(params, options)), "extrema");
   // a constant stretch has no point to mark
-  return list.filter((r) => r.kind !== "constant").map((r) => adaptPoint(r, { possible: "critical" }));
+  return forms(list.filter((r) => r.kind !== "constant").map((r) => adaptPoint(r, { possible: "critical" })), ast, params, options, { derivativeOrder: 1, values: true });
 }
 
 export function* inflectionsGenerator(f, params, range, options = {}) {
-  const list = yield* drive(A.inflections(asAst(f), range, aOpts(params, options)), "inflections");
-  return list.map((r) => adaptPoint(r, {}));
+  const ast = asAst(f);
+  const list = yield* drive(A.inflections(ast, range, aOpts(params, options)), "inflections");
+  return forms(list.map((r) => adaptPoint(r, {})), ast, params, options, { derivativeOrder: 2, values: true });
 }
 
 export const findPoles = (f, params, range, options) => finish(polesGenerator(f, params, range, options)).filter((p) => p.certain);
@@ -320,7 +335,9 @@ export function* intersectionsGenerator(f, g, params, range, options = {}) {
   const diff = { type: "op", op: "-", args: [F, asAst(g)] };
   const zs = yield* zerosGenerator2(diff, params, range, options);
   const S = setup(F, params, options.tolerance ?? "1/1000000", options.variable ?? "x");
-  return zs.map((z) => (z.kind === "everywhere" ? z : { ...z, ...valueAt(S, z) }));
+  const valued = zs.map((z) => (z.kind === "everywhere" ? z : { ...z, ...valueAt(S, z) }));
+  // the closed form of the common height, where the meeting point has one
+  return options.forms === false ? valued : withAlgebraicForms(valued.map(({ algebraic, ...z }) => z), diff, params, { variable: options.variable ?? "x", values: true, valueAst: F });
 }
 
 export const findIntersections = (f, g, params, range, options) => finish(intersectionsGenerator(f, g, params, range, options));

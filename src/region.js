@@ -27,6 +27,7 @@ import { Point, point, segment } from "./geometry.js";
 import { surd } from "./surd.js";
 import * as I from "./interval.js";
 import { colsInterval, rowsInterval } from "./quadtree.js";
+import { conicAtoms, exactConicRegion, NotConic } from "./conic.js";
 
 const asViewport = (vp) => (vp && vp.dx ? vp : makeViewport(vp));
 const asTree = (c) => (typeof c === "string" ? parseCondition(c) : c);
@@ -397,19 +398,29 @@ function shoelace(v) {
 
 /**
  * The region where a condition holds, as a Refinement. Quick: a float
- * sketch. Exact: an exact polygon frame when the condition is linear (unless
- * `{ method: "pixels" }`), else the certified pixel classification.
+ * sketch. Exact: an exact polygon frame when the condition is linear, exact
+ * arcs and corners when it is bounded by conics (see conic.js), else the
+ * certified pixel classification (always, with `{ method: "pixels" }`).
  */
 export function region(cond, params = {}, vp, options = {}) {
   const tree = asTree(cond);
   const view = asViewport(vp);
   const pieces = options.method === "pixels" ? null : linearPieces(tree, params);
+  const conics = options.method === "pixels" || pieces ? null : conicAtoms(tree, params);
   return new Refinement(
     () => ({ value: sketchRegion(tree, params, view, options), trust: "rough" }),
     function* () {
       if (pieces) {
         yield { done: 0, of: 1, step: "polygons" };
         return { value: exactLinearRegion(pieces, view), via: "exact-polygons" };
+      }
+      if (conics) {
+        yield { done: 0, of: 1, step: "conics" };
+        try {
+          return { value: exactConicRegion(tree, conics, view, options), via: "exact-conics" };
+        } catch (e) {
+          if (!(e instanceof NotConic)) throw e;
+        }
       }
       const frame = yield* classify(tree, params, view, options);
       return { value: frame, via: "interval-boxes" };

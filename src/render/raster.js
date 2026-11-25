@@ -471,8 +471,7 @@ function storedZlib(bytes) {
   return out;
 }
 
-/** Encode RGBA pixels ({ width, height, data }) as a PNG file (async: uses CompressionStream when present). */
-export async function encodePNG({ width, height, data }, { dpi } = {}) {
+function filterRows({ width, height, data }) {
   // Filter each row with "Sub" (difference from the pixel to the left).
   const raw = new Uint8Array(height * (width * 4 + 1));
   for (let y = 0; y < height; y++) {
@@ -483,6 +482,10 @@ export async function encodePNG({ width, height, data }, { dpi } = {}) {
       raw[o + 1 + i] = (v - (i >= 4 ? data[y * width * 4 + i - 4] : 0)) & 0xff;
     }
   }
+  return raw;
+}
+
+function pngWriter() {
   const chunks = [];
   const chunk = (type, body) => {
     const out = new Uint8Array(12 + body.length);
@@ -493,31 +496,84 @@ export async function encodePNG({ width, height, data }, { dpi } = {}) {
     dv.setUint32(8 + body.length, crc32(out.subarray(4, 8 + body.length)));
     chunks.push(out);
   };
-  const ihdr = new Uint8Array(13);
-  const dv = new DataView(ihdr.buffer);
-  dv.setUint32(0, width);
-  dv.setUint32(4, height);
-  ihdr.set([8, 6, 0, 0, 0], 8); // 8-bit RGBA
-  chunk("IHDR", ihdr);
+  const header = (width, height) => {
+    const ihdr = new Uint8Array(13);
+    const dv = new DataView(ihdr.buffer);
+    dv.setUint32(0, width);
+    dv.setUint32(4, height);
+    ihdr.set([8, 6, 0, 0, 0], 8); // 8-bit RGBA
+    chunk("IHDR", ihdr);
+  };
+  const finish = () => {
+    chunk("IEND", new Uint8Array(0));
+    const sig = [137, 80, 78, 71, 13, 10, 26, 10];
+    const out = new Uint8Array(8 + chunks.reduce((s, c) => s + c.length, 0));
+    out.set(sig, 0);
+    let o = 8;
+    for (const c of chunks) {
+      out.set(c, o);
+      o += c.length;
+    }
+    return out;
+  };
+  return { chunk, header, finish };
+}
+
+/** Encode RGBA pixels ({ width, height, data }) as a PNG file (async: uses CompressionStream when present). */
+export async function encodePNG(image, { dpi } = {}) {
+  const png = pngWriter();
+  png.header(image.width, image.height);
   if (dpi) {
     const phys = new Uint8Array(9);
     const ppm = Math.round(dpi / 0.0254);
     new DataView(phys.buffer).setUint32(0, ppm);
     new DataView(phys.buffer).setUint32(4, ppm);
     phys[8] = 1;
-    chunk("pHYs", phys);
+    png.chunk("pHYs", phys);
   }
-  chunk("IDAT", await zlib(raw));
-  chunk("IEND", new Uint8Array(0));
-  const sig = [137, 80, 78, 71, 13, 10, 26, 10];
-  const out = new Uint8Array(8 + chunks.reduce((s, c) => s + c.length, 0));
-  out.set(sig, 0);
-  let o = 8;
-  for (const c of chunks) {
-    out.set(c, o);
-    o += c.length;
+  png.chunk("IDAT", await zlib(filterRows(image)));
+  return png.finish();
+}
+
+/**
+ * Several RGBA images of one size as an animated PNG: each shown for
+ * `delayMs`, repeating forever when `loop`. The first frame is also the
+ * still image that viewers without APNG support show.
+ */
+export async function pngChunks(images, { delayMs = 100, loop = true } = {}) {
+  const { width, height } = images[0];
+  if (images.some((im) => im.width !== width || im.height !== height)) throw new RangeError("animation frames must all have the same size");
+  const png = pngWriter();
+  png.header(width, height);
+  const actl = new Uint8Array(8);
+  new DataView(actl.buffer).setUint32(0, images.length);
+  new DataView(actl.buffer).setUint32(4, loop ? 0 : 1);
+  png.chunk("acTL", actl);
+  let seq = 0;
+  const ms = Math.max(1, Math.round(delayMs));
+  for (let k = 0; k < images.length; k++) {
+    const fctl = new Uint8Array(26);
+    const dv = new DataView(fctl.buffer);
+    dv.setUint32(0, seq++);
+    dv.setUint32(4, width);
+    dv.setUint32(8, height);
+    dv.setUint32(12, 0);
+    dv.setUint32(16, 0);
+    dv.setUint16(20, ms);
+    dv.setUint16(22, 1000);
+    fctl[24] = 0; // leave the frame in place
+    fctl[25] = 0; // replace the whole image
+    png.chunk("fcTL", fctl);
+    const body = await zlib(filterRows(images[k]));
+    if (k === 0) png.chunk("IDAT", body);
+    else {
+      const fdat = new Uint8Array(4 + body.length);
+      new DataView(fdat.buffer).setUint32(0, seq++);
+      fdat.set(body, 4);
+      png.chunk("fdAT", fdat);
+    }
   }
-  return out;
+  return png.finish();
 }
 
 /**

@@ -2,7 +2,7 @@
 export { Refinement, live } from "@ratmath/core/refine";
 export {
   parse, num, v, op, call, toRational, freeVariables, isRationalOnly,
-  compileFloat, compileInterval, compileExact, FUNCTIONS, CONSTANTS, logScale,
+  compileFloat, compileInterval, compileExact, FUNCTIONS, CONSTANTS, logScale, toAst,
 } from "./src/expr.js";
 export { viewport, precisionFor, columnRationals } from "./src/viewport.js";
 export { graph, sampleFloat, certifyGraph } from "./src/plot.js";
@@ -32,6 +32,7 @@ export { linearForm } from "./src/linear.js";
 export { parseCondition, atoms, dnf, negationFree } from "./src/condition.js";
 export { classify } from "./src/quadtree.js";
 export { region, implicit, sketchRegion, sketchImplicit, linearPieces, exactLinearRegion } from "./src/region.js";
+export { conicAtoms, exactConicRegion, conicType, NotConic } from "./src/conic.js";
 export {
   label, texToText, primitives, axesPrimitives, niceStep, paint, drawScene, mountLabels, svgElements, sceneSVG, PALETTE,
 } from "./src/render/scene.js";
@@ -39,3 +40,20 @@ export { sceneTikZ, scenePGFPlots, tikzElements, tikzAxes, simplifyPolyline } fr
 export { sceneASCII, asciiElements, asciiText } from "./src/render/ascii.js";
 export { scenePDF, pdfContent, pdfTextRuns } from "./src/render/pdf.js";
 export { scenePNG, rasterize, encodePNG } from "./src/render/raster.js";
+
+// Calculus pictures, backed by @ratmath/analytic.
+export {
+  tangent, secant, areaUnder, areaBetween, riemannSum, taylorPolynomial, vectorField, gradientField, gradientAt, contours,
+} from "./src/calculus.js";
+
+// Three dimensions: surfaces, space curves and their projection.
+export {
+  camera, orbit, spaceViewport, surface, parametricSurface, spaceCurve, points3d, segment3d, arrow3d, tangentPlane, project3d,
+} from "./src/space.js";
+
+// Animation along an exact parameter.
+export { animate, parameterSteps, animationSVG, animationPNG } from "./src/animate.js";
+
+// Closed forms for irrational points, from @ratmath/algebraic.
+export { withAlgebraicForms, featureLabels, radicalTeX } from "./src/exactform.js";
+export { rationalForm } from "./src/polyform.js";

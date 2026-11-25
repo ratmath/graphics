@@ -2,3 +2,6 @@
 	path = vendor/analytic
 	url = https://github.com/ratmath/analytic
 	branch = main
+[submodule "vendor/algebraic"]
+	path = vendor/algebraic
+	url = https://github.com/ratmath/algebraic

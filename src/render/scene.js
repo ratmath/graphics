@@ -251,6 +251,52 @@ function framePrimitives(out, vp, f, style) {
       if (subs.length) out.push({ t: "path", subpaths: subs, closed: true, fill: style.fill ?? color, fillAlpha: style.fillAlpha ?? 0.35, stroke: color, width: style.width ?? 1 });
       return;
     }
+    case "area": {
+      // closed polygons in world coordinates: where f is above g, and where it is below
+      const map = (poly) => {
+        const out = [];
+        for (let i = 0; i < poly.length; i += 2) out.push(toPixelX(vp, poly[i]), toPixelY(vp, poly[i + 1]));
+        return out;
+      };
+      const stroke = f.outline ? color : null;
+      if (f.above?.length) out.push({ t: "path", subpaths: f.above.map(map), closed: true, fill: style.fill ?? color, fillAlpha: style.fillAlpha ?? 0.28, stroke, width: 1 });
+      if (f.below?.length) out.push({ t: "path", subpaths: f.below.map(map), closed: true, fill: style.negativeFill ?? "#dc2626", fillAlpha: style.fillAlpha ?? 0.28, stroke: f.outline ? style.negativeFill ?? "#dc2626" : null, width: 1 });
+      return;
+    }
+    case "arrows": {
+      // segments in world coordinates, each with a head at its second end
+      const g = f.segments;
+      const shafts = [];
+      const heads = [];
+      const size = style.head ?? 5;
+      for (let i = 0; i < g.length; i += 4) {
+        const x0 = toPixelX(vp, g[i]);
+        const y0 = toPixelY(vp, g[i + 1]);
+        const x1 = toPixelX(vp, g[i + 2]);
+        const y1 = toPixelY(vp, g[i + 3]);
+        const len = Math.hypot(x1 - x0, y1 - y0);
+        if (!(len > 0)) continue;
+        const ux = (x1 - x0) / len;
+        const uy = (y1 - y0) / len;
+        const hs = Math.min(size, len * 0.45);
+        shafts.push([x0, y0, x1 - ux * hs * 0.6, y1 - uy * hs * 0.6]);
+        heads.push([x1, y1, x1 - ux * hs - uy * hs * 0.45, y1 - uy * hs + ux * hs * 0.45, x1 - ux * hs + uy * hs * 0.45, y1 - uy * hs - ux * hs * 0.45]);
+      }
+      if (shafts.length) out.push({ t: "path", subpaths: shafts, closed: false, stroke: color, width: style.width ?? 1.5, alpha: style.alpha ?? 0.9 });
+      if (heads.length) out.push({ t: "path", subpaths: heads, closed: true, fill: color, fillAlpha: style.alpha ?? 0.9, stroke: null });
+      return;
+    }
+    case "mesh": {
+      // faces and strokes already projected and sorted from far to near (see space.js)
+      for (const face of f.faces) {
+        const pts = [];
+        for (let i = 0; i < face.points.length; i += 2) pts.push(toPixelX(vp, face.points[i]), toPixelY(vp, face.points[i + 1]));
+        if (face.dot) out.push({ t: "dot", x: pts[0], y: pts[1], r: face.radius ?? 3.5, fill: face.fill, stroke: face.stroke ?? face.fill, width: 1 });
+        else out.push({ t: "path", subpaths: [pts], closed: Boolean(face.closed), fill: face.fill ?? null, fillAlpha: face.fill ? face.fillAlpha ?? 1 : 0, stroke: face.stroke ?? null, width: face.width ?? 1, alpha: face.alpha, dash: face.dash });
+      }
+      for (const l of f.labels ?? []) out.push({ t: "label", x: toPixelX(vp, l.x), y: toPixelY(vp, l.y), tex: l.tex, text: l.text ?? texToText(l.tex), anchor: l.anchor ?? "c", color: l.color ?? "currentColor", size: l.size ?? 13, dx: 0, dy: 0 });
+      return;
+    }
     case "segments": {
       const g = f.segments;
       const subs = [];

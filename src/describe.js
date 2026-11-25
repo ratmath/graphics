@@ -10,7 +10,7 @@
 // decided is reported as such, never guessed.
 
 import { format } from "@ratmath/analytic";
-import { parse, toRational } from "./expr.js";
+import { parse, toRational, toAst } from "./expr.js";
 import { features as featuresOf } from "./features.js";
 
 const minus = (s) => s.replace(/^-/, "−");
@@ -51,7 +51,7 @@ const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
  * Options: `digits` (4), `max` (how many points to list of each kind, 6).
  */
 export function describeFeatures(f, range, feats, { digits = 4, max = 6, variable = "x" } = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   const [a, b] = range.map((t) => say(toRational(t), digits));
   const out = [`Graph of y = ${format(ast)} for ${variable} from ${a} to ${b}.`];
   const zeros = feats.zeros ?? [];
@@ -96,6 +96,6 @@ export function describeFeatures(f, range, feats, { digits = 4, max = 6, variabl
 
 /** Describe y = f(x) on a range from its certified features (this runs the certified search). */
 export function describe(f, params, range, options = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   return describeFeatures(ast, range, featuresOf(ast, params, range, options).exact(), options);
 }

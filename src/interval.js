@@ -9,7 +9,7 @@
 // Intervals are plain objects `{ lo, hi }`. `null` is the empty interval (for
 // example sqrt of a negative interval: the function is not defined there).
 
-import { Rational } from "@ratmath/core";
+import { Rational, RationalInterval } from "@ratmath/core";
 import { enclose as analytic } from "@ratmath/analytic";
 
 const NEG = -Infinity;
@@ -548,6 +548,31 @@ function pointOf(ctx, name, m) {
     if (ctx.cache.size > 20000) ctx.cache.clear();
     ctx.cache.set(key, r);
   }
+  return r;
+}
+
+/**
+ * The special functions (gamma, lgamma, digamma, trigamma, besselJ, Si,
+ * fresnelS, fresnelC) over an interval, by @ratmath/analytic. An interval
+ * that reaches a pole or is unbounded gives the whole line.
+ */
+export function special(ctx, name, a, order = 0) {
+  if (!a) return null;
+  if (!isFinite(a.lo) || !isFinite(a.hi)) return WHOLE;
+  const key = `${name}${order}:${a.lo}:${a.hi}`;
+  let r = ctx.cache.get(key);
+  if (r) return r;
+  try {
+    const X = a.lo === a.hi ? new Rational(a.lo, ctx.one) : new RationalInterval(new Rational(a.lo, ctx.one), new Rational(a.hi, ctx.one));
+    const bits = ctx.k + 8;
+    const iv = name === "besselJ" ? analytic.besselJ(order, X, bits) : name === "trigamma" ? analytic.polygamma(1, X, bits) : analytic[name](X, bits);
+    r = { lo: floorDiv(iv.low.numerator << ctx.K, iv.low.denominator), hi: ceilDiv(iv.high.numerator << ctx.K, iv.high.denominator) };
+  } catch (e) {
+    if (e?.name !== "AnalyticError") throw e;
+    r = WHOLE;
+  }
+  if (ctx.cache.size > 20000) ctx.cache.clear();
+  ctx.cache.set(key, r);
   return r;
 }
 

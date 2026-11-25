@@ -11,7 +11,7 @@
 // parser instead of going through a string.
 
 import { Rational } from "@ratmath/core";
-import { num, v, op, call, toRational, parse, freeVariables, FUNCTIONS, CONSTANTS, erfFloat } from "@ratmath/analytic";
+import { num, v, op, call, toRational, parse, freeVariables, FUNCTIONS, CONSTANTS, erfFloat, compileFloat as analyticFloat } from "@ratmath/analytic";
 import * as I from "./interval.js";
 
 // ---- AST, parser ------------------------------------------------------------------
@@ -21,6 +21,28 @@ import * as I from "./interval.js";
 // parse trees to each other.
 
 export { num, v, op, call, toRational, parse, freeVariables, FUNCTIONS, CONSTANTS };
+
+/**
+ * A tree from text, from a tree, or from an object that carries one in `.ast`
+ * (analytic's functions and fields), so those can be drawn directly.
+ */
+export function toAst(f) {
+  if (typeof f === "string") return parse(f);
+  if (f && typeof f === "object" && f.ast && typeof f.ast === "object" && typeof f.ast.type === "string") return f.ast;
+  return f;
+}
+
+// Special functions, evaluated by @ratmath/analytic.
+const SPECIAL = new Set(["gamma", "lgamma", "digamma", "trigamma", "besselJ", "Si", "fresnelS", "fresnelC"]);
+const specialFloat = new Map();
+function floatSpecial(name, order) {
+  const key = `${name}:${order}`;
+  if (!specialFloat.has(key)) {
+    const f = analyticFloat(name === "besselJ" ? call("besselJ", num(order), v("u")) : call(name, v("u")));
+    specialFloat.set(key, (u) => f({ u }));
+  }
+  return specialFloat.get(key);
+}
 
 // Functions that are not rational even at rational points.
 const EXACT_CALLS = new Set(["abs", "min", "max"]);
@@ -142,6 +164,12 @@ export function compileFloat(ast, variable = "x") {
           log1p: Math.log1p, cbrt: Math.cbrt, erf: erfFloat,
         }[n.name];
         if (f) return (x, p) => f(a(x, p));
+        if (SPECIAL.has(n.name)) {
+          const order = n.name === "besselJ" ? Number(n.args[0].value.numerator) : 0;
+          const g = floatSpecial(n.name, order);
+          const arg = n.name === "besselJ" ? b : a;
+          return (x, p) => g(arg(x, p));
+        }
         if (n.name === "min") return (x, p) => Math.min(a(x, p), b(x, p));
         if (n.name === "max") return (x, p) => Math.max(a(x, p), b(x, p));
         break;
@@ -216,6 +244,11 @@ export function compileInterval(ast, variable = "x") {
           log1p: I.log1p, cbrt: I.cbrt, erf: I.erf,
         }[n.name];
         if (f) return (c, X, P) => f(c, a(c, X, P));
+        if (SPECIAL.has(n.name)) {
+          const order = n.name === "besselJ" ? Number(n.args[0].value.numerator) : 0;
+          const arg = n.name === "besselJ" ? b : a;
+          return (c, X, P) => I.special(c, n.name, arg(c, X, P), order);
+        }
         if (n.name === "min") return (c, X, P) => I.min(c, a(c, X, P), b(c, X, P));
         if (n.name === "max") return (c, X, P) => I.max(c, a(c, X, P), b(c, X, P));
         break;

@@ -4,7 +4,7 @@
 // simplestBetween.
 
 import { Rational } from "@ratmath/core";
-import { compileFloat, paramsToFloat, paramsToRational, parse, toRational } from "./expr.js";
+import { compileFloat, paramsToFloat, paramsToRational, parse, toRational, toAst } from "./expr.js";
 import * as I from "./interval.js";
 import { Refinement } from "@ratmath/core/refine";
 import { zerosGenerator2 } from "./features.js";
@@ -62,7 +62,7 @@ export function findZeros(f, params, range, options) {
 
 /** Zeros as a Refinement: quick float guesses, then certified results (from analytic). */
 export function zeros(f, params, range, options = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   return new Refinement(
     () => ({ value: floatZeros(ast, params, range, options), trust: "rough" }),
     function* () {
@@ -73,7 +73,7 @@ export function zeros(f, params, range, options = {}) {
 
 /** Float guesses: sign changes on a grid, refined by a few bisection steps. */
 export function floatZeros(f, params, [a, b], { variable = "x", samples = 512 } = {}) {
-  const ast = typeof f === "string" ? parse(f) : f;
+  const ast = toAst(f);
   const fn = compileFloat(ast, variable);
   const p = paramsToFloat(paramsToRational(params));
   const lo = toRational(a).toNumber();

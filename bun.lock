@@ -4,7 +4,18 @@
   "workspaces": {
     "": {
       "dependencies": {
+        "@ratmath/algebraic": "workspace:*",
         "@ratmath/analytic": "workspace:*",
+        "@ratmath/core": "^0.10.0",
+      },
+      "devDependencies": {
+        "katex": "0.19.1",
+      },
+    },
+    "vendor/algebraic": {
+      "name": "@ratmath/algebraic",
+      "version": "0.1.0",
+      "dependencies": {
         "@ratmath/core": "^0.10.0",
       },
       "devDependencies": {
@@ -23,6 +34,8 @@
     },
   },
   "packages": {
+    "@ratmath/algebraic": ["@ratmath/algebraic@workspace:vendor/algebraic"],
+
     "@ratmath/analytic": ["@ratmath/analytic@workspace:vendor/analytic"],
 
     "@ratmath/core": ["@ratmath/core@0.10.0", "", {}, "sha512-+lw3Eclhc9aDc2QPGpPpf6cgE4IqifgCXgunjaM/XKgDMJzL6YF/rPB8pBOgUd7krM+mzz8XSXKhL8kpdgOQsw=="],

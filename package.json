@@ -53,7 +53,8 @@
   },
   "dependencies": {
     "@ratmath/core": "^0.10.0",
-    "@ratmath/analytic": "workspace:*"
+    "@ratmath/analytic": "workspace:*",
+    "@ratmath/algebraic": "workspace:*"
   },
   "devDependencies": {
     "katex": "0.19.1"

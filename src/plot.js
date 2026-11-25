@@ -14,7 +14,7 @@
 // progress tick carries the columns finished so far.
 
 import { Refinement } from "@ratmath/core/refine";
-import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse } from "./expr.js";
+import { compileFloat, compileInterval, paramsToFloat, paramsToIntervals, paramsToRational, parse, toAst } from "./expr.js";
 import * as I from "./interval.js";
 import { columnInterval, precisionFor, rowSpan, toPixelX, toPixelY, viewport as makeViewport } from "./viewport.js";
 import { denominators, polesGenerator } from "./features.js";
@@ -34,7 +34,7 @@ function compile(ast, variable) {
 }
 
 function asAst(f) {
-  return typeof f === "string" ? parse(f) : f;
+  return toAst(f);
 }
 
 const regular = new WeakMap();

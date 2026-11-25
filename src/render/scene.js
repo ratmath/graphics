@@ -329,6 +329,38 @@ function framePrimitives(out, vp, f, style) {
       }
       return;
     }
+    case "conics": {
+      const map = (pts) => {
+        const o = [];
+        for (let i = 0; i < pts.length; i += 2) o.push(toPixelX(vp, pts[i]), toPixelY(vp, pts[i + 1]));
+        return o;
+      };
+      if (f.fill.length) out.push({ t: "path", subpaths: f.fill.map(map), closed: true, fill: style.fill ?? color, fillAlpha, stroke: null });
+      for (const a of f.arcs) out.push({ t: "path", subpaths: [map(a.points)], closed: a.closed, stroke: color, width, dash: a.strict ? [6, 4] : undefined });
+      const dark = shade(color, -0.3);
+      const dot = (c) => out.push({ t: "dot", x: toPixelX(vp, c.x), y: toPixelY(vp, c.y), r: 4, fill: c.included ? dark : style.background ?? "#fff", stroke: dark, width: 1.5 });
+      // labels point away from the middle of the marked points
+      const marked = [...f.points, ...(style.corners !== false ? f.corners : [])];
+      const mx = marked.reduce((a, c) => a + c.x, 0) / (marked.length || 1);
+      const my = marked.reduce((a, c) => a + c.y, 0) / (marked.length || 1);
+      const name = (c) => {
+        if (!style.cornerLabels) return;
+        const anchor = marked.length < 2 ? "ne" : `${c.y >= my ? "n" : "s"}${c.x >= mx ? "e" : "w"}`;
+        const digits = (v) => String(Number(v.toPrecision(4)));
+        out.push({ t: "label", x: toPixelX(vp, c.x), y: toPixelY(vp, c.y), tex: c.tex ?? `\\left(${digits(c.x)},\\ ${digits(c.y)}\\right)`, text: c.text ?? `(${digits(c.x)}, ${digits(c.y)})`, anchor, color: style.labelColor ?? color, size: 13, dx: 0, dy: 0 });
+      };
+      for (const c of f.points) {
+        dot(c);
+        name(c);
+      }
+      if (style.corners !== false) {
+        for (const c of f.corners) {
+          dot(c);
+          name(c);
+        }
+      }
+      return;
+    }
   }
   throw new TypeError(`cannot draw a ${f.kind} frame`);
 }

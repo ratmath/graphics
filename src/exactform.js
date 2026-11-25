@@ -105,7 +105,7 @@ function splitTerms(text) {
   return terms;
 }
 
-function describeNumber(a) {
+export function describeNumber(a) {
   if (a.rational) return null;
   const text = formatAlgebraic(a);
   const poly = minimalPolynomial(a);

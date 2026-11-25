@@ -32,6 +32,7 @@ export { linearForm } from "./src/linear.js";
 export { parseCondition, atoms, dnf, negationFree } from "./src/condition.js";
 export { classify } from "./src/quadtree.js";
 export { region, implicit, sketchRegion, sketchImplicit, linearPieces, exactLinearRegion } from "./src/region.js";
+export { conicAtoms, exactConicRegion, conicType, NotConic } from "./src/conic.js";
 export {
   label, texToText, primitives, axesPrimitives, niceStep, paint, drawScene, mountLabels, svgElements, sceneSVG, PALETTE,
 } from "./src/render/scene.js";

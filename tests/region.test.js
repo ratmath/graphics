@@ -59,7 +59,7 @@ describe("regions bounded by lines are exact polygons", () => {
 describe("certified regions and curves", () => {
   test("pixels marked inside satisfy the condition; unmarked pixels do not", () => {
     const cond = "x^2 + y^2 < 9 and y > x^2 - 4";
-    const r = region(cond, {}, vp).exact();
+    const r = region(cond, {}, vp, { method: "pixels" }).exact();
     expect(r.kind).toBe("region");
     const tree = parseCondition(cond);
     const list = atoms(tree);

@@ -393,7 +393,7 @@ export function project3d(cam, items, { box, axes = false, light = [-1, -1, 2], 
     edge([xs[0], nearY, zBase], [xs[1], nearY, zBase]);
     edge([nearX, ys[0], zBase], [nearX, ys[1], zBase]);
     const out = (pt, dx, dy) => { const q = proj(...pt); return [q[0] + dx, q[1] + dy]; };
-    const lab = (pt, textValue, anchor, bold = false) => labels.push({ x: pt[0], y: pt[1], tex: textValue, text: textValue, anchor, color: text, size: bold ? 13 : 11 });
+    const lab = (pt, textValue, anchor, bold = false) => labels.push({ x: pt[0], y: pt[1], tex: textValue.replace("−", "-"), text: textValue, anchor, color: text, size: bold ? 13 : 11 });
     const sy = se >= 0 ? -0.09 : 0.09;
     for (const t of niceTicks(...xs)) lab(out([t, nearY, zBase], 0, sy), tickText(t), "c");
     for (const t of niceTicks(...ys)) lab(out([nearX, t, zBase], 0, sy), tickText(t), "c");

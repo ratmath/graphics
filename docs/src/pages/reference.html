@@ -96,6 +96,60 @@
     <tr><td>tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText, rasterize, encodePNG, pdfContent, pdfTextRuns</td><td>The pieces under the exporters</td></tr>
     <tr><td>drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade</td><td>Single-frame drawing for graphs, and feature markers</td></tr>
   </table></div>
+
+  <h2>Pictures for the Shelf</h2>
+  <h3>Figures</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>figure({ layers, x, y, axes, equal, status, title, notes })</td><td>A picture with its window and a status: exact, certified, estimated or simulated (<a href="figures.html">Figures</a>)</td></tr>
+    <tr><td>figureSVG, figurePNG, figurePDF, figureTikZ, figureASCII (fig, { width, height })</td><td>Draw a figure; figureViewport and figureSize give the viewport and the size hint</td></tr>
+    <tr><td>framesSVG, framesPNG (frames, { duration, loop })</td><td>Frames ({ kind: "frames", frames }) as one animated file</td></tr>
+    <tr><td>shapes, path, dot, arrow, text</td><td>A frame of styled shapes in world coordinates</td></tr>
+    <tr><td>image({ x, y, width, height, cells })</td><td>A grid of coloured cells, row 0 at the bottom</td></tr>
+    <tr><td>toNumber, extentOf, rampColor, divergingColor, CATEGORY</td><td>Helpers: numbers and text such as "1/5" as doubles, extents, colour scales</td></tr>
+    <tr><td>polygonsFigure(polygons, { colorBy })</td><td>Filled polygons coloured by sides or key</td></tr>
+    <tr><td>solidFigure(vertices, faces, { cam, colors })</td><td>A lit polyhedron in a proportional box</td></tr>
+    <tr><td>stepsFigures(steps)</td><td>A construction step by step, the newest step highlighted</td></tr>
+  </table></div>
+  <h3>Charts for statistics and finance</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>fiveNumbers(values), boxPlot(groups)</td><td>Tukey's hinges, whiskers to 1.5 IQR, outliers (<a href="stats-charts.html">Charts for statistics</a>)</td></tr>
+    <tr><td>histogramFigure(values, { bins, distribution })</td><td>Counts, or density bars with a curve</td></tr>
+    <tr><td>densityFigure(dist, { range, shade })</td><td>A density with P(a ≤ X ≤ b) shaded and stated</td></tr>
+    <tr><td>qqPlot(values, dist), scatterFit(points, { fit, band })</td><td>Quantile plot with its quartile line; data with a line and a band</td></tr>
+    <tr><td>lineChart(series), powerCurve(curves, { level }), legend</td><td>Lines with a legend; power against effect</td></tr>
+    <tr><td>samplingBuildUp(values, { bins, steps })</td><td>Frames of a sampling distribution building up (simulated)</td></tr>
+    <tr><td>amortisationChart(loan), balanceChart(loan)</td><td>Interest and principal per period; the balance (<a href="finance-charts.html">Charts for finance</a>)</td></tr>
+    <tr><td>fanChart(simulation)</td><td>Percentile bands over time (simulated)</td></tr>
+    <tr><td>yieldCurveFigure(curve), payoffFigure(strategy, { range })</td><td>Spot rates by maturity; payoff and profit, exact through the kinks</td></tr>
+  </table></div>
+  <h3>Graph drawing and logic diagrams</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>graphData(g)</td><td>A Graph, automaton, Kripke model or { vertices, edges } as plain data</td></tr>
+    <tr><td>circleLayout, gridLayout, bipartiteLayout, layeredLayout, treeLayout, springLayout</td><td>Positions as a Map (<a href="graph-drawing.html">Drawing graphs</a>)</td></tr>
+    <tr><td>tutteLayout(g, { outer, faces })</td><td>Exact barycentric drawing with an exact crossing check</td></tr>
+    <tr><td>countCrossings(g, positions)</td><td>Crossing pairs of any drawing, in floats</td></tr>
+    <tr><td>drawGraph(g, { layout, colours, highlight, edgeLabels })</td><td>A graph as a figure</td></tr>
+    <tr><td>automatonFigure(a), kripkeFigure(k)</td><td>Automata and Kripke models</td></tr>
+    <tr><td>proofTreeFigure(d), truthTreeFigure(t), treeLayoutOf(root, { width, children })</td><td>Gentzen trees and truth trees (<a href="logic-diagrams.html">Logic diagrams</a>)</td></tr>
+    <tr><td>vennFigure(sets, { shade, marks })</td><td>Venn diagrams of up to three sets</td></tr>
+  </table></div>
+  <h3>Dynamics and analysis</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Name</th><th>What it does</th></tr>
+    <tr><td>cobwebFigure(f, x0, n), orbitFigure, returnMapFigure</td><td>Iteration pictures (<a href="dynamics-pictures.html">Pictures of dynamics</a>)</td></tr>
+    <tr><td>bifurcationFigure(diagram, { marks })</td><td>Long-run values against a parameter</td></tr>
+    <tr><td>escapeFigure(grid)</td><td>Inside, outside and undecided pixels kept apart (certified)</td></tr>
+    <tr><td>pointCloudFigure, attractor3d, segmentsFigure, spacetimeFigure, lifeFigure, parameterFrames</td><td>Attractors, L-systems, automata, animation in a parameter</td></tr>
+    <tr><td>phasePortrait([f, g], { x, y, orbits })</td><td>Arrows, nullclines, orbits, proved equilibria (<a href="equation-pictures.html">Phase portraits and curvature</a>)</td></tr>
+    <tr><td>solutionFrames(u, times), zeroContour(F, x, y)</td><td>Solutions in time; marching squares</td></tr>
+    <tr><td>frameAlongCurve(r, t), frameFrames(r, ts)</td><td>Tangent, normal and osculating circle, certified</td></tr>
+    <tr><td>curvatureSurface(xyz, { u, v, which }), curveOnSurface, equalBox</td><td>Surfaces coloured by Gaussian or mean curvature</td></tr>
+    <tr><td>newtonFigure, interpolationFigure, quadratureFigure</td><td>Tangents, interpolants and Runge, quadrature pieces (<a href="numerical-pictures.html">Pictures of numerical methods</a>)</td></tr>
+    <tr><td>stabilityRegion(R), convergenceFigure(rows)</td><td>Where |R(z)| ≤ 1; observed order on log axes</td></tr>
+  </table></div>
 </section>
 
 <template data-runbox>

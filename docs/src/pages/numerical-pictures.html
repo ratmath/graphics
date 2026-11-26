@@ -1,0 +1,32 @@
+<section class="page" data-page="numerical-pictures">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Pictures of numerical methods</h1>
+  <p class="lede">The pictures for numerical analysis (roadmap 13.3): Newton's tangents, interpolation and Runge's phenomenon, the pieces of a quadrature rule, stability regions, and observed orders of convergence.</p>
+  <h2>Newton's method</h2>
+  <p>Newton's step replaces \(f\) by its tangent at \(x_k\) and goes to where the tangent meets the axis: \(x_{k+1} = x_k - f(x_k)/f'(x_k)\). <code>newtonFigure(f, x0, n)</code> draws each tangent; near a simple root the error is squared at each step, so the tangents crowd together fast.</p>
+  <h2>Interpolation</h2>
+  <p>Through \(n\) points there is one polynomial of degree below \(n\). <code>interpolationFigure(f, n)</code> builds it by divided differences and draws \(f\), the interpolant and the error. For \(f(x) = 1/(1 + 25x^2)\) on equally spaced points the error near the ends grows with \(n\) (Runge's phenomenon); with <code>nodes: "chebyshev"</code>, the points \(\cos\frac{(2i+1)\pi}{2n}\), it shrinks.</p>
+  <h2>Quadrature</h2>
+  <p><code>quadratureFigure(f, [a, b], n, { rule })</code> shades what the rule integrates: rectangles for the midpoint rule, trapezoids, or for Simpson's rule a parabola through each pair of panels, which integrates cubics exactly.</p>
+  <h2>Stability regions</h2>
+  <p>A one-step method applied to \(y' = \lambda y\) multiplies \(y\) by \(R(h\lambda)\) at each step: \(R(z) = 1 + z\) for Euler, \(1 + z + z^2/2\) for Heun, \(\sum_{k \le 4} z^k/k!\) for the classical Runge–Kutta method. The solution stays bounded when \(|R(z)| \le 1\). <code>stabilityRegion(R)</code> shades that set; Euler's is the disc of radius 1 about \(-1\).</p>
+  <h2>Orders of convergence</h2>
+  <p>If the error behaves like \(C h^p\), then \(\log E = \log C + p \log h\): a line of slope \(p\) on log–log axes. <code>convergenceFigure(rows)</code> plots \((h, E)\) and fits the slope, the observed order.</p>
+</section>
+
+<template data-runbox>
+const runge = "1/(1+25*x^2)";
+const eq = interpolationFigure(runge, 13);
+const ch = interpolationFigure(runge, 13, { nodes: "chebyshev" });
+PRINT("largest error, equal spacing:", eq.maxError.toFixed(3), "; Chebyshev points:", ch.maxError.toFixed(3));
+SHOW(figureSVG(eq, { width: 420, height: 260 }));
+const rows = [0.2, 0.1, 0.05, 0.025].map((h) => {
+  // the trapezoid rule for the integral of e^x on [0, 1]
+  const n = Math.round(1 / h);
+  let s = (1 + Math.E) / 2;
+  for (let k = 1; k < n; k++) s += Math.exp(k * h);
+  return [h, Math.abs(s * h - (Math.E - 1))];
+});
+PRINT("observed order of the trapezoid rule:", convergenceFigure(rows).order.toFixed(3));
+SHOW(figureSVG(stabilityRegion("rk4"), { width: 320, height: 300 }));
+</template>

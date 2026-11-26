@@ -1,0 +1,29 @@
+<section class="page" data-page="equation-pictures">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Phase portraits and curvature</h1>
+  <p class="lede">The pictures for differential equations and differential geometry (roadmap 13.1 and 13.2): phase portraits with proved equilibria, solutions in time, the moving frame of a curve, and surfaces coloured by curvature.</p>
+  <h2>Phase portraits</h2>
+  <p>For a planar system \(x' = f(x, y)\), \(y' = g(x, y)\), <code>phasePortrait([f, g], { x, y, orbits })</code> draws:</p>
+  <ul>
+    <li>arrows of the direction field, all one length so only the direction shows;</li>
+    <li>the nullclines \(f = 0\) (where motion is vertical) and \(g = 0\) (horizontal), traced by marching squares;</li>
+    <li>orbits through the given points, followed forward and backward by Runge–Kutta in floats;</li>
+    <li>every equilibrium in the window, found and proved unique in a small box by analytic's <code>planarSystem(...).equilibria</code>, and labelled by its kind from the certified trace and determinant of the Jacobian: saddle when \(\det J < 0\); a node or spiral, stable or not, by the sign of \(\operatorname{tr} J\) and of \((\operatorname{tr} J)^2 - 4 \det J\).</li>
+  </ul>
+  <p>The arrows and orbits are estimated; the equilibria are proved, and <code>fig.equilibria</code> has their boxes. When the search covers the whole window, <code>complete</code> says there are no others.</p>
+  <h2>Solutions in time</h2>
+  <p><code>solutionFrames(u, times)</code> draws \(u(x, t)\) at each time on one window: the heat equation's modes decaying, a wave travelling. Play them with <code>framesSVG</code>.</p>
+  <h2>The moving frame</h2>
+  <p>For a plane curve \(\mathbf r(t)\), the unit tangent is \(T = \mathbf r'/|\mathbf r'|\), the normal \(N\) is \(T\) turned a quarter turn, and the curvature is \(\kappa = (x'y'' - y'x'')/|\mathbf r'|^3\). The osculating circle has radius \(1/|\kappa|\) and centre \(\mathbf r + N/\kappa\). <code>frameAlongCurve(r, t)</code> gets all of these certified from analytic's <code>curve(...).at(t)</code> and draws them; <code>frameFrames</code> moves the frame along the curve.</p>
+  <h2>Curvature on a surface</h2>
+  <p><code>curvatureSurface([x, y, z], { u, v })</code> colours each cell of a parametric surface by its Gaussian curvature \(K = (LN - M^2)/(EG - F^2)\), or by the mean curvature: red where it is positive (the surface bends the same way in every direction, like a sphere), blue where it is negative (a saddle), white near zero. On a torus the outside is red and the inside blue, and Gauss–Bonnet says the two cancel: \(\iint K \, dA = 2\pi\chi = 0\). <code>curveOnSurface</code> lifts a path in \((u, v)\) to the surface, for a geodesic or the path of a transported vector.</p>
+</section>
+
+<template data-runbox>
+const pp = phasePortrait(["y", "x - x^3 - y/4"], { x: [-2, 2], y: [-1.5, 1.5], orbits: [[0.05, 0], [-0.05, 0], [1.9, 1.3], [-1.9, -1.3]] });
+for (const e of pp.equilibria) PRINT(e.kind, "near", e.point.map((iv) => iv.low.toNumber().toFixed(6)).join(", "));
+SHOW(figureSVG(pp, { width: 420, height: 320 }));
+const torus = curvatureSurface(["(2+cos(v))*cos(u)", "(2+cos(v))*sin(u)", "sin(v)"], { u: [0, 6.2832], v: [0, 6.2832], grid: 26 });
+PRINT("Gaussian curvature ranges over", torus.range.map((k) => k.toFixed(3)).join(" to "));
+SHOW(figureSVG(torus, { width: 360, height: 280 }));
+</template>

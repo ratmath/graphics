@@ -6,6 +6,17 @@
   uses the program's own copy of Core instead of bringing its own, so Core 0.11
   works and there is never a second copy whose `Rational` is not the same class.
 
+### Added
+
+- Pictures for the Shelf (roadmap step 14): figures with a status (exact,
+  certified, estimated, simulated), `shapes` and `image` frames drawn by every
+  back end, animated frames; charts for statistics and finance; graph drawing
+  with an exact Tutte layout and crossing check; proof trees, truth trees and
+  Venn diagrams; pictures of dynamics; phase portraits with proved
+  equilibria, moving frames, curvature colouring and numerical-method
+  pictures; polygons and lit solids (`faces3d` and per-cell colours in
+  `project3d`). Eight docs pages.
+
 ### Fixed
 
 - A dashed asymptote is drawn only where a pole is proven. `sin(1/x)`,

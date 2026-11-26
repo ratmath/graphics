@@ -1,0 +1,26 @@
+<section class="page" data-page="finance-charts">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Charts for finance</h1>
+  <p class="lede">The pictures phase of the finance package: payments split into interest and principal, the balance falling, percentile bands from repeated runs, yield curves and option payoffs.</p>
+  <h2>Loans</h2>
+  <p><code>amortisationChart(loan)</code> stacks each period's interest under its principal (extra payments and a balloon count as principal), so the bar's height is what was paid. <code>balanceChart(loan)</code> draws the balance after each period, starting from the principal. Both take a loan from <code>@ratmath/finance</code> or any <code>{ schedule }</code>; the bars are the schedule's cents, so the chart is exact.</p>
+  <h2>Fan charts</h2>
+  <p><code>fanChart(simulation)</code> reads a simulation's <code>bands</code>: one row per period with its percentiles. The outer band joins the lowest and highest percentiles, the inner one the next pair, and the median is a line. The runs are seeded, so the picture is marked <em>simulated</em>: the same seed draws it again.</p>
+  <h2>Yield curves</h2>
+  <p><code>yieldCurveFigure(curve)</code> draws spot rates against maturity in years, from a curve with <code>periods</code>, <code>frequency</code> and <code>spot(k)</code>, or from points.</p>
+  <h2>Payoffs at expiry</h2>
+  <p>A position in calls, puts, stock and bonds has a payoff that is piecewise linear in the price \(S\) at expiry, with kinks only at the strikes. <code>payoffFigure(strategy)</code> evaluates the payoff and the profit exactly at the ends of the window and at each kink, and joins them by straight lines: that is the whole graph, so the picture is exact. Break-even prices are marked.</p>
+</section>
+
+<template data-runbox>
+// a bull call spread: long the 100 call for 7, short the 110 call for 3
+const legs = [{ type: "call", strike: 100, premium: 7, q: 1 }, { type: "call", strike: 110, premium: 3, q: -1 }];
+const payoff = (S) => legs.reduce((acc, l) => acc + l.q * Math.max(0, Number(S) - l.strike), 0);
+const cost = legs.reduce((acc, l) => acc + l.q * l.premium, 0);
+const spread = { payoff, profit: (S) => payoff(S) - cost, kinks: [100, 110], breakEvens: [100 + cost] };
+const fig = payoffFigure(spread, { range: [85, 125] });
+PRINT("net cost", cost, "; break-even at", 100 + cost, "; status", fig.status);
+SHOW(figureSVG(fig, { width: 420, height: 260 }));
+const bands = Array.from({ length: 21 }, (_, k) => ({ period: k, 5: 1000 * 1.02 ** k - 25 * k, 25: 1000 * 1.04 ** k - 10 * k, 50: 1000 * 1.05 ** k, 75: 1000 * 1.06 ** k + 10 * k, 95: 1000 * 1.08 ** k + 20 * k }));
+SHOW(figureSVG(fanChart({ bands }), { width: 420, height: 260 }));
+</template>

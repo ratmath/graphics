@@ -1,0 +1,32 @@
+<section class="page" data-page="graph-drawing">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Drawing graphs</h1>
+  <p class="lede">The graph-drawing phase of the discrete package, shared with logic for automata and Kripke models: layouts, colourings and highlighted paths, and Tutte's exact planar drawing with its check.</p>
+  <h2>What can be drawn</h2>
+  <p><code>drawGraph(g, options)</code> takes a <code>Graph</code> from <code>@ratmath/discrete</code> (anything with <code>vertices()</code> and <code>edges()</code>) or plain <code>{ vertices, edges }</code>. Directed edges get arrowheads, a pair of opposite edges is drawn as two curves, loops sit above their vertex, and weights or labels are written on the edges. <code>colours</code> fills vertices by class (a colouring) and <code>highlight</code> draws edges and vertices bold (a matching, a shortest path, a cut).</p>
+  <h2>Layouts</h2>
+  <ul>
+    <li><code>circle</code>, <code>grid</code> and <code>bipartite</code> (with <code>left</code>) place the vertices directly.</li>
+    <li><code>layered</code> puts each vertex at its distance from the roots and orders each layer by the average place of its neighbours above, in a few sweeps, to cut crossings.</li>
+    <li><code>tree</code> is a tidy tree: leaves one unit apart, each parent centred over its children.</li>
+    <li><code>spring</code> is Fruchterman and Reingold's force model from the circle layout, with no random start: reproducible, but floating point, so the figure is marked estimated.</li>
+  </ul>
+  <h2>Tutte's drawing, exactly</h2>
+  <p>Fix a face of a planar graph on a convex polygon and put every other vertex at the average of its neighbours:</p>
+  \[ p_v = \frac{1}{\deg v} \sum_{w \sim v} p_w. \]
+  <p>That is a linear system with a unique solution (its matrix is a Laplacian with some rows fixed), and Tutte proved that for a 3-connected planar graph the drawing has no crossings and every face is convex. <code>tutteLayout(g, { outer })</code> places the outer face at rational points on the unit circle, \(\big(\tfrac{1 - t^2}{1 + t^2}, \tfrac{2t}{1 + t^2}\big)\), solves the system over the rationals, and then checks every pair of edges for a crossing with exact orientation tests. For \(K_5\) and \(K_{3,3}\), which have no plane drawing, the check fails, as it must. Pass <code>faces</code> from discrete's <code>planarity(g)</code> to use its longest face as the outer one.</p>
+  <h2>Automata and Kripke models</h2>
+  <p><code>automatonFigure(a)</code> lays out states in layers from the start state, joins the symbols of parallel transitions (<code>a,b</code>), doubles accepting states and draws an entry arrow. <code>kripkeFigure(k)</code> writes under each world the atoms true there.</p>
+</section>
+
+<template data-runbox>
+// the cube graph, drawn by Tutte's method from the face 0 1 2 3
+const cube = { edges: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]] };
+const t = tutteLayout(cube, { outer: [0, 1, 2, 3] });
+PRINT("inner vertices:", [4, 5, 6, 7].map((v) => `${v} at (${t.exact.get(String(v)).join(", ")})`).join("; "));
+PRINT("plane drawing (checked exactly):", t.planarDrawing);
+const K33 = { edges: [["a",1],["a",2],["a",3],["b",1],["b",2],["b",3],["c",1],["c",2],["c",3]] };
+PRINT("K3,3:", tutteLayout(K33, { outer: ["a", 1, "b", 2] }).planarDrawing);
+SHOW(figureSVG(drawGraph(cube, { layout: "tutte", outer: [0, 1, 2, 3], colours: { 0: 0, 2: 0, 5: 0, 7: 0, 1: 1, 3: 1, 4: 1, 6: 1 } }), { width: 300, height: 300 }));
+SHOW(figureSVG(drawGraph({ edges: [["s","a",3],["s","b",2],["a","t",2],["b","a",1],["b","t",3]], directed: true }, { layout: "layered", roots: ["s"], highlight: { edges: [["s","b"],["b","t"]] } }), { width: 300, height: 260 }));
+</template>

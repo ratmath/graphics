@@ -51,6 +51,25 @@ zeros("x^2 - 2", {}, [0, 2]).exact();
 // [{ kind: "sign-change", lo: 1393/985, hi: 1970/1393 }]
 ```
 
+## Pictures for the Shelf
+
+The pictures phases of the Shelf packages live here, so that the packages
+stay above graphics in the dependency order: each function takes plain data or
+an object with the shape the package returns, and nothing here imports them.
+Each returns a **figure** (layers, a window and a status: exact, certified,
+estimated or simulated), drawn by `figureSVG`, `figurePNG`, `figurePDF`,
+`figureTikZ` or `figureASCII`; sequences come as frames for `framesSVG`.
+
+| For | Functions |
+|---|---|
+| stats (phase 8) | `boxPlot`, `fiveNumbers`, `histogramFigure`, `densityFigure`, `qqPlot`, `scatterFit`, `powerCurve`, `samplingBuildUp` |
+| finance (phase 7) | `amortisationChart`, `balanceChart`, `fanChart`, `yieldCurveFigure`, `payoffFigure`, `lineChart` |
+| discrete (phase 9) | `drawGraph` with circle, grid, layered, tree, bipartite and spring layouts; `tutteLayout`, exact, with an exact crossing check |
+| logic (phase 8) | `proofTreeFigure`, `truthTreeFigure`, `vennFigure`, `automatonFigure`, `kripkeFigure` |
+| chaos (phase 6) | `cobwebFigure`, `orbitFigure`, `returnMapFigure`, `bifurcationFigure`, `escapeFigure`, `pointCloudFigure`, `attractor3d`, `segmentsFigure`, `spacetimeFigure`, `lifeFigure`, `parameterFrames` |
+| geo (phase 7) | `polygonsFigure`, `solidFigure`, `stepsFigures` (geo computes the tilings and solids) |
+| section 13 | `phasePortrait` (equilibria proved by analytic), `solutionFrames`, `frameAlongCurve`, `frameFrames`, `curvatureSurface`, `curveOnSurface`, `newtonFigure`, `interpolationFigure`, `quadratureFigure`, `stabilityRegion`, `convergenceFigure` |
+
 ## Poles, holes, extrema and inflection points
 
 These come from [`@ratmath/analytic`](https://github.com/ratmath/analytic),

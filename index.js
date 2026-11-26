@@ -57,3 +57,28 @@ export { animate, parameterSteps, animationSVG, animationPNG } from "./src/anima
 // Closed forms for irrational points, from @ratmath/algebraic.
 export { withAlgebraicForms, featureLabels, radicalTeX } from "./src/exactform.js";
 export { rationalForm } from "./src/polyform.js";
+
+// Pictures for the Shelf packages: figures, charts, graph drawing, logic
+// diagrams, dynamics, the section 13 pictures, polygons and solids.
+export {
+  figure, figureViewport, figureSize, figureSVG, figureTikZ, figureASCII, figurePDF, figurePNG, framesSVG, framesPNG,
+  shapes, path, dot, arrow, text, image, extentOf, toNumber, rampColor, divergingColor, CATEGORY,
+} from "./src/figure.js";
+export {
+  legend, fiveNumbers, boxPlot, histogramFigure, densityFigure, qqPlot, scatterFit, lineChart, powerCurve, samplingBuildUp,
+  amortisationChart, balanceChart, fanChart, yieldCurveFigure, payoffFigure,
+} from "./src/charts.js";
+export {
+  graphData, circleLayout, gridLayout, bipartiteLayout, layeredLayout, treeLayout, springLayout, tutteLayout, countCrossings,
+  drawGraph, automatonFigure, kripkeFigure,
+} from "./src/network.js";
+export { treeLayoutOf, proofTreeFigure, truthTreeFigure, vennFigure } from "./src/diagrams.js";
+export {
+  cobwebFigure, orbitFigure, returnMapFigure, bifurcationFigure, escapeFigure, pointCloudFigure, attractor3d, segmentsFigure,
+  spacetimeFigure, lifeFigure, parameterFrames,
+} from "./src/dynamics.js";
+export {
+  zeroContour, phasePortrait, solutionFrames, frameAlongCurve, frameFrames, curvatureSurface, curveOnSurface, equalBox,
+  newtonFigure, interpolationFigure, quadratureFigure, stabilityRegion, convergenceFigure,
+} from "./src/analysis.js";
+export { polygonsFigure, solidFigure, stepsFigures } from "./src/tiles.js";

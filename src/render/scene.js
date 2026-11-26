@@ -297,6 +297,54 @@ function framePrimitives(out, vp, f, style) {
       for (const l of f.labels ?? []) out.push({ t: "label", x: toPixelX(vp, l.x), y: toPixelY(vp, l.y), tex: l.tex, text: l.text ?? texToText(l.tex), anchor: l.anchor ?? "c", color: l.color ?? "currentColor", size: l.size ?? 13, dx: 0, dy: 0 });
       return;
     }
+    case "shapes": {
+      // world-coordinate shapes, each with its own style (see src/figure.js)
+      const P = (a, i) => [toPixelX(vp, a[i]), toPixelY(vp, a[i + 1])];
+      for (const s of f.shapes) {
+        const col = s.color ?? color;
+        if (s.path) {
+          const pts = [];
+          for (let i = 0; i < s.path.length; i += 2) pts.push(...P(s.path, i));
+          if (pts.length >= 4) out.push({ t: "path", subpaths: [pts], closed: Boolean(s.closed), fill: s.fill ?? null, fillAlpha: s.fill ? s.fillAlpha ?? 1 : 0, stroke: s.stroke === undefined ? col : s.stroke, width: s.width ?? width, dash: s.dash, alpha: s.alpha });
+        } else if (s.dot) {
+          const [x, y] = P(s.dot, 0);
+          out.push({ t: "dot", x, y, r: s.r ?? 4, fill: s.fill ?? col, stroke: s.stroke ?? col, width: s.width ?? 1.5 });
+        } else if (s.arrow) {
+          framePrimitives(out, vp, { kind: "arrows", segments: s.arrow }, { ...style, color: col, width: s.width ?? style.width, head: s.head ?? 7, alpha: s.alpha ?? 1 });
+        } else if (s.text) {
+          const [x, y] = P(s.text, 0);
+          out.push({ t: "label", x, y, tex: s.tex, text: s.label ?? texToText(s.tex), anchor: s.anchor ?? "c", color: s.color ?? "currentColor", size: s.size ?? 13, dx: 0, dy: 0 });
+        }
+      }
+      return;
+    }
+    case "image": {
+      // a grid of cells, row 0 at the bottom, one colour (or null) per cell; runs of a colour merge
+      const [x0, x1] = f.x;
+      const [y0, y1] = f.y;
+      const cw = (x1 - x0) / f.width;
+      const ch = (y1 - y0) / f.height;
+      const byColor = new Map();
+      for (let j = 0; j < f.height; j++) {
+        let i = 0;
+        while (i < f.width) {
+          const c = f.cells[j * f.width + i];
+          let k = i + 1;
+          while (k < f.width && f.cells[j * f.width + k] === c) k++;
+          if (c) {
+            const px0 = toPixelX(vp, x0 + i * cw);
+            const px1 = toPixelX(vp, x0 + k * cw);
+            const pyTop = toPixelY(vp, y0 + (j + 1) * ch);
+            const pyBot = toPixelY(vp, y0 + j * ch);
+            if (!byColor.has(c)) byColor.set(c, []);
+            byColor.get(c).push(px0, pyTop, px1 - px0, pyBot - pyTop);
+          }
+          i = k;
+        }
+      }
+      for (const [c, rects] of byColor) out.push({ t: "rects", rects, fill: c, alpha: 1 });
+      return;
+    }
     case "segments": {
       const g = f.segments;
       const subs = [];

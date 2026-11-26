@@ -52,11 +52,14 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@ratmath/core": "^0.10.0",
-    "@ratmath/analytic": "workspace:*",
-    "@ratmath/algebraic": "workspace:*"
+    "@ratmath/analytic": "^0.1.0",
+    "@ratmath/algebraic": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@ratmath/core": ">=0.10.0 <0.12.0"
   },
   "devDependencies": {
+    "@ratmath/core": "^0.11.0",
     "katex": "0.19.1"
   },
   "workspaces": [

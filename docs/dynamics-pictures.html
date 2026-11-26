@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pictures of dynamics · RatMath graphics</title>
+<meta name="description" content="Pictures of dynamics · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Pictures of dynamics · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/dynamics-pictures.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=2a5598a0ee">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+    <option value="figures">Figures for the Shelf</option>
+    <option value="stats-charts">Charts for statistics</option>
+    <option value="finance-charts">Charts for finance</option>
+    <option value="graph-drawing">Drawing graphs</option>
+    <option value="logic-diagrams">Logic diagrams</option>
+    <option value="dynamics-pictures" selected>Pictures of dynamics</option>
+    <option value="equation-pictures">Phase portraits and curvature</option>
+    <option value="numerical-pictures">Pictures of numerical methods</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+    <div class="group">Pictures for the Shelf</div>
+    <a href="figures.html">Figures for the Shelf</a>
+    <a href="stats-charts.html">Charts for statistics</a>
+    <a href="finance-charts.html">Charts for finance</a>
+    <a href="graph-drawing.html">Drawing graphs</a>
+    <a href="logic-diagrams.html">Logic diagrams</a>
+    <a href="dynamics-pictures.html" class="on" aria-current="page">Pictures of dynamics</a>
+    <a href="equation-pictures.html">Phase portraits and curvature</a>
+    <a href="numerical-pictures.html">Pictures of numerical methods</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="dynamics-pictures">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Pictures of dynamics</h1>
+  <p class="lede">The pictures phase of the chaos package: cobwebs, orbits and return maps, bifurcation diagrams, escape-time pictures with honest pixels, attractors, L-systems and cellular automata, and frames that move a parameter.</p>
+  <h2>Cobwebs</h2>
+  <p>To iterate <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>n</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x_{n+1} = f(x_n)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6389em;vertical-align:-0.2083em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> by eye: go up to the graph of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span>, across to the diagonal <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>x</mi></mrow><annotation encoding="application/x-tex">y = x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>, and repeat. <code>cobwebFigure(f, x0, n)</code> draws that staircase with the graph and the diagonal. A fixed point is where the graph meets the diagonal; the staircase spirals in when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi>f</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mi mathvariant="normal">∣</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">|f&#x27;| &lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.0019em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> there and out when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi>f</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mi mathvariant="normal">∣</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">|f&#x27;| &gt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.0019em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>. It takes a float function or chaos's <code>IteratedMap</code>.</p>
+  <h2>Orbits, return maps, bifurcations</h2>
+  <p><code>orbitFigure</code> draws <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>n</mi></msub></mrow><annotation encoding="application/x-tex">x_n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> against <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>; <code>returnMapFigure(values, { lag })</code> the pairs <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mi>n</mi></msub><mo separator="true">,</mo><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mi>k</mi></mrow></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(x_n, x_{n+k})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mbin mtight">+</span><span class="mord mathnormal mtight" style="margin-right:0.0315em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>, where a series that looks random can show it is a curve. <code>bifurcationFigure(diagram)</code> draws the long-run values from chaos's <code>bifurcationDiagram</code>, with <code>marks</code> at bifurcation points that chaos proves.</p>
+  <h2>Escape-time pictures</h2>
+  <p>Chaos classifies each pixel of the Mandelbrot set, a Julia set or Newton's basins as proved inside, proved outside, or undecided. <code>escapeFigure(grid)</code> keeps the three apart: inside dark, outside shaded by escape time, undecided in its own colour (orange by default), so the picture never claims more than was proved. Its status is certified.</p>
+  <h2>Attractors, L-systems, automata</h2>
+  <p><code>pointCloudFigure</code> and <code>attractor3d</code> plot points in the plane or in space. <code>segmentsFigure(lsystem.turtle(n))</code> draws a turtle path, marked exact when the angle is a multiple of 30° and chaos gives exact end points. <code>spacetimeFigure(rows)</code> draws an elementary automaton's run with time going down, and <code>lifeFigure</code> a Life pattern.</p>
+  <h2>Moving a parameter</h2>
+  <p><code>parameterFrames(values, build)</code> builds one figure per value; <code>framesSVG</code> plays them. A cobweb as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0278em;">r</span></span></span></span> runs through the period doublings of the logistic map is the classic example.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const f = (r) =&gt; (x) =&gt; r * x * (1 - x);
+const c = cobwebFigure(f(3.2), 0.15, 40, { range: [0, 1] });
+PRINT("after 40 steps the orbit alternates:", c.orbit.slice(-2).map((x) =&gt; x.toFixed(6)).join(", "));
+SHOW(figureSVG(c, { width: 300, height: 300 }));
+// the long-run values of the logistic family, from floats
+const cols = [];
+for (let i = 0; i &lt;= 400; i++) {
+  const r = 2.8 + (1.2 * i) / 400;
+  let x = 0.5;
+  for (let k = 0; k &lt; 500; k++) x = r * x * (1 - x);
+  const pts = new Set();
+  for (let k = 0; k &lt; 80; k++) pts.add(Math.round((x = r * x * (1 - x)) * 1e4) / 1e4);
+  cols.push({ parameter: r, points: [...pts] });
+}
+SHOW(figureSVG(bifurcationFigure(cols, { marks: [{ at: 3, label: "r = 3" }] }), { width: 420, height: 280 }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="logic-diagrams.html"><small>Previous</small>Logic diagrams</a><a class="next" href="equation-pictures.html"><small>Next</small>Phase portraits and curvature</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=2a5598a0ee"></script>
+</body>
+</html>

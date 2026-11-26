@@ -319,7 +319,7 @@ export function classify(tree: Condition, params: Params, vp: Viewport, options?
 // ---- scenes and labels ----------------------------------------------------------------------
 export interface Label { type: "label"; x: number; y: number; tex: string; text: string; anchor: string; dx: number; dy: number; color?: string; size: number }
 export interface Style { color?: string; width?: number; dash?: number[]; fill?: string; fillAlpha?: number; radius?: number; open?: boolean; background?: string; label?: string | true; anchor?: string; corners?: boolean; cornerLabels?: boolean; labelColor?: string; negativeFill?: string; alpha?: number; asymptoteColor?: string }
-export type Frame = Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | RegionConics | PointsFrame | BarsFrame | SegmentsFrame | AreaFrame | ArrowsFrame | MeshFrame;
+export type Frame = Polyline | Cells | RegionSketch | RegionCells | RegionPolygons | RegionConics | PointsFrame | BarsFrame | SegmentsFrame | AreaFrame | ArrowsFrame | MeshFrame | ShapesFrame | ImageFrame;
 export type Layer = Shape | Label | Frame | ({ item: Shape | Frame } & Style);
 export type Primitive =
   | { t: "path"; subpaths: number[][]; closed?: boolean; fill?: string; fillAlpha?: number; stroke?: string | null; width?: number; dash?: number[]; alpha?: number }
@@ -432,7 +432,9 @@ export interface Surface3d { kind: "surface3d"; nu: number; nv: number; points: 
 export interface Curve3d { kind: "curve3d"; points: Float64Array; certified?: boolean; error?: number }
 export interface Points3d { kind: "points3d"; points: Float64Array }
 export interface Arrow3d { kind: "arrow3d"; points: Float64Array }
-export type Item3d = Surface3d | Curve3d | Points3d | Arrow3d;
+/** Flat polygons in space, each [x, y, z, x, y, z, …], with a colour per face. */
+export interface Faces3d { kind: "faces3d"; faces: Float64Array[]; colors?: string[] }
+export type Item3d = Surface3d | Curve3d | Points3d | Arrow3d | Faces3d;
 export interface SurfaceOptions { grid?: number | [number, number]; bits?: number }
 export function surface(f: Fn, params?: Params, options?: SurfaceOptions & { x?: [RationalInput, RationalInput]; y?: [RationalInput, RationalInput]; variables?: [string, string] }): Refinement<Surface3d, Surface3d>;
 export function parametricSurface(xyz: [Fn, Fn, Fn], params?: Params, options?: SurfaceOptions & { u?: [RationalInput, RationalInput]; v?: [RationalInput, RationalInput]; variables?: [string, string] }): Refinement<Surface3d, Surface3d>;
@@ -440,7 +442,7 @@ export function spaceCurve(xyz: [Fn, Fn, Fn], params?: Params, options?: { t?: [
 export function points3d(list: [number, number, number][]): Points3d;
 export function segment3d(a: [number, number, number], b: [number, number, number]): Curve3d;
 export function arrow3d(from: [number, number, number], to: [number, number, number]): Arrow3d;
-export interface Style3d { color?: string; opacity?: number; wire?: boolean; width?: number; shading?: "light" | "height" | "flat"; twoSided?: boolean; radius?: number }
+export interface Style3d { color?: string; opacity?: number; wire?: boolean; width?: number; shading?: "light" | "height" | "flat"; twoSided?: boolean; radius?: number; /** One colour per surface cell, row by row. */ cellColors?: string[] }
 export function tangentPlane(f: Fn, at: [RationalInput, RationalInput], params?: Params, options?: { size?: number; variables?: [string, string]; normalLength?: number }): { point: [number, number, number]; gradient: [number, number]; normal: [number, number, number]; plane: Surface3d; layers: (Item3d | ({ item: Item3d } & Style3d))[] };
 /** Faces and strokes in plane coordinates, far to near, with labels for the axes. */
 export interface MeshFrame {
@@ -470,3 +472,154 @@ export interface Animation {
 export function animate(draw: (value: Rational, info: AnimationInfo) => void, options?: AnimationOptions): Animation;
 export function animationSVG(vp: Viewport, frames: Layer[][], options?: SceneOptions & { duration?: number; loop?: boolean; tex?: (tex: string) => string; width?: number; height?: number }): string;
 export function animationPNG(vp: Viewport, frames: Layer[][], options?: SceneOptions & { duration?: number; loop?: boolean }): Promise<Uint8Array>;
+
+
+// ---- pictures for the Shelf ----
+
+export type Num = number | bigint | string | Rational | { toNumber(): number } | { low: unknown; high: unknown };
+export type XY = [number, number];
+export interface ShapeStyle { color?: string; fill?: string | null; fillAlpha?: number; stroke?: string | null; width?: number; dash?: number[]; alpha?: number; closed?: boolean; r?: number; head?: number; anchor?: string; size?: number; label?: string }
+export type PictureShape =
+  | ({ path: number[] } & ShapeStyle)
+  | ({ dot: XY } & ShapeStyle)
+  | ({ arrow: [number, number, number, number] } & ShapeStyle)
+  | ({ text: XY; tex: string } & ShapeStyle);
+export interface ShapesFrame { kind: "shapes"; shapes: PictureShape[] }
+export interface ImageFrame { kind: "image"; x: XY; y: XY; width: number; height: number; cells: (string | null)[] }
+export type FigureStatus = "exact" | "certified" | "estimated" | "simulated";
+export interface Figure {
+  readonly kind: "figure";
+  readonly layers: Layer[];
+  readonly x: XY;
+  readonly y: XY;
+  readonly axes: boolean | AxesOptions;
+  readonly equal: boolean;
+  readonly status: FigureStatus;
+  readonly title: string;
+  readonly notes: string[];
+  readonly size?: { width: number; height: number };
+  readonly [extra: string]: unknown;
+}
+export interface Frames { readonly kind: "frames"; readonly frames: Figure[]; readonly steps: unknown[] }
+export interface FigureSpec { layers: Layer[]; x?: [Num, Num]; y?: [Num, Num]; axes?: boolean | AxesOptions; equal?: boolean; status?: FigureStatus; title?: string; notes?: string[]; margin?: number; [extra: string]: unknown }
+export function figure(spec: FigureSpec): Figure;
+export function figureViewport(fig: Figure, width?: number, height?: number): Viewport;
+export function figureSize(fig: Figure): { width: number; height: number };
+export interface DrawSize { width?: number; height?: number }
+export function figureSVG(fig: Figure, options?: DrawSize & SceneOptions & { tex?: (tex: string) => string }): string;
+export function figureTikZ(fig: Figure, options?: DrawSize & SceneOptions): string;
+export function figureASCII(fig: Figure, options?: DrawSize & SceneOptions): string;
+export function figurePDF(fig: Figure, options?: DrawSize & SceneOptions): Uint8Array;
+export function figurePNG(fig: Figure, options?: DrawSize & SceneOptions): Promise<Uint8Array>;
+export function framesSVG(frames: Frames | Figure[], options?: DrawSize & { duration?: number; loop?: boolean }): string;
+export function framesPNG(frames: Frames | Figure[], options?: DrawSize & { duration?: number; loop?: boolean }): Promise<Uint8Array>;
+export function shapes(list: (PictureShape | null | undefined | false)[]): ShapesFrame;
+export function path(points: Num[] | [Num, Num][], style?: ShapeStyle): PictureShape;
+export function dot(at: [Num, Num], style?: ShapeStyle): PictureShape;
+export function arrow(from: [Num, Num], to: [Num, Num], style?: ShapeStyle): PictureShape;
+export function text(at: [Num, Num], tex: string, style?: ShapeStyle): PictureShape;
+export function image(spec: { x: [Num, Num]; y: [Num, Num]; width: number; height: number; cells: (string | null)[] }): ImageFrame;
+export function extentOf(layers: Layer[]): { x: XY; y: XY } | null;
+export function toNumber(x: unknown): number;
+export function rampColor(t: number): string;
+export function divergingColor(t: number): string;
+export const CATEGORY: readonly string[];
+
+// charts
+export function legend(entries: { label: string; color: string; kind?: "line" | "box"; dash?: number[]; tex?: string }[], x: XY, y: XY, options?: { corner?: string }): ShapesFrame;
+export interface FiveNumbers { readonly min: number; readonly q1: number; readonly median: number; readonly q3: number; readonly max: number; readonly whiskers: XY; readonly outliers: number[]; readonly n: number }
+export function fiveNumbers(values: Num[]): FiveNumbers;
+export function boxPlot(groups: Record<string, Num[]> | [string, Num[]][], options?: { title?: string }): Figure;
+/** Anything with a density: a function, { fast: { pdf } } (the stats package's distributions) or pdf(x). */
+export type DensityLike = ((x: number) => number) | { fast?: { pdf?: (x: number) => number; quantile?: (p: number) => number }; pdf?: (x: Num) => Num; prob?: (a: Num, b: Num) => unknown; kind?: string };
+export function histogramFigure(values: Num[], options?: { bins?: number; range?: [Num, Num]; distribution?: DensityLike; density?: boolean; title?: string }): Figure;
+export function densityFigure(distribution: DensityLike, options?: { range?: [Num, Num]; shade?: [Num, Num]; samples?: number; title?: string }): Figure;
+export function qqPlot(values: Num[], distribution: DensityLike | ((p: number) => number), options?: { title?: string }): Figure;
+export function scatterFit(points: ([Num, Num] | { x: Num; y: Num })[], options?: { fit?: { intercept: Num; slope: Num } | { coefficients: Num[] }; band?: (x: number) => [Num, Num]; range?: [Num, Num]; title?: string }): Figure;
+export interface Series { name?: string; points: ([Num, Num] | { x: Num; y: Num })[]; color?: string; dash?: number[]; markers?: boolean }
+export function lineChart(series: Series[], options?: { x?: [Num, Num]; y?: [Num, Num]; title?: string; status?: FigureStatus; markers?: boolean; legendCorner?: string; notes?: string[] }): Figure;
+export function powerCurve(curves: Series[] | [Num, Num][], options?: { level?: Num; status?: FigureStatus; title?: string }): Figure;
+export function samplingBuildUp(values: Num[], options?: { bins?: number; steps?: number[]; range?: [Num, Num]; distribution?: DensityLike; title?: string }): Frames;
+export interface ScheduleRow { period: Num; interest: Num; principal: Num; extra?: Num; balloon?: Num; balance?: Num }
+export function amortisationChart(loan: { schedule: ScheduleRow[] } | ScheduleRow[], options?: { title?: string }): Figure;
+export function balanceChart(loan: { schedule: ScheduleRow[]; principal?: Num } | ScheduleRow[], options?: { title?: string }): Figure;
+export function fanChart(simulation: { bands: Record<string, Num>[] } | Record<string, Num>[], options?: { title?: string; periodsPerYear?: number }): Figure;
+export function yieldCurveFigure(curve: [Num, Num][] | { periods: number; frequency: number; spot(k: number): Num }, options?: { title?: string; percent?: boolean }): Figure;
+export function payoffFigure(strategy: { payoff(S: string): Num; profit?(S: string): Num; kinks?: Num[]; breakEvens?: Num[] }, options?: { range?: [Num, Num]; title?: string }): Figure;
+
+// graph drawing
+export interface GraphData { kind: "graph-data"; vertices: string[]; edges: { from: string; to: string; label?: string; weight?: unknown }[]; directed: boolean }
+export type GraphLike = GraphData | { vertices(): unknown[]; edges(): { from: unknown; to: unknown; weight?: unknown }[]; directed?: boolean; weighted?: boolean } | { vertices?: unknown[]; edges: ([unknown, unknown] | [unknown, unknown, unknown] | { from: unknown; to: unknown; label?: string })[]; directed?: boolean } | object;
+export type Positions = Map<string, XY>;
+export function graphData(g: GraphLike): GraphData;
+export function circleLayout(g: GraphLike, options?: { order?: unknown[] }): Positions;
+export function gridLayout(g: GraphLike, options?: { columns?: number }): Positions;
+export function bipartiteLayout(g: GraphLike, options: { left: unknown[] }): Positions;
+export function layeredLayout(g: GraphLike, options?: { roots?: unknown[]; sweeps?: number }): Positions;
+export function treeLayout(g: GraphLike, options?: { root?: unknown }): Positions;
+export function springLayout(g: GraphLike, options?: { iterations?: number }): Positions;
+export interface TutteLayout { readonly positions: Positions; readonly exact: Map<string, [Rational, Rational]>; readonly outer: string[]; readonly crossings: [[string, string], [string, string]][]; readonly coincident: [string, string][]; readonly planarDrawing: boolean }
+export function tutteLayout(g: GraphLike, options?: { outer?: unknown[]; faces?: unknown[] }): TutteLayout;
+export function countCrossings(g: GraphLike, positions: Positions): [[string, string], [string, string]][];
+export interface DrawGraphOptions {
+  layout?: "circle" | "grid" | "layered" | "tree" | "spring" | "bipartite" | "tutte" | Positions;
+  colours?: Record<string, number | string> | Map<unknown, number | string>;
+  highlight?: { edges?: [unknown, unknown][]; vertices?: unknown[] };
+  edgeLabels?: boolean;
+  start?: unknown;
+  accept?: Iterable<unknown>;
+  notes?: Record<string, string>;
+  title?: string;
+  left?: unknown[];
+  roots?: unknown[];
+  root?: unknown;
+  outer?: unknown[];
+  faces?: unknown[];
+}
+export function drawGraph(g: GraphLike, options?: DrawGraphOptions): Figure;
+export function automatonFigure(a: { states: string[]; start: string; accept: Iterable<string>; delta: Map<string, Map<string, Set<string>>> }, options?: { layout?: DrawGraphOptions["layout"]; title?: string }): Figure;
+export function kripkeFigure(k: { worlds: string[]; R: Map<string, Set<string>>; valuation?: Record<string, Set<string> | string[]> }, options?: { layout?: DrawGraphOptions["layout"]; title?: string }): Figure;
+
+// logic diagrams
+export function treeLayoutOf<T>(root: T, options: { width(node: T): number; children(node: T): T[]; gap?: number }): { node: T; x: number; depth: number; width: number; span: XY }[];
+export interface DerivationLike { sequent?: unknown; conclusion?: unknown; formula?: unknown; rule?: string; premises?: DerivationLike[] }
+export function proofTreeFigure(derivation: DerivationLike, options?: { title?: string; options?: unknown }): Figure;
+export interface TruthNode { lines: { n: number; formula: unknown; rule?: string; from?: unknown }[]; children?: TruthNode[]; closed?: number[] | null; open?: boolean }
+export function truthTreeFigure(tree: { root: TruthNode } | TruthNode, options?: { title?: string; options?: unknown; rules?: boolean }): Figure;
+export function vennFigure(sets: string[], options?: { shade?: ((membership: Record<string, boolean>) => boolean) | string[]; marks?: Record<string, string>; resolution?: number; title?: string; universe?: boolean }): Figure;
+
+// dynamics
+export type FloatMap = ((x: number) => number) | { float(x: number): number };
+export function cobwebFigure(map: FloatMap, x0: Num, n?: number, options?: { range?: [Num, Num]; samples?: number; title?: string }): Figure;
+export function orbitFigure(mapOrValues: FloatMap | Num[], x0?: Num, n?: number, options?: { title?: string }): Figure;
+export function returnMapFigure(values: Num[], options?: { lag?: number; title?: string }): Figure;
+export function bifurcationFigure(diagram: { columns: { parameter: Num; points: Num[] }[] } | { parameter: Num; points: Num[] }[], options?: { marks?: { at: Num; label?: string }[]; title?: string }): Figure;
+export interface PixelGridLike { width: number; height: number; kind: ArrayLike<number>; re: Num; reHigh: Num; im: Num; imHigh: Num; escape?: ArrayLike<number>; labels?: unknown; counts?: Record<string, number>; name?: string }
+export function escapeFigure(grid: PixelGridLike, options?: { inside?: string; undecided?: string; outside?: string; title?: string }): Figure;
+export function pointCloudFigure(points: [Num, Num][] | Num[], options?: { r?: number; color?: string; title?: string; status?: FigureStatus; equal?: boolean }): Figure;
+export function attractor3d(points: [Num, Num, Num][], options?: { cam?: Camera; radius?: number; title?: string; axes?: boolean }): Figure;
+export function segmentsFigure(turtle: { segments: Num[][]; exact?: unknown } | Num[][], options?: { color?: string; width?: number; title?: string }): Figure;
+export function spacetimeFigure(rows: ArrayLike<number>[], options?: { on?: string; off?: string | null; title?: string }): Figure;
+export function lifeFigure(pattern: { cells: Set<string> } | [Num, Num][], options?: { color?: string; title?: string }): Figure;
+export function parameterFrames<T>(values: T[], build: (value: T, index: number) => Figure): Frames;
+
+// section 13
+export function zeroContour(F: (x: number, y: number) => number, x: XY, y: XY, n?: number): [number, number, number, number][];
+export interface Equilibrium { point: RationalInterval[]; unique: boolean; jacobian: RationalInterval[][]; trace: RationalInterval; determinant: RationalInterval; kind: string | null; stability: string | null; hyperbolic: boolean | null }
+export function phasePortrait(field: [string, string] | object, options?: { x?: [Num, Num]; y?: [Num, Num]; orbits?: [Num, Num][]; arrows?: number; nullclines?: boolean; equilibria?: boolean; t?: number; variables?: [string, string]; params?: Record<string, Num>; title?: string }): Figure & { readonly equilibria: Equilibrium[] & { complete?: boolean } };
+export function solutionFrames(u: string | ((x: number, t: number) => number), times: Num[], options?: { x?: [Num, Num]; y?: [Num, Num]; samples?: number; variables?: [string, string]; title?: string }): Frames;
+export function frameAlongCurve(components: [string, string], t: Num, options?: { range?: [Num, Num]; parameter?: string; samples?: number; title?: string }): Figure;
+export function frameFrames(components: [string, string], ts: Num[], options?: { range?: [Num, Num]; parameter?: string; samples?: number; title?: string }): Frames;
+export function curvatureSurface(components: [string, string, string], options?: { u?: [Num, Num]; v?: [Num, Num]; grid?: number | [number, number]; parameters?: [string, string]; which?: "gaussian" | "mean"; scale?: Num; cam?: Camera; title?: string; extra?: (Item3d | ({ item: Item3d } & Style3d))[] }): Figure & { readonly range: XY };
+export function curveOnSurface(components: [string, string, string], uvPoints: [Num, Num][], options?: { parameters?: [string, string] }): Curve3d;
+export function equalBox(points: ArrayLike<number>): { x: XY; y: XY; z: XY };
+export function newtonFigure(f: string | ((x: number) => number), x0: Num, n?: number, options?: { range?: [Num, Num]; derivative?: string | ((x: number) => number); title?: string; variable?: string }): Figure & { readonly iterates: number[] };
+export function interpolationFigure(f: string | ((x: number) => number), n: number, options?: { range?: [Num, Num]; nodes?: "equal" | "chebyshev" | Num[]; title?: string; variable?: string; error?: boolean }): Figure & { readonly maxError: number; readonly nodes: number[] };
+export function quadratureFigure(f: string | ((x: number) => number), interval: [Num, Num], n?: number, options?: { rule?: "trapezoid" | "midpoint" | "simpson"; title?: string; variable?: string }): Figure & { readonly value: number };
+export function stabilityRegion(R?: "euler" | "heun" | "rk2" | "rk3" | "rk4" | Num[], options?: { re?: [Num, Num]; im?: [Num, Num]; resolution?: number; title?: string }): Figure & { readonly area: number };
+export function convergenceFigure(rows: ([Num, Num] | { h?: Num; step?: Num; error?: Num; err?: Num })[], options?: { title?: string }): Figure & { readonly order: number };
+
+// polygons and solids
+export function polygonsFigure(polygons: ([Num, Num][] | { points: [Num, Num][]; key?: unknown; color?: string })[], options?: { colorBy?: "sides" | "key" | ((p: { points: [Num, Num][]; key?: unknown }) => string); stroke?: string; width?: number; x?: XY; y?: XY; title?: string; status?: FigureStatus }): Figure;
+export function solidFigure(vertices: [Num, Num, Num][], faces: number[][], options?: { cam?: Camera; colors?: string[] | ((face: number[], index: number) => string); opacity?: number; title?: string; status?: FigureStatus; edgeWidth?: number }): Figure;
+export function stepsFigures(steps: { shapes: PictureShape[]; note?: string }[], options?: { highlight?: string; title?: string; status?: FigureStatus }): Frames;

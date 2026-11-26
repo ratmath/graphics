@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drawing graphs · RatMath graphics</title>
+<meta name="description" content="Drawing graphs · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Drawing graphs · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/graph-drawing.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=2a5598a0ee">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+    <option value="figures">Figures for the Shelf</option>
+    <option value="stats-charts">Charts for statistics</option>
+    <option value="finance-charts">Charts for finance</option>
+    <option value="graph-drawing" selected>Drawing graphs</option>
+    <option value="logic-diagrams">Logic diagrams</option>
+    <option value="dynamics-pictures">Pictures of dynamics</option>
+    <option value="equation-pictures">Phase portraits and curvature</option>
+    <option value="numerical-pictures">Pictures of numerical methods</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+    <div class="group">Pictures for the Shelf</div>
+    <a href="figures.html">Figures for the Shelf</a>
+    <a href="stats-charts.html">Charts for statistics</a>
+    <a href="finance-charts.html">Charts for finance</a>
+    <a href="graph-drawing.html" class="on" aria-current="page">Drawing graphs</a>
+    <a href="logic-diagrams.html">Logic diagrams</a>
+    <a href="dynamics-pictures.html">Pictures of dynamics</a>
+    <a href="equation-pictures.html">Phase portraits and curvature</a>
+    <a href="numerical-pictures.html">Pictures of numerical methods</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="graph-drawing">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Drawing graphs</h1>
+  <p class="lede">The graph-drawing phase of the discrete package, shared with logic for automata and Kripke models: layouts, colourings and highlighted paths, and Tutte's exact planar drawing with its check.</p>
+  <h2>What can be drawn</h2>
+  <p><code>drawGraph(g, options)</code> takes a <code>Graph</code> from <code>@ratmath/discrete</code> (anything with <code>vertices()</code> and <code>edges()</code>) or plain <code>{ vertices, edges }</code>. Directed edges get arrowheads, a pair of opposite edges is drawn as two curves, loops sit above their vertex, and weights or labels are written on the edges. <code>colours</code> fills vertices by class (a colouring) and <code>highlight</code> draws edges and vertices bold (a matching, a shortest path, a cut).</p>
+  <h2>Layouts</h2>
+  <ul>
+    <li><code>circle</code>, <code>grid</code> and <code>bipartite</code> (with <code>left</code>) place the vertices directly.</li>
+    <li><code>layered</code> puts each vertex at its distance from the roots and orders each layer by the average place of its neighbours above, in a few sweeps, to cut crossings.</li>
+    <li><code>tree</code> is a tidy tree: leaves one unit apart, each parent centred over its children.</li>
+    <li><code>spring</code> is Fruchterman and Reingold's force model from the circle layout, with no random start: reproducible, but floating point, so the figure is marked estimated.</li>
+  </ul>
+  <h2>Tutte's drawing, exactly</h2>
+  <p>Fix a face of a planar graph on a convex polygon and put every other vertex at the average of its neighbours:</p>
+  <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>p</mi><mi>v</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mi>deg</mi><mo>⁡</mo><mi>v</mi></mrow></mfrac><munder><mo>∑</mo><mrow><mi>w</mi><mo>∼</mo><mi>v</mi></mrow></munder><msub><mi>p</mi><mi>w</mi></msub><mi mathvariant="normal">.</mi></mrow><annotation encoding="application/x-tex"> p_v = \frac{1}{\deg v} \sum_{w \sim v} p_w. </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0359em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:2.5714em;vertical-align:-1.25em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3214em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mop">de<span style="margin-right:0.0139em;">g</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.05em;"><span style="top:-1.9em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0269em;">w</span><span class="mrel mtight">∼</span><span class="mord mathnormal mtight" style="margin-right:0.0359em;">v</span></span></span></span><span style="top:-3.05em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.25em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0269em;">w</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">.</span></span></span></span></span>
+  <p>That is a linear system with a unique solution (its matrix is a Laplacian with some rows fixed), and Tutte proved that for a 3-connected planar graph the drawing has no crossings and every face is convex. <code>tutteLayout(g, { outer })</code> places the outer face at rational points on the unit circle, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo fence="false" stretchy="true" minsize="1.2em" maxsize="1.2em">(</mo><mstyle scriptlevel="0" displaystyle="false"><mfrac><mrow><mn>1</mn><mo>−</mo><msup><mi>t</mi><mn>2</mn></msup></mrow><mrow><mn>1</mn><mo>+</mo><msup><mi>t</mi><mn>2</mn></msup></mrow></mfrac></mstyle><mo separator="true">,</mo><mstyle scriptlevel="0" displaystyle="false"><mfrac><mrow><mn>2</mn><mi>t</mi></mrow><mrow><mn>1</mn><mo>+</mo><msup><mi>t</mi><mn>2</mn></msup></mrow></mfrac></mstyle><mo fence="false" stretchy="true" minsize="1.2em" maxsize="1.2em">)</mo></mrow><annotation encoding="application/x-tex">\big(\tfrac{1 - t^2}{1 + t^2}, \tfrac{2t}{1 + t^2}\big)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.4213em;vertical-align:-0.4033em;"></span><span class="mord"><span class="delimsizing size1">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0179em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">+</span><span class="mord mtight"><span class="mord mathnormal mtight">t</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7463em;"><span style="top:-2.786em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">−</span><span class="mord mtight"><span class="mord mathnormal mtight">t</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913em;"><span style="top:-2.931em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4033em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span><span class="mbin mtight">+</span><span class="mord mtight"><span class="mord mathnormal mtight">t</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7463em;"><span style="top:-2.786em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="katex-sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span><span class="mord mathnormal mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4033em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mord"><span class="delimsizing size1">)</span></span></span></span></span>, solves the system over the rationals, and then checks every pair of edges for a crossing with exact orientation tests. For <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mn>5</mn></msub></mrow><annotation encoding="application/x-tex">K_5</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0715em;">K</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0715em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">5</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><mrow><mn>3</mn><mo separator="true">,</mo><mn>3</mn></mrow></msub></mrow><annotation encoding="application/x-tex">K_{3,3}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0715em;">K</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0715em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">3</span><span class="mpunct mtight">,</span><span class="mord mtight">3</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span>, which have no plane drawing, the check fails, as it must. Pass <code>faces</code> from discrete's <code>planarity(g)</code> to use its longest face as the outer one.</p>
+  <h2>Automata and Kripke models</h2>
+  <p><code>automatonFigure(a)</code> lays out states in layers from the start state, joins the symbols of parallel transitions (<code>a,b</code>), doubles accepting states and draws an entry arrow. <code>kripkeFigure(k)</code> writes under each world the atoms true there.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// the cube graph, drawn by Tutte's method from the face 0 1 2 3
+const cube = { edges: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]] };
+const t = tutteLayout(cube, { outer: [0, 1, 2, 3] });
+PRINT("inner vertices:", [4, 5, 6, 7].map((v) =&gt; `${v} at (${t.exact.get(String(v)).join(", ")})`).join("; "));
+PRINT("plane drawing (checked exactly):", t.planarDrawing);
+const K33 = { edges: [["a",1],["a",2],["a",3],["b",1],["b",2],["b",3],["c",1],["c",2],["c",3]] };
+PRINT("K3,3:", tutteLayout(K33, { outer: ["a", 1, "b", 2] }).planarDrawing);
+SHOW(figureSVG(drawGraph(cube, { layout: "tutte", outer: [0, 1, 2, 3], colours: { 0: 0, 2: 0, 5: 0, 7: 0, 1: 1, 3: 1, 4: 1, 6: 1 } }), { width: 300, height: 300 }));
+SHOW(figureSVG(drawGraph({ edges: [["s","a",3],["s","b",2],["a","t",2],["b","a",1],["b","t",3]], directed: true }, { layout: "layered", roots: ["s"], highlight: { edges: [["s","b"],["b","t"]] } }), { width: 300, height: 260 }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="finance-charts.html"><small>Previous</small>Charts for finance</a><a class="next" href="logic-diagrams.html"><small>Next</small>Logic diagrams</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=2a5598a0ee"></script>
+</body>
+</html>

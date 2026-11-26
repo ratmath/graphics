@@ -1,0 +1,26 @@
+<section class="page" data-page="stats-charts">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Charts for statistics</h1>
+  <p class="lede">The pictures phase of the statistics package: box plots, histograms with a density over them, density curves with a certified shaded probability, quantile plots, fitted lines with bands, power curves, and a sampling distribution building up.</p>
+  <h2>Box plots by Tukey's hinges</h2>
+  <p><code>fiveNumbers(values)</code> sorts the data and takes the median of each half (the middle value in both halves when \(n\) is odd). With \(Q_1\) and \(Q_3\) the hinges and \(\mathrm{IQR} = Q_3 - Q_1\), the whiskers reach the furthest data inside \([Q_1 - 1.5\,\mathrm{IQR},\ Q_3 + 1.5\,\mathrm{IQR}]\) and the rest are drawn as outliers. <code>boxPlot({ name: values, … })</code> sets the boxes side by side.</p>
+  <h2>Histograms and densities</h2>
+  <p><code>histogramFigure(values, { bins, distribution })</code> draws the counts, or with a distribution the density scale (total area 1) with the curve over it. <code>densityFigure(dist, { shade: [a, b] })</code> draws the density from the distribution's fast float version and shades \(P(a \le X \le b)\). The curve is estimated; the probability in the notes is the distribution's own <code>prob(a, b)</code>, which in <code>@ratmath/stats</code> is a certified interval.</p>
+  <h2>Quantile plots</h2>
+  <p><code>qqPlot(values, dist)</code> sets the \(i\)-th smallest value against the distribution's quantile at \((i - \tfrac12)/n\). Data from that family, after a shift and a scale, fall along a line; the line drawn is the one through the quartiles. A bend at the ends means heavier or lighter tails.</p>
+  <h2>Fits, power and sampling</h2>
+  <p><code>scatterFit(points, { fit, band })</code> takes a line as <code>{ intercept, slope }</code> or a regression's coefficients, and a band as a function \(x \mapsto [\ell, u]\). <code>powerCurve</code> draws the chance a test rejects against the true effect, with the level as a dashed line. <code>samplingBuildUp(values, { steps })</code> gives frames of a histogram of the first \(k\) values on shared bins and scales, marked <em>simulated</em>: animate them to watch the shape settle.</p>
+</section>
+
+<template data-runbox>
+// a seeded sample: 300 means of 12 uniform values (a stand-in for the stats package's generator)
+let s = 7;
+const rnd = () => ((s = (s * 48271) % 2147483647) / 2147483647);
+const means = Array.from({ length: 300 }, () => Array.from({ length: 12 }, rnd).reduce((a, b) => a + b) / 12);
+const five = fiveNumbers(means);
+PRINT("median", five.median.toFixed(4), "IQR", (five.q3 - five.q1).toFixed(4), "outliers", five.outliers.length);
+const sd = Math.sqrt(1 / 144);
+const normal = { fast: { pdf: (x) => Math.exp(-((x - 0.5) ** 2) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI)) } };
+SHOW(figureSVG(histogramFigure(means, { bins: 14, distribution: normal }), { width: 420, height: 260 }));
+SHOW(figureSVG(boxPlot({ means, "first 30": means.slice(0, 30) }), { width: 420, height: 220 }));
+</template>

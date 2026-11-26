@@ -1,0 +1,22 @@
+<section class="page" data-page="logic-diagrams">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Logic diagrams</h1>
+  <p class="lede">The pictures phase of the logic package: proof trees, truth trees and Venn diagrams. Automata and Kripke frames are graphs, drawn as on <a href="graph-drawing.html">Drawing graphs</a>.</p>
+  <h2>Proof trees</h2>
+  <p>A sequent derivation is a tree: each inference has its conclusion below a bar and its premises above, with the rule's name at the bar's right. <code>proofTreeFigure(d)</code> takes a <code>Derivation</code> from <code>@ratmath/logic</code> (or any <code>{ sequent, rule, premises }</code>) and lays it out with <code>treeLayoutOf</code>: each subtree is as wide as its widest line, subtrees sit a fixed gap apart, and each conclusion is centred over its premises. Widths are counted in characters, so positions are exact whole numbers.</p>
+  <h2>Truth trees</h2>
+  <p><code>truthTreeFigure(t)</code> draws an analytic tableau top down: the numbered lines of each node, with the rule and the line each came from; branches below; ✗ under a closed branch with the two lines that contradict, ○ under an open one. A tree whose every branch closes proves its premises inconsistent.</p>
+  <h2>Venn diagrams</h2>
+  <p><code>vennFigure(["A", "B", "C"], { shade })</code> draws up to three sets. <code>shade</code> picks regions by membership: a function such as <code>(m) => m.A && !m.B</code>, or strings such as <code>"110"</code> (in A and B, not in C). The eight regions of three sets are \(A \cap B \cap C\), \(A \cap B \cap C'\), …, \(A' \cap B' \cap C'\); a syllogism's premises shade the regions they say are empty and <code>marks</code> put a cross in a region that has a member. The shading is a grid of cells, so it is estimated at the circles' edges; <code>regions</code> lists exactly which regions are shaded.</p>
+</section>
+
+<template data-runbox>
+// all M are P, all S are M: shade what the premises say is empty
+const empty = (m) => (m.M && !m.P) || (m.S && !m.M);
+const v = vennFigure(["S", "M", "P"], { shade: empty });
+PRINT("shaded regions (S M P):", v.regions.join(" "));
+PRINT("S outside P is shaded entirely, so all S are P:", ["100", "110"].every((r) => v.regions.includes(r)));
+SHOW(figureSVG(v, { width: 320, height: 280 }));
+const leaf = (s) => ({ sequent: s, rule: "Ax", premises: [] });
+SHOW(figureSVG(proofTreeFigure({ sequent: "p ∧ q ⊢ q ∧ p", rule: "∧L", premises: [{ sequent: "p, q ⊢ q ∧ p", rule: "∧R", premises: [leaf("p, q ⊢ q"), leaf("p, q ⊢ p")] }] })));
+</template>

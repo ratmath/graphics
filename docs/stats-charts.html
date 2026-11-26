@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Charts for statistics · RatMath graphics</title>
+<meta name="description" content="Charts for statistics · RatMath graphics. Exact-rational graphics in JavaScript: fast sketches while exploring, certified pixel-exact plots when settled.">
+<meta property="og:title" content="Charts for statistics · RatMath graphics">
+<meta property="og:description" content="Graphs, curves, regions and exact geometry that are fast while you explore and certified when you stop.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/graphics/stats-charts.html">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/site.css?v=2a5598a0ee">
+</head>
+<body>
+<div class="shell">
+<aside>
+  <header class="brand"><div class="mark">RatMath <span>graphics</span></div><small>Plots that are fast, then certified</small></header>
+  <label for="toc-select" class="muted small" hidden>Page</label>
+  <select id="toc-select" aria-label="Page">
+    <option value="intro">Introduction</option>
+    <option value="reference">Reference</option>
+    <option value="explore">Explore</option>
+    <option value="fast-certified">Fast, then certified</option>
+    <option value="graphs">Graphs and features</option>
+    <option value="curves">Curves, data and slope fields</option>
+    <option value="implicit">Implicit curves</option>
+    <option value="geometry">Exact geometry</option>
+    <option value="regions">Regions and inequalities</option>
+    <option value="calculus">Calculus pictures</option>
+    <option value="space">Surfaces and space curves</option>
+    <option value="animation">Animation</option>
+    <option value="drawing">Drawing and labels</option>
+    <option value="export">Exporting</option>
+    <option value="figures">Figures for the Shelf</option>
+    <option value="stats-charts" selected>Charts for statistics</option>
+    <option value="finance-charts">Charts for finance</option>
+    <option value="graph-drawing">Drawing graphs</option>
+    <option value="logic-diagrams">Logic diagrams</option>
+    <option value="dynamics-pictures">Pictures of dynamics</option>
+    <option value="equation-pictures">Phase portraits and curvature</option>
+    <option value="numerical-pictures">Pictures of numerical methods</option>
+  </select>
+  <nav class="toc" aria-label="Contents">
+    <a href="index.html">Introduction</a>
+    <a href="reference.html">Reference</a>
+    <a href="explore.html">Explore</a>
+    <div class="group">Ideas</div>
+    <a href="fast-certified.html">Fast, then certified</a>
+    <div class="group">Topics</div>
+    <a href="graphs.html">Graphs and features</a>
+    <a href="curves.html">Curves, data and slope fields</a>
+    <a href="implicit.html">Implicit curves</a>
+    <a href="geometry.html">Exact geometry</a>
+    <a href="regions.html">Regions and inequalities</a>
+    <a href="calculus.html">Calculus pictures</a>
+    <a href="space.html">Surfaces and space curves</a>
+    <a href="animation.html">Animation</a>
+    <a href="drawing.html">Drawing and labels</a>
+    <a href="export.html">Exporting</a>
+    <div class="group">Pictures for the Shelf</div>
+    <a href="figures.html">Figures for the Shelf</a>
+    <a href="stats-charts.html" class="on" aria-current="page">Charts for statistics</a>
+    <a href="finance-charts.html">Charts for finance</a>
+    <a href="graph-drawing.html">Drawing graphs</a>
+    <a href="logic-diagrams.html">Logic diagrams</a>
+    <a href="dynamics-pictures.html">Pictures of dynamics</a>
+    <a href="equation-pictures.html">Phase portraits and curvature</a>
+    <a href="numerical-pictures.html">Pictures of numerical methods</a>
+  </nav>
+  <p class="sitelinks"><a href="https://github.com/ratmath/graphics">GitHub</a> · <a href="https://www.npmjs.com/package/@ratmath/graphics">npm</a> · <a href="https://ratmath.com/">ratmath.com</a><br><a href="https://ratmath.com/core/">core</a> · <a href="https://ratmath.com/analytic/">analytic</a> · <a href="https://ratmath.com/algebraic/">algebraic</a> · <a href="https://ratmath.com/linalg/">linalg</a></p>
+</aside>
+<main>
+
+<section class="page" data-page="stats-charts">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Charts for statistics</h1>
+  <p class="lede">The pictures phase of the statistics package: box plots, histograms with a density over them, density curves with a certified shaded probability, quantile plots, fitted lines with bands, power curves, and a sampling distribution building up.</p>
+  <h2>Box plots by Tukey's hinges</h2>
+  <p><code>fiveNumbers(values)</code> sorts the data and takes the median of each half (the middle value in both halves when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> is odd). With <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Q</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">Q_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Q</mi><mn>3</mn></msub></mrow><annotation encoding="application/x-tex">Q_3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> the hinges and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">I</mi><mi mathvariant="normal">Q</mi><mi mathvariant="normal">R</mi></mrow><mo>=</mo><msub><mi>Q</mi><mn>3</mn></msub><mo>−</mo><msub><mi>Q</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">\mathrm{IQR} = Q_3 - Q_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathrm">IQR</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, the whiskers reach the furthest data inside <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">[</mo><msub><mi>Q</mi><mn>1</mn></msub><mo>−</mo><mn>1.5</mn><mtext> </mtext><mrow><mi mathvariant="normal">I</mi><mi mathvariant="normal">Q</mi><mi mathvariant="normal">R</mi></mrow><mo separator="true">,</mo><mtext> </mtext><msub><mi>Q</mi><mn>3</mn></msub><mo>+</mo><mn>1.5</mn><mtext> </mtext><mrow><mi mathvariant="normal">I</mi><mi mathvariant="normal">Q</mi><mi mathvariant="normal">R</mi></mrow><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">[Q_1 - 1.5\,\mathrm{IQR},\ Q_3 + 1.5\,\mathrm{IQR}]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord">1.5</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathrm">IQR</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">Q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1.5</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathrm">IQR</span></span><span class="mclose">]</span></span></span></span> and the rest are drawn as outliers. <code>boxPlot({ name: values, … })</code> sets the boxes side by side.</p>
+  <h2>Histograms and densities</h2>
+  <p><code>histogramFigure(values, { bins, distribution })</code> draws the counts, or with a distribution the density scale (total area 1) with the curve over it. <code>densityFigure(dist, { shade: [a, b] })</code> draws the density from the distribution's fast float version and shades <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false">(</mo><mi>a</mi><mo>≤</mo><mi>X</mi><mo>≤</mo><mi>b</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">P(a \le X \le b)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1389em;">P</span><span class="mopen">(</span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.8193em;vertical-align:-0.136em;"></span><span class="mord mathnormal" style="margin-right:0.0785em;">X</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">b</span><span class="mclose">)</span></span></span></span>. The curve is estimated; the probability in the notes is the distribution's own <code>prob(a, b)</code>, which in <code>@ratmath/stats</code> is a certified interval.</p>
+  <h2>Quantile plots</h2>
+  <p><code>qqPlot(values, dist)</code> sets the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span>-th smallest value against the distribution's quantile at <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>i</mi><mo>−</mo><mstyle scriptlevel="0" displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle><mo stretchy="false">)</mo><mi mathvariant="normal">/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">(i - \tfrac12)/n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.1901em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span><span class="mord">/</span><span class="mord mathnormal">n</span></span></span></span>. Data from that family, after a shift and a scale, fall along a line; the line drawn is the one through the quartiles. A bend at the ends means heavier or lighter tails.</p>
+  <h2>Fits, power and sampling</h2>
+  <p><code>scatterFit(points, { fit, band })</code> takes a line as <code>{ intercept, slope }</code> or a regression's coefficients, and a band as a function <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>↦</mo><mo stretchy="false">[</mo><mi mathvariant="normal">ℓ</mi><mo separator="true">,</mo><mi>u</mi><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">x \mapsto [\ell, u]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">ℓ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">u</span><span class="mclose">]</span></span></span></span>. <code>powerCurve</code> draws the chance a test rejects against the true effect, with the level as a dashed line. <code>samplingBuildUp(values, { steps })</code> gives frames of a histogram of the first <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.0315em;">k</span></span></span></span> values on shared bins and scales, marked <em>simulated</em>: animate them to watch the shape settle.</p>
+</section>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/graphics</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math, and <code>SHOW(svg)</code> draws a picture.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// a seeded sample: 300 means of 12 uniform values (a stand-in for the stats package's generator)
+let s = 7;
+const rnd = () =&gt; ((s = (s * 48271) % 2147483647) / 2147483647);
+const means = Array.from({ length: 300 }, () =&gt; Array.from({ length: 12 }, rnd).reduce((a, b) =&gt; a + b) / 12);
+const five = fiveNumbers(means);
+PRINT("median", five.median.toFixed(4), "IQR", (five.q3 - five.q1).toFixed(4), "outliers", five.outliers.length);
+const sd = Math.sqrt(1 / 144);
+const normal = { fast: { pdf: (x) =&gt; Math.exp(-((x - 0.5) ** 2) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI)) } };
+SHOW(figureSVG(histogramFigure(means, { bins: 14, distribution: normal }), { width: 420, height: 260 }));
+SHOW(figureSVG(boxPlot({ means, "first 30": means.slice(0, 30) }), { width: 420, height: 220 }));</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="figures.html"><small>Previous</small>Figures for the Shelf</a><a class="next" href="finance-charts.html"><small>Next</small>Charts for finance</a></nav>
+</main>
+</div>
+<script type="module" src="assets/pages.js?v=2a5598a0ee"></script>
+</body>
+</html>

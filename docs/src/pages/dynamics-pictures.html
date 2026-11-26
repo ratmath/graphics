@@ -1,0 +1,33 @@
+<section class="page" data-page="dynamics-pictures">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Pictures of dynamics</h1>
+  <p class="lede">The pictures phase of the chaos package: cobwebs, orbits and return maps, bifurcation diagrams, escape-time pictures with honest pixels, attractors, L-systems and cellular automata, and frames that move a parameter.</p>
+  <h2>Cobwebs</h2>
+  <p>To iterate \(x_{n+1} = f(x_n)\) by eye: go up to the graph of \(f\), across to the diagonal \(y = x\), and repeat. <code>cobwebFigure(f, x0, n)</code> draws that staircase with the graph and the diagonal. A fixed point is where the graph meets the diagonal; the staircase spirals in when \(|f'| < 1\) there and out when \(|f'| > 1\). It takes a float function or chaos's <code>IteratedMap</code>.</p>
+  <h2>Orbits, return maps, bifurcations</h2>
+  <p><code>orbitFigure</code> draws \(x_n\) against \(n\); <code>returnMapFigure(values, { lag })</code> the pairs \((x_n, x_{n+k})\), where a series that looks random can show it is a curve. <code>bifurcationFigure(diagram)</code> draws the long-run values from chaos's <code>bifurcationDiagram</code>, with <code>marks</code> at bifurcation points that chaos proves.</p>
+  <h2>Escape-time pictures</h2>
+  <p>Chaos classifies each pixel of the Mandelbrot set, a Julia set or Newton's basins as proved inside, proved outside, or undecided. <code>escapeFigure(grid)</code> keeps the three apart: inside dark, outside shaded by escape time, undecided in its own colour (orange by default), so the picture never claims more than was proved. Its status is certified.</p>
+  <h2>Attractors, L-systems, automata</h2>
+  <p><code>pointCloudFigure</code> and <code>attractor3d</code> plot points in the plane or in space. <code>segmentsFigure(lsystem.turtle(n))</code> draws a turtle path, marked exact when the angle is a multiple of 30° and chaos gives exact end points. <code>spacetimeFigure(rows)</code> draws an elementary automaton's run with time going down, and <code>lifeFigure</code> a Life pattern.</p>
+  <h2>Moving a parameter</h2>
+  <p><code>parameterFrames(values, build)</code> builds one figure per value; <code>framesSVG</code> plays them. A cobweb as \(r\) runs through the period doublings of the logistic map is the classic example.</p>
+</section>
+
+<template data-runbox>
+const f = (r) => (x) => r * x * (1 - x);
+const c = cobwebFigure(f(3.2), 0.15, 40, { range: [0, 1] });
+PRINT("after 40 steps the orbit alternates:", c.orbit.slice(-2).map((x) => x.toFixed(6)).join(", "));
+SHOW(figureSVG(c, { width: 300, height: 300 }));
+// the long-run values of the logistic family, from floats
+const cols = [];
+for (let i = 0; i <= 400; i++) {
+  const r = 2.8 + (1.2 * i) / 400;
+  let x = 0.5;
+  for (let k = 0; k < 500; k++) x = r * x * (1 - x);
+  const pts = new Set();
+  for (let k = 0; k < 80; k++) pts.add(Math.round((x = r * x * (1 - x)) * 1e4) / 1e4);
+  cols.push({ parameter: r, points: [...pts] });
+}
+SHOW(figureSVG(bifurcationFigure(cols, { marks: [{ at: 3, label: "r = 3" }] }), { width: 420, height: 280 }));
+</template>

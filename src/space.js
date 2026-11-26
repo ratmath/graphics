@@ -232,7 +232,7 @@ function extent(items) {
   const lo = [Infinity, Infinity, Infinity];
   const hi = [-Infinity, -Infinity, -Infinity];
   for (const { item } of items) {
-    const p = item.points;
+    const p = item.points ?? Float64Array.from((item.faces ?? []).flatMap((f) => [...f]));
     for (let i = 0; i < p.length; i += 3) {
       for (let c = 0; c < 3; c += 1) {
         const x = p[i + c];
@@ -327,7 +327,7 @@ export function project3d(cam, items, { box, axes = false, light = [-1, -1, 2], 
           const facing = n[0] * eye[0] + n[1] * eye[1] + n[2] * eye[2];
           if (facing < 0) n = n.map((c) => -c);
           const lit = Math.max(0, n[0] * lightDir[0] + n[1] * lightDir[1] + n[2] * lightDir[2]);
-          let base = color;
+          let base = style.cellColors?.[j * nu + i] ?? color;
           if (style.shading === "height") {
             const t = Math.max(0, Math.min(1, (zs.reduce((s, z) => s + z, 0) / 4 - B.z[0]) / (B.z[1] - B.z[0])));
             base = heightColor(t);
@@ -341,6 +341,25 @@ export function project3d(cam, items, { box, axes = false, light = [-1, -1, 2], 
           });
         }
       }
+    } else if (item.kind === "faces3d") {
+      // flat polygons (a polyhedron's faces), each [x, y, z, x, y, z, …], lit and depth-sorted
+      const opacity = style.opacity ?? 0.9;
+      item.faces.forEach((F, k) => {
+        const pr = [];
+        for (let i = 0; i < F.length; i += 3) pr.push(proj(F[i], F[i + 1], F[i + 2]));
+        const n3 = (i) => [norm(F[i], B.x), norm(F[i + 1], B.y), norm(F[i + 2], B.z)];
+        const [A, Bq, C] = [n3(0), n3(3), n3(6)];
+        const u = [Bq[0] - A[0], Bq[1] - A[1], Bq[2] - A[2]];
+        const w = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+        let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+        const nl = Math.hypot(...n) || 1;
+        n = n.map((c) => c / nl);
+        if (n[0] * eye[0] + n[1] * eye[1] + n[2] * eye[2] < 0) n = n.map((c) => -c);
+        const lit = Math.max(0, n[0] * lightDir[0] + n[1] * lightDir[1] + n[2] * lightDir[2]);
+        const base = item.colors?.[k] ?? color;
+        const fill = shade(base, (lit - 0.5) * 0.5);
+        faces.push({ depth: pr.reduce((s, q) => s + q[2], 0) / pr.length, points: Float64Array.from(pr.flatMap((q) => [q[0], q[1]])), closed: true, fill, fillAlpha: opacity, stroke: shade(base, -0.5), width: style.width ?? 1, alpha: 1 });
+      });
     } else if (item.kind === "curve3d" || item.kind === "arrow3d") {
       const width = style.width ?? 2;
       for (let i = 0; i + 5 < p.length; i += 3) {

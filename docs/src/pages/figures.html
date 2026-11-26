@@ -1,0 +1,34 @@
+<section class="page" data-page="figures">
+  <div class="eyebrow">Pictures for the Shelf</div>
+  <h1>Figures for the Shelf</h1>
+  <p class="lede">Every picture the Shelf packages ask for is a <em>figure</em>: layers, the window of the plane they sit in, and a status that says how far the picture can be trusted. One figure goes to SVG, PNG, PDF, TikZ and text.</p>
+  <h2>What a figure holds</h2>
+  <p><code>figure({ layers, x, y, axes, equal, status, title, notes })</code> wraps the frames the scene renderers already draw. When <code>x</code> and <code>y</code> are left out the window is what the layers span, with a margin; <code>equal: true</code> keeps one unit the same length on both axes, so circles stay round. <code>figureSVG(fig, { width, height })</code>, <code>figurePNG</code>, <code>figurePDF</code>, <code>figureTikZ</code> and <code>figureASCII</code> draw it at a size; a figure may carry a size hint of its own (a proof tree knows how wide its formulas are).</p>
+  <h2>Four statuses</h2>
+  <p>A picture makes claims, and the status says what kind:</p>
+  <ul>
+    <li><strong>exact</strong>: every mark is at the exact value (exact data, exact layout). A payoff diagram drawn through its kinks, a Tutte drawing with rational coordinates, a proof tree.</li>
+    <li><strong>certified</strong>: every mark is within a stated error, or a pixel's class is proved. An escape-time picture whose undecided pixels have their own colour.</li>
+    <li><strong>estimated</strong>: floating-point values, not proved. A phase portrait's orbits, a spring layout, a density curve. Any certified number in the picture (an equilibrium, a shaded probability) is said in <code>notes</code>.</li>
+    <li><strong>simulated</strong>: the result of seeded random runs. The same seed draws the same picture; another seed a different one.</li>
+  </ul>
+  <h2>Two new frames</h2>
+  <p><code>shapes([...])</code> is a frame of styled shapes in world coordinates, made by <code>path(points, style)</code>, <code>dot(at, style)</code>, <code>arrow(from, to, style)</code> and <code>text(at, tex, style)</code>. <code>image({ x, y, width, height, cells })</code> is a grid of coloured cells, row 0 at the bottom, with runs of one colour merged into one rectangle. Escape-time pictures, Venn shading and stability regions are images.</p>
+  <h2>Frames to animate</h2>
+  <p>Functions that build a sequence (a sampling distribution growing, a moving frame, a heat solution in time, a construction step by step) return <code>{ kind: "frames", frames }</code>. <code>framesSVG</code> turns them into one animated SVG that plays with no script; <code>framesPNG</code> into an animated PNG.</p>
+  <h2>Polygons and solids</h2>
+  <p><code>polygonsFigure(polygons, { colorBy })</code> fills polygons, coloured by their number of sides or by a key; <code>solidFigure(vertices, faces)</code> lights a polyhedron's faces and sorts them by depth in a box that keeps the solid's proportions. The geometry package computes tilings and solids and draws them with these.</p>
+</section>
+
+<template data-runbox>
+const tri = [[0, 0], [1, 0], [0.5, 0.866]];
+const sq = [[1, 0], [2, 0], [2, 1], [1, 1]];
+const flat = polygonsFigure([tri, sq, [[0, 0], [0.5, 0.866], [-0.5, 0.866]]], { title: "two triangles and a square" });
+PRINT(flat.count, "polygons,", flat.status);
+const V = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]];
+const F = [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]];
+const tet = solidFigure(V, F);
+PRINT("a tetrahedron:", tet.faces, "faces,", tet.vertices, "vertices");
+SHOW(figureSVG(flat, { width: 300, height: 200 }));
+SHOW(figureSVG(tet, { width: 300, height: 260 }));
+</template>

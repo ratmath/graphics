@@ -1,0 +1,1528 @@
+# @ratmath/graphics 0.1.0: full documentation
+
+> Exact-rational graphics for RatMath: fast float sketches while exploring, certified pixel-exact plots when settled; graphs, parametric and polar curves, regions, exact geometry, and exports to SVG, TikZ, PDF, PNG and text. From https://ratmath.com/graphics/, commit 9e2043e. Each page ends with a runnable example; in it, PRINT(...) prints.
+
+
+---
+
+Page: https://ratmath.com/graphics/index.html
+
+@ratmath/graphics
+
+## Plots that are fast, then certified
+
+A JavaScript plotting library for exact rational mathematics. Every picture is drawn twice: a floating-point sketch at once, then a certified version you can trust pixel by pixel.
+
+Move a slider and the sketch follows your hand. When you stop, every pixel column is recomputed with interval arithmetic over the exact rational inputs. The shaded cells are then a guarantee: every point of the graph in view lies in a shaded cell, and an unshaded cell holds no point of the graph. Zeros, extrema and inflection points arrive as exact rationals or proven brackets, drawn as dots.
+
+### What it draws
+
+- Graphs y=f(x) with certified zeros, poles, holes, extrema, inflection points and domain ends. See Graphs and features.
+
+- Implicit curves F(x,y)=0, with each pixel either excluded, possible, or proven to hold part of the curve. See Implicit curves.
+
+- Exact geometry: points, lines, segments, rays, polygons and circles, with intersections in exact form such as 811​+8315​​. See Exact geometry.
+
+- Regions from inequalities joined by and, or, not. Regions bounded by lines are exact polygons with exact corners. Others are certified pixel by pixel. See Regions and inequalities.
+
+- Pictures for the Shelf: charts for statistics and finance, graph drawing with Tutte's exact layout, proof trees, truth trees and Venn diagrams, cobwebs and escape-time pictures, phase portraits with proved equilibria, curvature, numerical methods, polygons and solids. Each is a figure that says whether it is exact, certified, estimated or simulated. See Figures for the Shelf.
+
+- Labels with mathematical notation, typeset with KaTeX, on canvas and in SVG. See Drawing and labels.
+
+### Computing is separate from drawing
+
+The library computes plain data: rational coordinates, exact points, pixel cells with a guarantee. Small renderers turn that data into pixels, on a 2D canvas for interactive use or as an SVG string for export, printing and tests. Nothing about the mathematics depends on the renderer, so a calculator app can draw the same results natively.
+
+```js
+import { graph, region, intersect, line, circle, viewport, drawScene, sceneSVG } from "@ratmath/graphics";
+
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 480, height: 360 });
+
+const g = graph("x^3/4 - x", {}, vp);
+g.quick.value;              // float polyline, immediate
+await g.settle();           // certified cells, computed in time slices
+
+intersect(line("y = x"), circle([0, 0], 2));   // [(√2, √2), (-√2, -√2)], exact
+region("x + y = 0, y > 0", {}, vp).exact().corners;  // exact corners, included or not
+
+drawScene(ctx, vp, [g.exact(), circle([0, 0], 2)], { axes: true });   // canvas
+sceneSVG(vp, [g.exact(), circle([0, 0], 2)], { axes: true });         // SVG string
+```
+
+### Topics
+
+- [Explore](https://ratmath.com/graphics/explore.html): Type a function, curve or region and pan around
+
+- [Fast, then certified](https://ratmath.com/graphics/fast-certified.html): Sketches, certified cells, Refinements, sliders
+
+- [Graphs and features](https://ratmath.com/graphics/graphs.html): Zeros, poles, holes, extrema, markers
+
+- [Implicit curves](https://ratmath.com/graphics/implicit.html): F(x, y) = 0, excluded, possible and proven pixels
+
+- [Exact geometry](https://ratmath.com/graphics/geometry.html): Lines, circles, polygons, exact intersections
+
+- [Regions](https://ratmath.com/graphics/regions.html): Inequalities, exact polygons, certified shading
+
+- [Drawing and labels](https://ratmath.com/graphics/drawing.html): Canvas, SVG, TeX labels
+
+- [Exporting](https://ratmath.com/graphics/export.html): SVG, PNG, PDF, TikZ and PGFPlots for LaTeX, text
+
+- [Figures for the Shelf](https://ratmath.com/graphics/figures.html): Statuses, shapes and images, frames, polygons and solids
+
+- [Charts for statistics](https://ratmath.com/graphics/stats-charts.html): Box plots, densities, quantile plots, sampling
+
+- [Charts for finance](https://ratmath.com/graphics/finance-charts.html): Amortisation, fan charts, yield curves, payoffs
+
+- [Drawing graphs](https://ratmath.com/graphics/graph-drawing.html): Layouts, Tutte's exact drawing, automata
+
+- [Logic diagrams](https://ratmath.com/graphics/logic-diagrams.html): Proof trees, truth trees, Venn diagrams
+
+- [Pictures of dynamics](https://ratmath.com/graphics/dynamics-pictures.html): Cobwebs, bifurcations, honest escape pixels
+
+- [Phase portraits and curvature](https://ratmath.com/graphics/equation-pictures.html): Proved equilibria, moving frames, curvature colours
+
+- [Numerical methods](https://ratmath.com/graphics/numerical-pictures.html): Newton, Runge, quadrature, stability regions
+
+- [Reference](https://ratmath.com/graphics/reference.html): Every export
+
+### Try it
+
+```js
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 400, height: 300 });
+const g = graph("x^3/4 - x", {}, vp);
+PRINT("zeros:", zeros("x^3/4 - x", {}, [-4, 4]).exact().map((z) => String(z.at)));
+const pts = intersect(line("y = x"), circle([0, 0], 2));
+PRINT("y = x meets the circle at", pts.map(String));
+SHOW(sceneSVG(vp, [g.exact(), { item: circle([0, 0], 2), color: "#dc2626" }, ...pts.map((p) => ({ item: p, color: "#111", label: true }))], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/reference.html
+
+Reference
+
+## Everything in the library
+
+Numbers can be JS numbers (read by their shortest spelling, so `0.1` is 101​), bigints, strings such as `"3/4"` or `"1.25"`, or Core `Rational`s. Functions marked R return a [Refinement](https://ratmath.com/graphics/fast-certified.html): `.quick.value` is the float sketch; `.exact()` or `await .settle()` give the certified result.
+
+### Viewports and Refinements
+
+| Name | What it does |
+
+| viewport({ x: [a, b], y: [c, d], width, height }) | Exact rational world rectangle over a pixel grid; dx, dy are exact. |
+
+| Refinement, live(compute, onStage, { idleMs, sliceMs, onProgress }) | The fast-then-exact protocol shared with linalg and analytic; live wires it to input. |
+
+| precisionFor(vp), columnRationals(vp, i) | Working precision for a viewport; the exact x-interval of a pixel column. |
+
+### Expressions
+
+| Name | What it does |
+
+| parse(text) | Calculator notation to a plain AST (num var const op call). |
+
+| num, v, op, call | AST builders, for a calculator that has its own parser. |
+
+| compileFloat, compileInterval, compileExact | Doubles; certified interval enclosures; exact rationals for rational-only expressions. |
+
+| freeVariables(ast), isRationalOnly(ast), toRational(x) | Helpers. |
+
+| derive(ast), format(ast) | Symbolic derivative and printing, from @ratmath/analytic. |
+
+### Graphs and features
+
+| Name | Exact value |
+
+| graph(f, params, vp) R | quick: polyline; exact: cells frame { columns, tight, asymptotes, holes } |
+
+| zeros(f, params, [a, b]) R | exact rationals, sign-change brackets, or possible |
+
+| features(f, params, [a, b]) R | { zeros, poles, holes, undefined, endpoints, extrema, inflections }. poles are proven; undefined lists points with no value and no proven pole (sin(1/x) at 0) |
+
+| parametric({ x, y }, params, [t0, t1], vp) R, polar(r, params, [t0, t1], vp) R | quick: polyline; exact: cells frame in which every point of the curve lies in a lit pixel |
+
+| intersections(f, g, params, [a, b]) R, findIntersections | The zeros of f − g with the common value: { kind, at \| lo, hi, value \| valueLo, valueHi } |
+
+| scatter(data, { join }), bars(data, { width, baseline }), histogram(values, { bins, range, density }) | Data frames in world coordinates |
+
+| slopeField(f, params, vp, { spacing, length }), solutionCurve(spec, vp) R | The field of y′ = f(x, y), and one solution: an RK4 sketch, then cells that provably hold it |
+
+| describe(f, params, [a, b], { digits, max }), describeFeatures | Sentences built from the certified features, for alt text |
+
+| logScale(f, { x, y }) | f rewritten for logarithmic axes (use with axes: { xScale: "log" }) |
+
+| findPoles, findHoles, findExtrema, findInflections, findEndpoints, findZeros | The same pieces, synchronously |
+
+| sampleFloat, certifyGraph, floatZeros, floatFeatures, simplestBetween | Lower-level stages |
+
+### Implicit curves and regions
+
+| Name | Exact value |
+
+| implicit(equation, params, vp) R | quick: marching-squares segments; exact: cells frame with sure (proven pixels) |
+
+| region(condition, params, vp, { method }) R | quick: region sketch; exact: polygons frame when bounded by lines, conics frame (exact arcs, corners in closed form) when bounded by conics, else region frame { inside, boundary } of certified pixels |
+
+| conicAtoms(tree, params), exactConicRegion(tree, atoms, vp), conicType(poly) | The conic method's pieces: comparisons as polynomials of degree ≤ 2, the decomposition, a curve's name |
+
+| parseCondition(text), atoms(tree), dnf(tree), negationFree(tree) | Conditions as trees of comparisons F rel 0 |
+
+| linearForm(expr, params) | { a, b, c } with expr = a·x + b·y + c, or null |
+
+| linearPieces, exactLinearRegion, classify, sketchRegion, sketchImplicit | Lower-level stages |
+
+### Calculus pictures
+
+| Name | What it gives |
+
+| tangent(f, x0, params), secant(f, a, b, params) | Slope, point, line, equation and layers; exact or certified |
+
+| areaUnder(f, [a, b], params, vp), areaBetween(f, g, [a, b], params, vp) R | An area frame with integral: a float, then exact or a certified interval; improper ends allowed |
+
+| riemannSum(f, [a, b], n, params, { rule }) | Rectangles or trapezoids as a frame, with the sum |
+
+| taylorPolynomial(f, c, n, params) | Coefficients and an expression to graph |
+
+| vectorField([P, Q], params, vp), gradientField(F, params, vp) | An arrows frame |
+
+| gradientAt(F, [x, y], params) | The certified gradient, an arrow and the level line |
+
+| contours(F, levels, params, vp) | One implicit curve (R) per level |
+
+| featureLabels(features), withAlgebraicForms, radicalTeX, rationalForm | Labels in closed form (2​ rather than 1.414…) for zeros, extrema, inflections and intersections; the pieces behind them |
+
+### Three dimensions
+
+| Name | What it does |
+
+| surface(f, params, { x, y, grid }) R | z = f(x, y): a float grid, then certified heights with error |
+
+| parametricSurface([x, y, z], params, { u, v, grid }) R, spaceCurve([x, y, z], params, { t, samples }) R | The same for parametric surfaces and curves |
+
+| points3d, segment3d, arrow3d, tangentPlane(f, [x0, y0]) | Marks, and the tangent plane with its normal |
+
+| camera({ azimuth, elevation, distance, zoom }), orbit(cam, dx, dy), spaceViewport(w, h) | The view, a drag, and a viewport that fits the scene |
+
+| project3d(cam, items, { box, axes, light }) | One mesh frame for drawScene and every exporter |
+
+### Animation
+
+| Name | What it does |
+
+| animate(draw, { from, to, steps, duration, loop, bounce, onSettle }) | Plays a parameter through exact values; returns play, pause, toggle, seek, stop |
+
+| parameterSteps(from, to, n) | The n + 1 exact values |
+
+| animationSVG(vp, frames, options), animationPNG(vp, frames, options) | Frames as one animated SVG (a string) or animated PNG (bytes, a Promise) |
+
+### Exact numbers and geometry
+
+| Name | What it does |
+
+| surd(a), surd(a, b, d), sqrt(q), Surd | a+bd​: add, subtract, multiply, divide, sign, compareTo, bounds(bits), toNumber, toTeX |
+
+| point, line, segment, ray, polygon, circle | Immutable objects with toString() and toTeX() |
+
+| intersect(A, B) | Exact intersection list for any pair |
+
+| midpoint, project, reflect, parallel, perpendicular, bisector, circumcircle | Constructions |
+
+| dist2, distance, area (simple polygons only), isSimple, signedArea, centroid, orientation, locate, convexHull | Measurements and predicates, exact |
+
+### Drawing
+
+| Name | What it does |
+
+| drawScene(ctx2d, vp, layers, { axes, scale, background, colors }) | Draw layers on a canvas; returns the primitives |
+
+| sceneSVG(vp, layers, { axes, background, tex }) | A standalone SVG string |
+
+| sceneTikZ(vp, layers, { axes, width, height, standalone, background, pt }) | A LaTeX tikzpicture in world coordinates, labels as real TeX (Exporting) |
+
+| scenePGFPlots(vp, layers, { axes, width, height, standalone, axisOptions }) | A PGFPlots axis: its own axes and ticks, curves as \addplot |
+
+| scenePNG(vp, layers, { axes, scale, background, engine }) | PNG bytes (a Promise): canvas in browsers, built-in renderer elsewhere |
+
+| scenePDF(vp, layers, { axes, background, pt }) | A one-page vector PDF (bytes) |
+
+| sceneASCII(vp, layers, { axes, cols, rows, mode, border, color }) | The scene as text: ASCII, Braille or block characters |
+
+| label(at, tex, { anchor, color, size }) | A TeX label at a world point |
+
+| mountLabels(container, vp, prims, { katex }) | Typeset labels in an HTML layer over a canvas |
+
+| primitives, axesPrimitives, paint, svgElements, texToText, niceStep, PALETTE | The pieces under drawScene and sceneSVG |
+
+| tikzElements, tikzAxes, simplifyPolyline, asciiElements, asciiText, rasterize, encodePNG, pdfContent, pdfTextRuns | The pieces under the exporters |
+
+| drawCanvas, drawAsymptotes, toSVG, drawMarkers, markerList, shade | Single-frame drawing for graphs, and feature markers |
+
+### Pictures for the Shelf
+
+#### Figures
+
+| Name | What it does |
+
+| figure({ layers, x, y, axes, equal, status, title, notes }) | A picture with its window and a status: exact, certified, estimated or simulated (Figures) |
+
+| figureSVG, figurePNG, figurePDF, figureTikZ, figureASCII (fig, { width, height }) | Draw a figure; figureViewport and figureSize give the viewport and the size hint |
+
+| framesSVG, framesPNG (frames, { duration, loop }) | Frames ({ kind: "frames", frames }) as one animated file |
+
+| shapes, path, dot, arrow, text | A frame of styled shapes in world coordinates |
+
+| image({ x, y, width, height, cells }) | A grid of coloured cells, row 0 at the bottom |
+
+| toNumber, extentOf, rampColor, divergingColor, CATEGORY | Helpers: numbers and text such as "1/5" as doubles, extents, colour scales |
+
+| polygonsFigure(polygons, { colorBy }) | Filled polygons coloured by sides or key |
+
+| solidFigure(vertices, faces, { cam, colors }) | A lit polyhedron in a proportional box |
+
+| stepsFigures(steps) | A construction step by step, the newest step highlighted |
+
+#### Charts for statistics and finance
+
+| Name | What it does |
+
+| fiveNumbers(values), boxPlot(groups) | Tukey's hinges, whiskers to 1.5 IQR, outliers (Charts for statistics) |
+
+| histogramFigure(values, { bins, distribution }) | Counts, or density bars with a curve |
+
+| densityFigure(dist, { range, shade }) | A density with P(a ≤ X ≤ b) shaded and stated |
+
+| qqPlot(values, dist), scatterFit(points, { fit, band }) | Quantile plot with its quartile line; data with a line and a band |
+
+| lineChart(series), powerCurve(curves, { level }), legend | Lines with a legend; power against effect |
+
+| samplingBuildUp(values, { bins, steps }) | Frames of a sampling distribution building up (simulated) |
+
+| amortisationChart(loan), balanceChart(loan) | Interest and principal per period; the balance (Charts for finance) |
+
+| fanChart(simulation) | Percentile bands over time (simulated) |
+
+| yieldCurveFigure(curve), payoffFigure(strategy, { range }) | Spot rates by maturity; payoff and profit, exact through the kinks |
+
+#### Graph drawing and logic diagrams
+
+| Name | What it does |
+
+| graphData(g) | A Graph, automaton, Kripke model or { vertices, edges } as plain data |
+
+| circleLayout, gridLayout, bipartiteLayout, layeredLayout, treeLayout, springLayout | Positions as a Map (Drawing graphs) |
+
+| tutteLayout(g, { outer, faces }) | Exact barycentric drawing with an exact crossing check |
+
+| countCrossings(g, positions) | Crossing pairs of any drawing, in floats |
+
+| drawGraph(g, { layout, colours, highlight, edgeLabels }) | A graph as a figure |
+
+| automatonFigure(a), kripkeFigure(k) | Automata and Kripke models |
+
+| proofTreeFigure(d), truthTreeFigure(t), treeLayoutOf(root, { width, children }) | Gentzen trees and truth trees (Logic diagrams) |
+
+| vennFigure(sets, { shade, marks }) | Venn diagrams of up to three sets |
+
+#### Dynamics and analysis
+
+| Name | What it does |
+
+| cobwebFigure(f, x0, n), orbitFigure, returnMapFigure | Iteration pictures (Pictures of dynamics) |
+
+| bifurcationFigure(diagram, { marks }) | Long-run values against a parameter |
+
+| escapeFigure(grid) | Inside, outside and undecided pixels kept apart (certified) |
+
+| pointCloudFigure, attractor3d, segmentsFigure, spacetimeFigure, lifeFigure, parameterFrames | Attractors, L-systems, automata, animation in a parameter |
+
+| phasePortrait([f, g], { x, y, orbits }) | Arrows, nullclines, orbits, proved equilibria (Phase portraits and curvature) |
+
+| solutionFrames(u, times), zeroContour(F, x, y) | Solutions in time; marching squares |
+
+| frameAlongCurve(r, t), frameFrames(r, ts) | Tangent, normal and osculating circle, certified |
+
+| curvatureSurface(xyz, { u, v, which }), curveOnSurface, equalBox | Surfaces coloured by Gaussian or mean curvature |
+
+| newtonFigure, interpolationFigure, quadratureFigure | Tangents, interpolants and Runge, quadrature pieces (Pictures of numerical methods) |
+
+| stabilityRegion(R), convergenceFigure(rows) | Where \|R(z)\| ≤ 1; observed order on log axes |
+
+### Try it
+
+```js
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 360, height: 240 });
+const g = graph("x^3 - x", {}, vp);
+PRINT("quick:", g.quick.value.kind, "| exact:", g.exact().kind);
+PRINT(line("2x - y = 3").toTeX(), "|", circle([1, -2], { r2: 2 }).toString());
+SHOW(sceneSVG(vp, [g.exact(), line("2x - y = 3"), { item: circle([1, -2], { r2: 2 }), color: "#dc2626" }], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/explore.html
+
+Explore
+
+## Type something and look
+
+A graph y=f(x), a curve F(x,y)=0, or a region. Names other than x and y become sliders with exact steps of 81​. Drag the plot to pan; the buttons zoom by exact factors of 2.
+
+While you drag a slider or the plot, you see the float sketch (blue). When you stop, the certified version (green) replaces it. The status chip says which one is on screen.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 420, height: 315 });
+const layers = [
+  { item: region("y^2 <= x^3 - 2x + 1", {}, vp).exact(), color: "#9333ea" },
+  { item: implicit("x^3 + y^3 = 3x y", {}, vp).exact(), color: "#ea580c" },
+  { item: graph("sin(2x)", {}, vp).exact(), color: "#2563eb" },
+];
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/fast-certified.html
+
+Ideas
+
+## Fast, then certified
+
+Every computation answers twice. The first answer is a floating-point sketch, cheap enough for every frame of a slider drag. The second is certified: computed from the exact rational inputs with interval arithmetic that rounds outward, so its claims are proven.
+
+### What "certified" means for a graph
+
+The viewport has rational edges and a grid of pixel cells. Pixel column i covers the exact interval [xmin​+iΔx, xmin​+(i+1)Δx]. For each column, the library evaluates f over that whole interval with interval arithmetic, splitting the column where that tightens the result. The rows the enclosure touches are shaded. So:
+
+- every point (x,f(x)) of the graph in view lies in a shaded cell, and
+
+- a cell that is not shaded contains no point of the graph.
+
+The sketch makes no such promise. Above, sin(1/x) oscillates infinitely often near 0; the sketch shows a few zigzags, the certified cells shade the whole band. Zoom in and both sharpen.
+
+### Refinements
+
+Functions like `graph`, `zeros`, `features`, `implicit` and `region` return a `Refinement`, the same protocol used by RatMath's linalg and analytic libraries.
+
+```js
+const g = graph("a*x^2 - 3", { a: "1/2" }, vp);
+g.quick.value;           // float sketch, computed on creation
+g.quick.trust;           // "rough"
+g.exact();               // run the certified stage to the end, synchronously
+await g.settle({ signal, sliceMs: 8, onProgress });   // the same, in 8 ms slices
+```
+
+Progress ticks carry a `partial` frame, so a page can show the certified picture filling in column by column.
+
+### Sliders: live
+
+`live(compute, onStage, { idleMs })` wires a Refinement to user input. Each call shows the sketch at once. Once input has been still for `idleMs`, the certified stage runs in time slices; newer input cancels it. Slider values should be exact rationals, such as integer steps of 1/8, so the certified picture is of exactly the function the label shows.
+
+```js
+const update = live((a) => graph("a*x^2 - 3", { a }, vp), (stage) => {
+  draw(stage.value, stage.exact ? "teal" : "royalblue");
+}, { idleMs: 120 });
+slider.oninput = () => update(`${slider.value}/8`);
+```
+
+### Exact versus certified
+
+Some results are exact: a rational zero, a polygon corner, an intersection point like (811​,8315​​). Others are certified enclosures: an irrational zero as a bracket [lo,hi] proven to hold exactly one zero, a curve as the set of pixels it can touch. Both are trustworthy; the second is as sharp as the pixel grid or the tolerance you ask for.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-1, 1], y: ["-3/2", "3/2"], width: 400, height: 240 });
+const g = graph("sin(1/x)", {}, vp, { asymptotes: false });
+const cells = g.exact();
+PRINT("certified frame:", cells.width, "columns,", cells.evaluations, "interval evaluations, tight:", cells.tight);
+SHOW(sceneSVG(vp, [{ item: cells, color: "#0f766e" }, { item: g.quick.value, color: "#dc2626", width: 1 }], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/graphs.html
+
+Topic
+
+## Graphs and features
+
+y=f(x) for expressions in calculator notation, with parameters, and the points that matter: zeros, poles, holes, maxima and minima, inflection points and the ends of the domain.
+
+### Expressions
+
+The parser reads `+ - * / ^`, parentheses, implicit multiplication after a number (`2x`, `3(x+1)`), decimals as exact rationals (`0.1` is 101​), the constants `pi` and `e`, and `sin cos tan exp ln log sqrt abs min max`. Any other name is a parameter, given in the params object as a number, a string such as `"3/4"`, or a Core `Rational`.
+
+```js
+const vp = viewport({ x: [-8, 8], y: [-6, 6], width: 480, height: 360 });
+const g = graph("a*sin(b*x) + c*x", { a: 2, b: 1, c: "1/4" }, vp);
+g.exact().tight;      // true when every column reached two rows or fewer
+```
+
+### Features
+
+`features(f, params, [a, b])` returns a Refinement whose exact stage holds `{ zeros, poles, holes, endpoints, extrema, inflections }`. The work is done by [@ratmath/analytic](https://ratmath.com/analytic/): symbolic derivatives, exact gcd, square-free and Sturm steps for rational functions, and Krawczyk and Rolle tests for everything else, which prove that a bracket holds exactly one zero.
+
+```js
+const f = features("x^3/8 - 2x", {}, [-8, 8]).exact();
+f.zeros.map((z) => String(z.at));        // ["-4", "0", "4"]
+f.extrema.map((e) => e.kind);            // ["max", "min"]
+f.inflections.map((i) => String(i.at));  // ["0"]
+```
+
+Each record has `at` when the point is an exact rational, or `lo` and `hi` for a bracket that certainly holds it. `unique: true` means it is proven to be the only one in the bracket.
+
+### Closed forms
+
+When f is a rational function, each zero, extremum, inflection point, pole and hole is a root of a polynomial with integer coefficients. [@ratmath/algebraic](https://ratmath.com/algebraic/) picks out the root inside the certified bracket, and the record gets `algebraic`: the number in closed form where it has one, with its minimal polynomial. Heights get `valueAlgebraic` the same way, and `intersections(f, g, …)` does this for the points where two graphs meet.
+
+```js
+const f = features("x^4 - 2x^2 - 1", {}, [-4, 4]).exact();
+f.zeros.map((z) => z.algebraic.text);        // ["−√(1 + √2)", "√(1 + √2)"]
+f.zeros[0].algebraic.tex;                    // "-\\sqrt{1 + \\sqrt{2}}"
+f.zeros[0].algebraic.polynomial;             // [-1n, 0n, -2n, 0n, 1n]
+f.inflections.map((p) => p.algebraic.text);  // ["−√3/3", "√3/3"], each at height −14/9
+intersections("x^2", "x + 1", {}, [-4, 4]).exact().map((p) => p.algebraic.text);   // ["(1 − √5)/2", "(1 + √5)/2"]
+```
+
+`featureLabels(features)` turns the records into labels for a scene, typeset as 2​ rather than 1.414…, and `describe()` uses the same forms in its sentences. A root with no closed form (most quintics) keeps its digits and its polynomial. Pass `{ forms: false }` to skip the step.
+
+### Holes and poles
+
+A pole is proven where a denominator has a proven zero and the numerator does not vanish there. Certified frames list poles as `asymptotes`, drawn dashed; unproven float guesses are drawn dotted. A hole is a point where f is undefined but has a finite limit, as x−1x2−1​ at 1, with the limit given exactly when possible.
+
+### Markers
+
+| Feature | Dot |
+
+| Zero | Filled, in the curve's color |
+
+| Max or min | Filled, darker than the curve |
+
+| Inflection point | Filled, lighter than the curve |
+
+| Hole | Open (the function is not defined there) |
+
+| Domain end, included | Filled |
+
+| Domain end, excluded | Open |
+
+`drawMarkers(ctx2d, vp, features, { color, background, scale })` draws them; `markerList(features)` gives the same list as data for other renderers.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-6, 6], y: [-6, 8], width: 420, height: 380 });
+const f = "(x^2 - 1)/(x - 1) + 1/(x + 2)";
+const feats = features(f, {}, [-6, 6]).exact();
+PRINT("holes:", feats.holes.map((h) => `${h.at} (limit ${h.value})`));
+PRINT("poles:", feats.poles.map((p) => String(p.at)));
+PRINT("zeros:", feats.zeros.map((z) => z.at ? String(z.at) : `[${z.lo.toDecimal(6)}, ${z.hi.toDecimal(6)}]`));
+const marks = markerList(feats).map((m) => ({ item: point(String(m.x), String(m.y)), color: "#0f766e", open: !m.filled, radius: 4 }));
+SHOW(sceneSVG(vp, [{ item: graph(f, {}, vp).exact(), color: "#0f766e" }, ...marks], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/curves.html
+
+Topic
+
+## Curves, data and slope fields
+
+A graph y = f(x) is one kind of picture. This page covers the others: curves given by a parameter, polar curves, the points where two graphs meet, measured data, slope fields, solutions of differential equations, and a description of a graph in words.
+
+### Parametric and polar curves
+
+A parametric curve gives both coordinates as functions of a parameter t. A polar curve gives the distance r from the origin as a function of the angle.
+
+```js
+parametric({ x: "cos(3t)", y: "sin(2t)" }, {}, [0, "44/7"], vp);   // a Lissajous figure
+polar("1 + cos(t)", {}, [0, "44/7"], vp);                          // a cardioid
+polar("2cos(a*t)", { a: 3 }, [0, "22/7"], vp);                     // parameters work as in graph()
+```
+
+Both return a Refinement, like `graph`. The quick stage is a float polyline. The exact stage is a `cells` frame with the same promise a certified graph makes: every point of the curve lies in a lit pixel.
+
+The proof works on the parameter. The range of t is cut into pieces. For a piece T, interval arithmetic gives a box that contains (x(t),y(t)) for every t in T. A box that misses the screen is dropped. A box no larger than a pixel is lit. Any other box is cut in half and both halves are tried again. Because each box contains its part of the curve, nothing is missed, and because boxes shrink to a pixel, the curve stays one or two pixels thick. The frame's `tight` flag is false only if a piece could not be shrunk within the limits (`maxDepth`, `maxBoxes`).
+
+### Where two graphs meet
+
+```js
+intersections("x^2", "x + 2", {}, [-3, 3]).exact();
+// [{ kind: "exact", at: -1, value: 1 }, { kind: "exact", at: 2, value: 4 }]
+intersections("sin(x)", "cos(x)", {}, [0, 7]).exact();
+// brackets around π/4 and 5π/4, each with an enclosure of the common value
+```
+
+The meeting points of f and g are the zeros of f − g, so they come with the same proofs as zeros: exact rationals where they are rational, otherwise a bracket with a proven sign change, and `possible` where nothing could be decided. Each record also carries the common value, exactly or as an enclosure.
+
+### Data
+
+```js
+scatter([[1, 2], [2, "7/2"], [3, 3]], { join: true });   // dots, joined in order
+bars([[1, 4], [2, 7], [3, 5]]);                          // one bar per [x, height]
+histogram(values, { bins: 8, range: [0, 4] });           // .counts and .edges
+```
+
+These are frames in world coordinates that every renderer draws. Data is measured, so nothing here is a proof; it is drawn where the numbers say. A histogram value on an inner edge goes to the bin on its right, and the last bin includes its right end.
+
+### Slope fields and solutions
+
+```js
+slopeField("x - y", {}, vp);                             // y′ = x − y
+solutionCurve({ f: "t - y", y0: 1, until: 3 }, vp);      // Refinement
+```
+
+A slope field draws a short segment at each grid point with the slope the equation gives there. `solutionCurve` draws one solution. Its quick stage is a Runge–Kutta sketch. Its exact stage comes from the validated solver in `@ratmath/analytic`: for each pixel column, the lit span provably contains the solution over that column. If the solution blows up before the end, the frame has `complete: false` and a `reason`, and stops where the proof stops.
+
+### A graph in words
+
+```js
+describe("x^3 - 3x", {}, [-3, 3]);
+```
+
+`describe` turns the certified features of a graph into sentences: where it meets the axis, its asymptotes and holes, its highest and lowest points, where it changes the way it bends, and where its domain ends. Use it for alt text. Every sentence comes from a proven record, and anything undecided is reported as undecided.
+
+### Axes in π, fractions and powers of ten
+
+```js
+sceneSVG(vp, layers, { axes: { xUnit: "pi" } });           // ticks at π/2, π, 3π/2, …
+sceneSVG(vp, layers, { axes: { yUnit: "fraction" } });     // ticks at 1/4, 1/2, 3/4, …
+const g = graph(logScale("x^2", { x: true, y: true }), {}, logVp);
+sceneSVG(logVp, [g.exact()], { axes: { xScale: "log", yScale: "log" } });
+```
+
+For logarithmic axes the viewport is in log10 coordinates: `logScale` rewrites f so that the horizontal coordinate u stands for x = 10u and the vertical one for log10 of the value. The picture is still certified, and the axes label whole powers of ten.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-2, 2], y: [-2, 2], width: 320, height: 320 });
+const rose = polar("2cos(3t)", {}, [0, "22/7"], vp).exact();
+const loop = parametric({ x: "3/2*cos(3t)", y: "3/2*sin(2t)" }, {}, [0, "44/7"], vp).exact();
+SHOW(sceneSVG(vp, [{ item: loop, color: "#94a3b8" }, { item: rose, color: "#0f766e" }], { axes: { xUnit: "fraction" } }));
+PRINT(findIntersections("x^2", "x + 2", {}, [-3, 3]).map((p) => `(${p.at}, ${p.value})`).join("  "));
+PRINT(describe("x^3 - 3x", {}, [-3, 3]));
+const field = viewport({ x: [0, 4], y: [-1, 3], width: 320, height: 320 });
+SHOW(sceneSVG(field, [{ item: slopeField("x - y", {}, field), color: "#94a3b8" }, { item: solutionCurve({ f: "t - y", y0: 1, until: 4 }, field).exact(), color: "#dc2626" }], { axes: true }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/implicit.html
+
+Topic
+
+## Implicit curves
+
+Curves given by an equation F(x,y)=0 rather than as y=f(x): circles, ellipses, cubics, lemniscates, the folium of Descartes.
+
+### How it is certified
+
+The viewport is split into boxes of pixels. For each box, the exact x- and y-intervals go through interval arithmetic. If the enclosure of F over the box excludes 0, the curve misses the whole box and it is dropped. Otherwise the box is split, down to single pixels and then a few levels below. A pixel that survives may contain part of the curve; a pixel that does not survive certainly contains none.
+
+Some pixels are better than possible. If F is defined and continuous on a pixel (no square root of a negative, no division by an interval containing 0) and has opposite proven signs at two of its corners, then by the intermediate value theorem the curve passes through that pixel. Those are listed in `sure` and drawn darker above. Where the curve crosses itself or touches without crossing, as at the node of y2=x3−2x+1 when the parameter makes one, pixels stay possible: no sign change proves them.
+
+```js
+const vp = viewport({ x: [-4, 4], y: [-3, 3], width: 400, height: 300 });
+const c = implicit("x^2/4 + y^2 = 1", {}, vp);
+c.quick.value;           // marching-squares segments, immediate
+const cells = c.exact(); // { kind: "cells", columns, sure }
+cells.sure.count;        // pixels proven to hold part of the curve
+```
+
+The equation can be written with anything on either side (`y^2 = x^3 - x`), or as a bare expression meaning `= 0`. The quick sketch uses marching squares on a grid every 2 pixels, so it can miss small loops and join branches that cross; the certified frame cannot miss anything.
+
+### Parameters
+
+Names other than `x` and `y` are parameters, given as exact rationals. The demo wires them to sliders with `live`, exactly as for graphs.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 420, height: 280 });
+const c = implicit("(x^2 + y^2)^2 = 4(x^2 - y^2)", {}, vp).exact();
+const all = c.columns.reduce((n, s) => { for (let k = 0; k < s.length; k += 2) n += s[k + 1] - s[k] + 1; return n; }, 0);
+PRINT(`${c.sure.count} of ${all} candidate pixels are proven to hold the curve`);
+SHOW(sceneSVG(vp, [{ item: c, color: "#9333ea" }, label([0, "1.5"], "(x^2+y^2)^2 = 4(x^2-y^2)")], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/geometry.html
+
+Topic
+
+## Exact geometry
+
+Points, lines, segments, rays, polygons and circles with exact coordinates, and constructions whose answers stay exact: intersections, perpendiculars, reflections, areas, circumcircles.
+
+### Numbers: rationals and a+bd​
+
+Lines through rational points meet at rational points. A line meets a circle where a quadratic has its roots, so the coordinates have the form p±qd​. Two circles meet on their radical axis, a line, so the same holds. These numbers are `Surd`s: a+bd​ with rational a,b and a square-free integer d. Arithmetic, signs and comparisons on them are exact (the sign of a+bd​ comes from comparing a2 with b2d).
+
+```js
+const x = surd("1/2").add(sqrt("9/8"));
+x.toString();          // "1/2 + 3√2/4"
+x.toTeX();             // "\frac{1}{2} + \frac{3\sqrt{2}}{4}"
+sqrt(2).subtract(surd("1.4142")).sign();   // 1, exactly
+sqrt(2).add(sqrt(3));  // throws: Q(√2, √3) needs @ratmath/algebraic
+```
+
+Mixing two different square roots needs a bigger number field, which is the job of [@ratmath/algebraic](https://github.com/ratmath/algebraic); constructions that stay inside one Q(d​) work here.
+
+### Objects
+
+```js
+const A = point(0, 0), B = point(4, 0), C = point(1, 3);
+line(A, C);                  // 3x - y = 0
+line("2x - y = 3");          // from an equation
+line({ a: 1, b: 1, c: 2 });  // a·x + b·y = c
+segment(A, B); ray(A, C);
+polygon([A, B, C]);
+circle(B, 3);                // center and radius
+circle(A, { r2: 2 });        // center and squared radius: radius √2
+```
+
+Every object has `toString()` and `toTeX()`. Lines print as equations with integer coefficients; circles as (x−h)2+(y−k)2=r2.
+
+### Intersections
+
+`intersect(P, Q)` takes any two objects and returns a list. Points come back exact. Collinear pieces that overlap come back as the shared segment, ray or line. A polygon intersects through its edges.
+
+```js
+intersect(segment(A, C), segment(B, point(0, 2)));   // [(4/7, 12/7)]
+intersect(line("y = x"), circle([0, 0], 2));          // [(√2, √2), (-√2, -√2)]
+intersect(circle(A, 2), circle(B, 3));                // [(11/8, -3√15/8), (11/8, 3√15/8)]
+intersect(segment(A, B), segment(point(2, 0), point(6, 0)));   // [segment (2, 0)–(4, 0)]
+```
+
+### Constructions and measurements
+
+| Name | Result |
+
+| midpoint(P, Q), project(P, L), reflect(P, L) | Point |
+
+| parallel(L, P), perpendicular(L, P), bisector(P, Q) | Line |
+
+| circumcircle(A, B, C) | Circle, or null for collinear points |
+
+| dist2(P, Q), distance(P, Q) | squared distance; distance when ∣PQ∣2 is rational |
+
+| area(poly), signedArea(poly), centroid(poly) | exact, by the shoelace formula |
+
+| orientation(P, Q, R) | 1 counter-clockwise, −1 clockwise, 0 collinear |
+
+| locate(poly, P) | "inside", "boundary" or "outside", exactly |
+
+| convexHull(points) | counter-clockwise hull |
+
+### Drawing
+
+Geometry objects are layers for `drawScene` and `sceneSVG`; give a style with `{ item, color, width, dash, fill, fillAlpha, label }`. `label: true` uses the object's own TeX. Lines and rays are clipped to the viewport only when drawn.
+
+### Try it
+
+```js
+const A = point(-3, -2), B = point(3, -1), C = point(0, 3);
+const cc = circumcircle(A, B, C);
+PRINT("circumcircle:", cc.toString());
+const L = line(point(-5, 1), point(5, "-1/2"));
+const hits = intersect(L, cc);
+PRINT("line:", L.toString());
+for (const p of hits) TEX(p.toTeX());
+PRINT("area of ABC:", area(polygon([A, B, C])));
+const vp = viewport({ x: [-6, 6], y: [-4, 4], width: 420, height: 280 });
+SHOW(sceneSVG(vp, [polygon([A, B, C]), { item: cc, color: "#dc2626" }, { item: L, color: "#ea580c" }, ...hits.map((p) => ({ item: p, color: "#111" }))], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/regions.html
+
+Topic
+
+## Regions and inequalities
+
+Shade where a condition holds. Inequalities can be chained and joined with `and`, `or` and `not`. Regions bounded by lines are computed exactly, corners included. So are regions bounded by circles, ellipses, parabolas and hyperbolas, with corners such as (2​,2​) in closed form. Everything else is certified pixel by pixel.
+
+### Writing conditions
+
+```js
+"x^2 + y^2 = x and x + y  1 or y  0"      // parentheses group logic
+"x != y"                           // ≤ ≥ ≠ work too
+```
+
+`parseCondition(text)` gives the tree; each comparison is normalized to F, F≤0, F=0 or F=0.
+
+### Bounded by lines: exact polygons
+
+When every comparison is affine in x and y with rational coefficients, `region(...).exact()` splits the condition into "and" pieces, clips the viewport rectangle by each piece's half-planes with exact arithmetic, and returns
+
+- pieces: convex polygons with rational vertices and exact areas,
+
+- boundary: the outer edges, each marked strict (from or >, drawn dashed) or not (solid). Edges shared by two pieces of a union are dropped,
+
+- corners: points where two boundary lines meet, each with included, drawn as a filled or open dot, and
+
+- lines: segments from equations such as x - y = 1 and x >= 0.
+
+```js
+const vp = viewport({ x: [-5, 5], y: [-4, 4], width: 400, height: 320 });
+const r = region("3x + 7y = -1, y >= -1/3", {}, vp).exact();
+r.corners.map((c) => String(c.point));   // ["(22/9, -1/3)", "(3/13, 8/13)", "(-5/3, -1/3)"]
+String(r.pieces[0].area);
+```
+
+### Bounded by conics: exact arcs
+
+When every comparison is a polynomial of degree at most two with rational coefficients, the region is still worked out exactly. The plane is cut into strips at the places where something happens: two curves meet, a curve turns back, a curve leaves the picture. Those places are algebraic numbers, which [@ratmath/algebraic](https://ratmath.com/algebraic/) finds and tells apart exactly. Inside a strip the curves never touch, so they stack in a fixed order and the condition is constant between two neighbours: one exact evaluation at a rational point settles a whole cell. The result has
+
+- curves: each comparison's curve with its type (circle, ellipse, parabola, hyperbola, two lines, …),
+
+- arcs: the pieces of curve that bound the region, each strict (dashed, not part of the region) or not (solid),
+
+- corners: where arcs of different curves meet, with included and exact coordinates in text, tex and exact,
+
+- points: single points that differ from their surroundings, such as the two points of x^2 + y^2 = 4 and y = x or the missing centre of x^2 + y^2 , and
+
+- fill and area: polygons that draw the region, and its area to about seven digits.
+
+```js
+const c = region("x^2 + y^2 = x^2 - 1", {}, vp).exact();
+c.kind;                              // "conics"
+c.curves.map((k) => k.type);         // ["circle", "parabola"]
+c.corners.map((k) => k.text);        // ["(−√(2 + 2√13)/2, (−1 + √13)/2)", "(√(2 + 2√13)/2, (−1 + √13)/2)"]
+c.corners[0].exact.x.polynomial;     // [-3n, 0n, -1n, 0n, 1n]: a root of x⁴ − x² − 3
+```
+
+The arcs themselves are drawn from the exact description at far below a pixel. If two curves share a whole line, the pixel method takes over.
+
+### Anything else: certified pixels
+
+For other conditions the viewport is classified box by box with interval arithmetic, as for implicit curves. Each comparison is true on the whole box, false on the whole box, or undecided; `and`, `or` and `not` combine those three values, and decided parts are dropped as boxes shrink. The result lists `inside` rectangles, proven to lie entirely in the region, and `boundary` pixels that stay undecided. Every other pixel lies entirely outside. Where a function is undefined, such as x​ for x, the condition is false.
+
+```js
+const s = region("y^2 To force the pixel method for any condition, pass `{ method: "pixels" }`.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-3, 3], y: [-3, 3], width: 420, height: 420 });
+const r = region("x^2 + y^2 < 4 and y >= x^2 - 1", {}, vp).exact();
+for (const c of r.corners) PRINT(c.text, c.included ? "included" : "not included");
+PRINT("curves:", r.curves.map((c) => c.type).join(", "), "| area about", r.area.toFixed(6));
+SHOW(sceneSVG(vp, [{ item: r, color: "#0f766e", cornerLabels: true }], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/calculus.html
+
+Topic
+
+## Calculus pictures
+
+Tangent lines, shaded areas, Riemann sums, Taylor polynomials, gradient fields and level curves. Each function returns layers to draw together with the numbers behind the picture: exact where they are rational, certified enclosures otherwise.
+
+### Tangents and secants
+
+`tangent(f, x0)` gives the slope, the point of contact, the line and its equation. Where f and f′ are rational at x0​ the answer is exact; otherwise `slope` and `value` are `RationalInterval`s from [@ratmath/analytic](https://ratmath.com/analytic/) that provably hold the true numbers.
+
+```js
+const t = tangent("x^3 - x", 1);
+t.equation;            // "y = 2x - 2", exact
+tangent("sin(x)", 1).slope;   // an interval around cos(1), 12 digits wide
+secant("x^2", 0, 2).slope;    // 2
+drawScene(ctx, vp, [graph("x^3 - x", {}, vp).exact(), ...t.layers], { axes: true });
+```
+
+### Areas and integrals
+
+`areaUnder(f, [a, b], params, vp)` and `areaBetween(f, g, [a, b], params, vp)` are [Refinements](https://ratmath.com/graphics/fast-certified.html). The quick stage shades the region and integrates in floats. The exact stage returns the same shading with `integral` exact (for polynomials and other rational cases) or a certified interval. Parts where f is below g are shaded in a second colour and count negative.
+
+An end may be a constant such as `"pi/2"`, or `"inf"` and `"-inf"`. The integral is then improper: `improper` is true, and `integral` is `Infinity` when it is proven to diverge.
+
+```js
+areaUnder("x^2", [0, 3], {}, vp).exact().integral;         // 9, a Rational
+areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral;   // an interval around 2
+areaUnder("1/x^2", [1, "inf"], {}, vp).exact().integral;   // an interval around 1
+areaUnder("1/x", [1, "inf"], {}, vp).exact().integral;     // Infinity
+```
+
+`riemannSum(f, [a, b], n, params, { rule })` draws the rectangles (or trapezoids) and adds them up. The sum is an exact `Rational` when f is rational at the sample points. Rules: `left`, `right`, `midpoint`, `trapezoid`, `lower`, `upper`.
+
+### Taylor polynomials
+
+`taylorPolynomial(f, c, n)` returns the coefficients of (x−c)k, exact or enclosed, and an `expression` that `graph()` draws next to the function.
+
+### Gradients, fields and level curves
+
+`vectorField([P, Q], params, vp)` and `gradientField(F, params, vp)` return a frame of arrows. `gradientAt(F, [x, y])` gives the certified gradient at a point with an arrow and the line tangent to the level curve there. `contours(F, levels, params, vp)` returns one [implicit curve](https://ratmath.com/graphics/implicit.html) per level.
+
+```js
+const g = gradientAt("x^2 + y^2", [1, 2]);
+g.gradient.map(String);     // ["2", "4"], exact
+drawScene(ctx, vp, [gradientField("x^2 + y^2", {}, vp), ...contours("x^2 + y^2", [1, 4, 9], {}, vp).map((c) => c.curve.exact()), ...g.layers]);
+```
+
+### How this connects to analytic
+
+The numbers come from @ratmath/analytic: derivatives by automatic differentiation, integrals by Taylor models, improper integrals by its tail bounds. Anything that library returns with an `.ast` (a function made with `fn()`, a derivative, a Taylor polynomial) can be passed straight to `graph()`, `tangent()` and the rest. Its special functions draw too: `gamma(x)`, `lgamma(x)`, `digamma(x)`, `besselJ(n, x)`, `Si(x)`, `fresnelS(x)` and `fresnelC(x)` work in `graph()` with certified pixels.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-1, 4], y: [-1, 4], width: 420, height: 320 });
+const f = "x^2/2 - x + 1";
+const t = tangent(f, 2);
+const area = areaUnder(f, [0, 3], {}, vp).exact();
+const sum = riemannSum(f, [0, 3], 6, {}, { rule: "midpoint" });
+PRINT("tangent at 2:", t.equation);
+PRINT("integral from 0 to 3:", area.integral, "| midpoint sum with 6 pieces:", sum.sum);
+PRINT("sin from 0 to pi:", areaUnder("sin(x)", [0, "pi"], {}, vp).exact().integral.low.toDecimal(10), "…");
+SHOW(sceneSVG(vp, [area, { item: sum, color: "#ea580c" }, graph(f, {}, vp).exact(), ...t.layers], { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/space.html
+
+Topic
+
+## Surfaces and space curves
+
+Surfaces z=f(x,y), parametric surfaces and curves in space, projected to the plane. A 3D object is computed once and kept in space coordinates; turning the camera only repeats the projection, so dragging stays fast.
+
+### Fast, then certified
+
+`surface(f, params, { x, y, grid })` is a [Refinement](https://ratmath.com/graphics/fast-certified.html). The quick stage is a float grid. The exact stage evaluates every vertex with interval arithmetic and reports `error`: each drawn height is within that distance of the true one. Vertices where f is undefined are left out, so a surface such as 9−x2−y2​ stops at the edge of its domain.
+
+```js
+const cam = camera({ azimuth: 35, elevation: 25 });
+const s = surface("sin(x)*cos(y)", {}, { x: [-3, 3], y: [-3, 3], grid: 40 });
+const vp = spaceViewport(600, 450);
+drawScene(ctx, vp, [project3d(cam, [s.quick.value], { axes: true })]);   // at once
+drawScene(ctx, vp, [project3d(cam, [s.exact()], { axes: true })]);       // certified
+s.exact().error;                                                         // about 1e-14
+```
+
+### Cameras
+
+`camera({ azimuth, elevation, distance, zoom })` looks at the centre of the scene. `distance: Infinity`, the default, is a parallel projection; a finite distance gives perspective. `orbit(cam, dx, dy)` is the camera after a drag of that many pixels. The scene's box is drawn as a cube whatever its three ranges are, and `spaceViewport(width, height)` is a viewport the cube fits at every angle.
+
+### Curves, points and arrows
+
+`spaceCurve([x, y, z], params, { t })` and `parametricSurface([x, y, z], params, { u, v })` work the same way: a float sketch, then certified points. `points3d`, `segment3d` and `arrow3d` add marks. `tangentPlane(f, [x0, y0])` returns the plane as a small patch with the point of contact and the normal arrow.
+
+### One frame for every exporter
+
+`project3d(camera, items, { box, axes, light })` turns any mix of items into one `mesh` frame: faces and strokes in plane coordinates, sorted from far to near. It is an ordinary layer, so the same picture goes to canvas, SVG, TikZ, PDF, PNG and text. Styles per item: `color`, `opacity`, `wire`, `shading: "height"`.
+
+### Try it
+
+```js
+const cam = camera({ azimuth: 40, elevation: 28 });
+const s = surface("x^2/3 - y^2/3", {}, { x: [-2, 2], y: [-2, 2], grid: 20 }).exact();
+const t = tangentPlane("x^2/3 - y^2/3", [1, 1], {}, { size: "3/4" });
+PRINT("largest error of a vertex:", s.error);
+PRINT("tangent plane at (1, 1): height", t.point[2], "gradient", t.gradient);
+SHOW(sceneSVG(spaceViewport(420, 320), [project3d(cam, [{ item: s, shading: "height" }, ...t.layers], { axes: true })], { background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/animation.html
+
+Topic
+
+## Animation
+
+Let a parameter run. Every frame is drawn at an exact rational value, with the quick sketch while it plays and the certified picture when it stops.
+
+### Playing a parameter
+
+`animate(draw, { from, to, steps, duration, loop, bounce, onSettle })` calls `draw(value, info)` for each frame, where `value` is a Core `Rational`. It returns a controller with `play`, `pause`, `toggle`, `seek(index)`, `seekTo(fraction)` and `stop`. `onSettle` runs when the animation pauses, is sought or ends: that is the place to draw the exact stage.
+
+```js
+const anim = animate((a) => {
+  drawScene(ctx, vp, [graph("sin(a*x)", { a }, vp).quick.value], { axes: true, background: "#fff" });
+}, {
+  from: 1, to: 4, steps: 90, duration: 3000, bounce: true,
+  onSettle: async (a) => drawScene(ctx, vp, [await graph("sin(a*x)", { a }, vp).settle()], { axes: true, background: "#fff" }),
+});
+anim.play();
+```
+
+`parameterSteps(from, to, n)` gives the n+1 exact values on their own. Anything can be drawn in a frame: a tangent sliding along a curve, a Riemann sum with more and more pieces, a surface with the camera turning.
+
+### Animated files
+
+`animationSVG(vp, frames, { duration, loop, axes })` writes one SVG that plays wherever SVG images do, with no script. `animationPNG(vp, frames, options)` writes an animated PNG, which browsers play in an `<img>`. `frames` is a list of layer lists, one per frame.
+
+```js
+const frames = parameterSteps(1, 4, 30).map((a) => [graph("sin(a*x)", { a }, vp).quick.value]);
+const svg = animationSVG(vp, frames, { duration: 3000, axes: true, background: "#fff" });
+const png = await animationPNG(vp, frames, { duration: 3000, axes: true });
+```
+
+### Try it
+
+```js
+const vp = viewport({ x: [-2, 2], y: [-1, 4], width: 360, height: 280 });
+const f = "x^2";
+// a tangent line sliding along the parabola: one frame per exact point
+const frames = parameterSteps("-3/2", "3/2", 24).map((a) => {
+  const t = tangent(f, a);
+  return [graph(f, {}, vp).quick.value, { item: t.line, color: "#dc2626" }, { item: t.point, color: "#dc2626" }];
+});
+PRINT(frames.length, "frames; slope at the last one:", tangent(f, "3/2").slope);
+SHOW(animationSVG(vp, frames, { duration: 4000, axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/drawing.html
+
+Topic
+
+## Drawing and labels
+
+The library computes; small renderers draw. One scene can go to a canvas for interactive use or to an SVG string for export, with labels in mathematical notation.
+
+### Canvas and SVG
+
+Interactive drawing uses the 2D canvas: it redraws a few thousand cells or a long polyline in well under a frame, which is what slider drags need. SVG is for export, printing, server-side rendering and tests, where a vector file and crisp text matter more than redraw speed. There is no WebGL; nothing so far needs it.
+
+Both back ends share one step, `primitives(vp, layers)`, which is the only place exact values become floating-point pixel coordinates. It returns paths, rectangles, dots and labels; `paint(ctx2d, prims)` and `svgElements(prims)` only paint them. A native app can paint the same primitives with its own drawing API.
+
+```js
+drawScene(ctx2d, vp, layers, { axes: true, scale: devicePixelRatio, background: "#fff" });
+const svg = sceneSVG(vp, layers, { axes: true, background: "#fff" });
+```
+
+### Layers
+
+A layer is a geometry object, a frame from `graph`, `implicit` or `region` (quick or exact), a `label`, or `{ item, ...style }`. Style keys: `color`, `width`, `dash`, `fill`, `fillAlpha`, `radius` and `open` for points, `label` (TeX, or `true` for the object's own `toTeX()`), `anchor`, and for regions `corners` and `cornerLabels`.
+
+### Labels with mathematical notation
+
+`label([x, y], tex, { anchor, color, size })` places LaTeX at a world point. Anchors `n ne e se s sw w nw c` say where the label sits relative to the point; labels that would run off the edge flip to the other side.
+
+- On a canvas, which cannot typeset TeX, mountLabels(container, vp, prims, { katex }) places the labels in an HTML layer over the canvas and typesets them with KaTeX. Positions are in percent, so they follow the canvas when CSS scales it. Without KaTeX, labels fall back to a plain-text reading (texToText: 9x2​ becomes x²/9).
+
+- In SVG, pass tex: (s) => katex.renderToString(s) to sceneSVG, and labels go in as foreignObject HTML (the page needs KaTeX's stylesheet). Without it, they are elements with the plain-text reading.
+
+These docs load KaTeX from `ratmath.com/assets/katex/0.19.1/`, shared by all the RatMath docs sites.
+
+### Axes
+
+`axes: true` (or `{ grid, axis, text }` colors) draws a grid at 1, 2 or 5 times a power of ten, axis lines through 0, and tick labels.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-1, 5], y: [-1, 4], width: 360, height: 300 });
+const r = region("y <= 3 - x/2, y >= x - 1, x >= 0, y >= 0", {}, vp).exact();
+const c = circle([2, 1], 1);
+const hits = intersect(line("y = x/2"), c);
+const layers = [{ item: r, color: "#0f766e" }, { item: c, color: "#dc2626" }, ...hits.map((p, i) => ({ item: p, color: "#dc2626", label: true, anchor: i ? "s" : "n" })), label([3, "3.4"], "y \\le 3 - \\tfrac{x}{2}")];
+PRINT(primitives(vp, layers).length, "primitives");
+SHOW(sceneSVG(vp, layers, { axes: true, background: "#fff" }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/export.html
+
+Topic
+
+## Exporting: images, PDF, LaTeX and text
+
+Any scene that can be drawn on a canvas can also leave the browser: as an SVG or PNG image, as a PDF, as TikZ or PGFPlots for a LaTeX paper or worksheet, and as plain text for a terminal, a README or an email. All of them take the same layers and options as `drawScene`, and none needs anything installed.
+
+```js
+const layers = [{ item: graph("x^3/4 - x", {}, vp).exact(), color: "#0f766e" }, label([2, 2], "y = \\tfrac{x^3}{4} - x")];
+sceneSVG(vp, layers, { axes: true });                  // an <svg> string
+await scenePNG(vp, layers, { axes: true, scale: 2 });  // PNG bytes, at twice the size
+scenePDF(vp, layers, { axes: true });                  // PDF bytes, vector
+sceneTikZ(vp, layers, { axes: true, width: 8 });       // a tikzpicture, 8 cm wide
+scenePGFPlots(vp, layers, { axes: true, width: 8 });   // a PGFPlots axis
+sceneASCII(vp, layers, { axes: true, cols: 72 });      // 72 columns of text
+```
+
+### Which one to use
+
+| Format | Good for | Labels |
+
+| SVG | Web pages, slides, image editors, printing from a browser | KaTeX HTML (with tex) or plain text |
+
+| PNG | Anywhere an image goes: messages, documents, slides, social posts, app share sheets | Plain text |
+
+| PDF | Printing, handouts, attaching a sharp figure without LaTeX | Plain text (Helvetica and Symbol) |
+
+| TikZ | LaTeX documents: papers, exams, worksheets, Beamer slides. The figure uses the document's own fonts and can be edited by hand afterwards. | Real TeX, typeset by LaTeX |
+
+| PGFPlots | LaTeX documents whose other plots use PGFPlots: axes, ticks and grid in its house style, curves as \addplot you can restyle or add a legend to | Real TeX |
+
+| Text | Terminals and REPLs, code comments, plain-text email, quick checks in tests, screen readers that read text | Plain text (x² ≤ 1/2, or x^2 `sceneTikZ(vp, layers, options)` returns a `tikzpicture`. Unlike the SVG, which is in pixels, its coordinates are the viewport's world coordinates: the picture sets TikZ's `x` and `y` units so the viewport is `width` centimetres wide, and a corner at (4,0) is written `(4,0)`. That makes the file readable and easy to adjust: move a label, add an arrow, change a color.
+
+- Exact pieces stay exact. Polygon corners, segment ends and tick marks are written at their values (rounded to a tenth of a pixel, so 38​ shows as 2.667). Circles are written as TikZ ellipses with their true center and radius, not as many-sided polygons. Labels keep their LaTeX, so a point labelled with toTeX() shows (2+525​​,1+55​​) set by LaTeX itself.
+
+- Certified frames stay certified. Shaded cells from exact() become filled rectangles (side-by-side cells are merged), so the printed picture still provably contains the graph. Quick sketches become paths, with points that lie within a quarter pixel of a straight line dropped (simplify, in pixels; 0 keeps every point).
+
+- Sizes. width and height are in centimetres (height defaults to the viewport's aspect ratio). Line widths, dashes and dot radii are given by the scene in pixels and written as pt times pt (default 0.5), so a 2-pixel curve is a 1 pt line whatever the figure's size.
+
+- Colors become \definecolor lines at the top of the picture (rm1, rm2, …); xcolor names such as red or blue!50 pass through.
+
+- A complete file. standalone: true wraps the picture in a standalone document that compiles with pdflatex as it is, giving a tightly cropped PDF. preamble adds lines to it. In your own document, load tikz (and amsmath if labels use it) and paste the picture.
+
+- axes: true draws the grid, axes and tick labels at exact tick values. background fills the viewport; clip: false lets drawing run past its edges.
+
+```js
+import { writeFileSync } from "node:fs";
+writeFileSync("figure.tex", sceneTikZ(vp, layers, { axes: true, standalone: true }));
+// $ pdflatex figure.tex   -> figure.pdf
+```
+
+The lower-level `tikzElements(vp, prims, options)` turns any list of primitives (from `primitives`, or your own) into TikZ commands without the surrounding picture.
+
+### PGFPlots
+
+`scenePGFPlots(vp, layers, options)` puts the layers in a PGFPlots `axis` sized `width` × `height` cm with the viewport as its limits. PGFPlots draws the axes, ticks and grid itself (`axes: true`; otherwise the axis is hidden) and clips to the viewport. Curves become `\addplot coordinates`, so you can restyle them or add `\legend`; regions, certified cells, circles, points and labels are TikZ paths in axis coordinates, exactly as in the TikZ export. `axisOptions` adds keys to the axis (for example `"xlabel=$x$, ylabel=$y$"`). The document needs `\usepackage{pgfplots}` and `\pgfplotsset{compat=1.11}` or later; `standalone: true` includes both.
+
+### PNG
+
+`await scenePNG(vp, layers, options)` gives the bytes of a PNG file. `scale` multiplies the pixel size (2 for sharp images on high-density screens), and `background` fills it (it is transparent otherwise).
+
+- In a browser the scene is painted with drawScene on an OffscreenCanvas, so the PNG matches what is on screen.
+
+- In Node, Bun or a worker without a canvas, a built-in renderer paints the same primitives with anti-aliased edges, and labels in a small built-in font (DejaVu Sans). Certified cells land exactly on their pixels. engine: "software" chooses it in a browser too; rasterize and encodePNG are its two halves.
+
+### PDF
+
+`scenePDF(vp, layers, options)` gives the bytes of a one-page vector PDF the size of the viewport (`pt` points per pixel, default 0.75, so 96 pixels make an inch). Lines, regions and certified cells stay vector and print sharply at any size; circles are true curves. Labels use the PDF base fonts, Helvetica with Symbol for ≤, π, ​ and Greek, so they are plain text, not typeset TeX. For TeX labels, export TikZ with `standalone: true` and run `pdflatex`.
+
+```js
+import { writeFileSync } from "node:fs";
+writeFileSync("figure.png", await scenePNG(vp, layers, { axes: true, scale: 2, background: "#fff" }));
+writeFileSync("figure.pdf", scenePDF(vp, layers, { axes: true }));
+
+// In a browser: offer a download.
+const url = URL.createObjectURL(new Blob([scenePDF(vp, layers)], { type: "application/pdf" }));
+```
+
+### Text
+
+`sceneASCII(vp, layers, options)` draws the scene with characters, `cols` wide (default 72) and `rows` tall (default: the viewport's shape, counting a character as twice as tall as it is wide). Three character sets:
+
+| mode | Characters | Detail per character |
+
+| "ascii" (default) | - \| / \ _ for curves, chosen by the curve's direction; # for solid blocks; . for shaded regions; @ and O for filled and open dots; - \| + for axes | 1, with direction |
+
+| "braille" | Unicode Braille patterns ⡇⠑⢄⣀, ░ shading, ●○ dots, box-drawing axes | 2 × 4 dots |
+
+| "blocks" | Unicode quadrant blocks ▖▗▘▝▀▄▌▐█ | 2 × 2 blocks |
+
+ASCII is safe everywhere, including old terminals and source files. Braille gives the smoothest curves but needs a font that has the patterns (most monospace fonts do). Labels are written last, so they stay readable; in ASCII mode they are spelled with 7-bit characters (`asciiText`: `x²` becomes `x^2`, `≤` becomes `<=`). Tick labels give way to the picture when there is no room for them.
+
+Certified frames stay certified here too. A character is inked when any ink touches it, so every character the certified cells pass through is marked: the picture is coarser, never wrong. To get exactly one character per certified pixel, make the viewport `cols` by `rows` pixels.
+
+Other options: `border: true` frames the picture, `color: true` adds 24-bit ANSI colors for terminals, `labels: false` leaves labels out. `asciiElements(vp, prims, options)` works on primitives directly.
+
+```js
+// In a terminal (Node or Bun):
+console.log(sceneASCII(vp, [graph("sin(x)", {}, vp).exact()], { axes: true, mode: "braille", color: true }));
+```
+
+The box below draws one scene several ways. Change `mode`, `cols` or the layers, and press Run.
+
+### Try it
+
+```js
+const vp = viewport({ x: [-3, 3], y: [-2, 2], width: 360, height: 240 });
+const f = "x^3/4 - x";
+const layers = [
+  { item: graph(f, {}, vp).exact(), color: "#0f766e" },
+  { item: circle([0, 0], 1), color: "#dc2626" },
+  label([1, "1.6"], "y = \\tfrac{x^3}{4} - x"),
+];
+PRINT(sceneASCII(vp, layers, { axes: true, cols: 60 }));
+PRINT(sceneASCII(vp, layers, { axes: true, cols: 60, mode: "blocks" }));   // or "braille"
+const tex = sceneTikZ(vp, layers, { axes: true, width: 8 });
+PRINT(tex.split("\n").slice(0, 12).join("\n") + "\n…");
+const png = await scenePNG(vp, layers, { axes: true, background: "#fff" });
+const pdf = scenePDF(vp, layers, { axes: true });
+PRINT(`PNG: ${png.length} bytes, PDF: ${pdf.length} bytes`);
+let bin = "";
+for (const b of png) bin += String.fromCharCode(b);
+SHOW(`<img alt="the scene as a PNG" width="360" src="data:image/png;base64,${btoa(bin)}">`);
+```
+
+---
+
+Page: https://ratmath.com/graphics/figures.html
+
+Pictures for the Shelf
+
+## Figures for the Shelf
+
+Every picture the Shelf packages ask for is a figure: layers, the window of the plane they sit in, and a status that says how far the picture can be trusted. One figure goes to SVG, PNG, PDF, TikZ and text.
+
+### What a figure holds
+
+`figure({ layers, x, y, axes, equal, status, title, notes })` wraps the frames the scene renderers already draw. When `x` and `y` are left out the window is what the layers span, with a margin; `equal: true` keeps one unit the same length on both axes, so circles stay round. `figureSVG(fig, { width, height })`, `figurePNG`, `figurePDF`, `figureTikZ` and `figureASCII` draw it at a size; a figure may carry a size hint of its own (a proof tree knows how wide its formulas are).
+
+### Four statuses
+
+A picture makes claims, and the status says what kind:
+
+- exact: every mark is at the exact value (exact data, exact layout). A payoff diagram drawn through its kinks, a Tutte drawing with rational coordinates, a proof tree.
+
+- certified: every mark is within a stated error, or a pixel's class is proved. An escape-time picture whose undecided pixels have their own colour.
+
+- estimated: floating-point values, not proved. A phase portrait's orbits, a spring layout, a density curve. Any certified number in the picture (an equilibrium, a shaded probability) is said in notes.
+
+- simulated: the result of seeded random runs. The same seed draws the same picture; another seed a different one.
+
+### Two new frames
+
+`shapes([...])` is a frame of styled shapes in world coordinates, made by `path(points, style)`, `dot(at, style)`, `arrow(from, to, style)` and `text(at, tex, style)`. `image({ x, y, width, height, cells })` is a grid of coloured cells, row 0 at the bottom, with runs of one colour merged into one rectangle. Escape-time pictures, Venn shading and stability regions are images.
+
+### Frames to animate
+
+Functions that build a sequence (a sampling distribution growing, a moving frame, a heat solution in time, a construction step by step) return `{ kind: "frames", frames }`. `framesSVG` turns them into one animated SVG that plays with no script; `framesPNG` into an animated PNG.
+
+### Polygons and solids
+
+`polygonsFigure(polygons, { colorBy })` fills polygons, coloured by their number of sides or by a key; `solidFigure(vertices, faces)` lights a polyhedron's faces and sorts them by depth in a box that keeps the solid's proportions. The geometry package computes tilings and solids and draws them with these.
+
+### Try it
+
+```js
+const tri = [[0, 0], [1, 0], [0.5, 0.866]];
+const sq = [[1, 0], [2, 0], [2, 1], [1, 1]];
+const flat = polygonsFigure([tri, sq, [[0, 0], [0.5, 0.866], [-0.5, 0.866]]], { title: "two triangles and a square" });
+PRINT(flat.count, "polygons,", flat.status);
+const V = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]];
+const F = [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]];
+const tet = solidFigure(V, F);
+PRINT("a tetrahedron:", tet.faces, "faces,", tet.vertices, "vertices");
+SHOW(figureSVG(flat, { width: 300, height: 200 }));
+SHOW(figureSVG(tet, { width: 300, height: 260 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/stats-charts.html
+
+Pictures for the Shelf
+
+## Charts for statistics
+
+The pictures phase of the statistics package: box plots, histograms with a density over them, density curves with a certified shaded probability, quantile plots, fitted lines with bands, power curves, and a sampling distribution building up.
+
+### Box plots by Tukey's hinges
+
+`fiveNumbers(values)` sorts the data and takes the median of each half (the middle value in both halves when n is odd). With Q1​ and Q3​ the hinges and IQR=Q3​−Q1​, the whiskers reach the furthest data inside [Q1​−1.5IQR, Q3​+1.5IQR] and the rest are drawn as outliers. `boxPlot({ name: values, … })` sets the boxes side by side.
+
+### Histograms and densities
+
+`histogramFigure(values, { bins, distribution })` draws the counts, or with a distribution the density scale (total area 1) with the curve over it. `densityFigure(dist, { shade: [a, b] })` draws the density from the distribution's fast float version and shades P(a≤X≤b). The curve is estimated; the probability in the notes is the distribution's own `prob(a, b)`, which in `@ratmath/stats` is a certified interval.
+
+### Quantile plots
+
+`qqPlot(values, dist)` sets the i-th smallest value against the distribution's quantile at (i−21​)/n. Data from that family, after a shift and a scale, fall along a line; the line drawn is the one through the quartiles. A bend at the ends means heavier or lighter tails.
+
+### Fits, power and sampling
+
+`scatterFit(points, { fit, band })` takes a line as `{ intercept, slope }` or a regression's coefficients, and a band as a function x↦[ℓ,u]. `powerCurve` draws the chance a test rejects against the true effect, with the level as a dashed line. `samplingBuildUp(values, { steps })` gives frames of a histogram of the first k values on shared bins and scales, marked simulated: animate them to watch the shape settle.
+
+### Try it
+
+```js
+// a seeded sample: 300 means of 12 uniform values (a stand-in for the stats package's generator)
+let s = 7;
+const rnd = () => ((s = (s * 48271) % 2147483647) / 2147483647);
+const means = Array.from({ length: 300 }, () => Array.from({ length: 12 }, rnd).reduce((a, b) => a + b) / 12);
+const five = fiveNumbers(means);
+PRINT("median", five.median.toFixed(4), "IQR", (five.q3 - five.q1).toFixed(4), "outliers", five.outliers.length);
+const sd = Math.sqrt(1 / 144);
+const normal = { fast: { pdf: (x) => Math.exp(-((x - 0.5) ** 2) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI)) } };
+SHOW(figureSVG(histogramFigure(means, { bins: 14, distribution: normal }), { width: 420, height: 260 }));
+SHOW(figureSVG(boxPlot({ means, "first 30": means.slice(0, 30) }), { width: 420, height: 220 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/finance-charts.html
+
+Pictures for the Shelf
+
+## Charts for finance
+
+The pictures phase of the finance package: payments split into interest and principal, the balance falling, percentile bands from repeated runs, yield curves and option payoffs.
+
+### Loans
+
+`amortisationChart(loan)` stacks each period's interest under its principal (extra payments and a balloon count as principal), so the bar's height is what was paid. `balanceChart(loan)` draws the balance after each period, starting from the principal. Both take a loan from `@ratmath/finance` or any `{ schedule }`; the bars are the schedule's cents, so the chart is exact.
+
+### Fan charts
+
+`fanChart(simulation)` reads a simulation's `bands`: one row per period with its percentiles. The outer band joins the lowest and highest percentiles, the inner one the next pair, and the median is a line. The runs are seeded, so the picture is marked simulated: the same seed draws it again.
+
+### Yield curves
+
+`yieldCurveFigure(curve)` draws spot rates against maturity in years, from a curve with `periods`, `frequency` and `spot(k)`, or from points.
+
+### Payoffs at expiry
+
+A position in calls, puts, stock and bonds has a payoff that is piecewise linear in the price S at expiry, with kinks only at the strikes. `payoffFigure(strategy)` evaluates the payoff and the profit exactly at the ends of the window and at each kink, and joins them by straight lines: that is the whole graph, so the picture is exact. Break-even prices are marked.
+
+### Try it
+
+```js
+// a bull call spread: long the 100 call for 7, short the 110 call for 3
+const legs = [{ type: "call", strike: 100, premium: 7, q: 1 }, { type: "call", strike: 110, premium: 3, q: -1 }];
+const payoff = (S) => legs.reduce((acc, l) => acc + l.q * Math.max(0, Number(S) - l.strike), 0);
+const cost = legs.reduce((acc, l) => acc + l.q * l.premium, 0);
+const spread = { payoff, profit: (S) => payoff(S) - cost, kinks: [100, 110], breakEvens: [100 + cost] };
+const fig = payoffFigure(spread, { range: [85, 125] });
+PRINT("net cost", cost, "; break-even at", 100 + cost, "; status", fig.status);
+SHOW(figureSVG(fig, { width: 420, height: 260 }));
+const bands = Array.from({ length: 21 }, (_, k) => ({ period: k, 5: 1000 * 1.02 ** k - 25 * k, 25: 1000 * 1.04 ** k - 10 * k, 50: 1000 * 1.05 ** k, 75: 1000 * 1.06 ** k + 10 * k, 95: 1000 * 1.08 ** k + 20 * k }));
+SHOW(figureSVG(fanChart({ bands }), { width: 420, height: 260 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/graph-drawing.html
+
+Pictures for the Shelf
+
+## Drawing graphs
+
+The graph-drawing phase of the discrete package, shared with logic for automata and Kripke models: layouts, colourings and highlighted paths, and Tutte's exact planar drawing with its check.
+
+### What can be drawn
+
+`drawGraph(g, options)` takes a `Graph` from `@ratmath/discrete` (anything with `vertices()` and `edges()`) or plain `{ vertices, edges }`. Directed edges get arrowheads, a pair of opposite edges is drawn as two curves, loops sit above their vertex, and weights or labels are written on the edges. `colours` fills vertices by class (a colouring) and `highlight` draws edges and vertices bold (a matching, a shortest path, a cut).
+
+### Layouts
+
+- circle, grid and bipartite (with left) place the vertices directly.
+
+- layered puts each vertex at its distance from the roots and orders each layer by the average place of its neighbours above, in a few sweeps, to cut crossings.
+
+- tree is a tidy tree: leaves one unit apart, each parent centred over its children.
+
+- spring is Fruchterman and Reingold's force model from the circle layout, with no random start: reproducible, but floating point, so the figure is marked estimated.
+
+### Tutte's drawing, exactly
+
+Fix a face of a planar graph on a convex polygon and put every other vertex at the average of its neighbours:
+
+pv​=degv1​w∼v∑​pw​.
+That is a linear system with a unique solution (its matrix is a Laplacian with some rows fixed), and Tutte proved that for a 3-connected planar graph the drawing has no crossings and every face is convex. `tutteLayout(g, { outer })` places the outer face at rational points on the unit circle, (1+t21−t2​,1+t22t​), solves the system over the rationals, and then checks every pair of edges for a crossing with exact orientation tests. For K5​ and K3,3​, which have no plane drawing, the check fails, as it must. Pass `faces` from discrete's `planarity(g)` to use its longest face as the outer one.
+
+### Automata and Kripke models
+
+`automatonFigure(a)` lays out states in layers from the start state, joins the symbols of parallel transitions (`a,b`), doubles accepting states and draws an entry arrow. `kripkeFigure(k)` writes under each world the atoms true there.
+
+### Try it
+
+```js
+// the cube graph, drawn by Tutte's method from the face 0 1 2 3
+const cube = { edges: [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]] };
+const t = tutteLayout(cube, { outer: [0, 1, 2, 3] });
+PRINT("inner vertices:", [4, 5, 6, 7].map((v) => `${v} at (${t.exact.get(String(v)).join(", ")})`).join("; "));
+PRINT("plane drawing (checked exactly):", t.planarDrawing);
+const K33 = { edges: [["a",1],["a",2],["a",3],["b",1],["b",2],["b",3],["c",1],["c",2],["c",3]] };
+PRINT("K3,3:", tutteLayout(K33, { outer: ["a", 1, "b", 2] }).planarDrawing);
+SHOW(figureSVG(drawGraph(cube, { layout: "tutte", outer: [0, 1, 2, 3], colours: { 0: 0, 2: 0, 5: 0, 7: 0, 1: 1, 3: 1, 4: 1, 6: 1 } }), { width: 300, height: 300 }));
+SHOW(figureSVG(drawGraph({ edges: [["s","a",3],["s","b",2],["a","t",2],["b","a",1],["b","t",3]], directed: true }, { layout: "layered", roots: ["s"], highlight: { edges: [["s","b"],["b","t"]] } }), { width: 300, height: 260 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/logic-diagrams.html
+
+Pictures for the Shelf
+
+## Logic diagrams
+
+The pictures phase of the logic package: proof trees, truth trees and Venn diagrams. Automata and Kripke frames are graphs, drawn as on [Drawing graphs](https://ratmath.com/graphics/graph-drawing.html).
+
+### Proof trees
+
+A sequent derivation is a tree: each inference has its conclusion below a bar and its premises above, with the rule's name at the bar's right. `proofTreeFigure(d)` takes a `Derivation` from `@ratmath/logic` (or any `{ sequent, rule, premises }`) and lays it out with `treeLayoutOf`: each subtree is as wide as its widest line, subtrees sit a fixed gap apart, and each conclusion is centred over its premises. Widths are counted in characters, so positions are exact whole numbers.
+
+### Truth trees
+
+`truthTreeFigure(t)` draws an analytic tableau top down: the numbered lines of each node, with the rule and the line each came from; branches below; ✗ under a closed branch with the two lines that contradict, ○ under an open one. A tree whose every branch closes proves its premises inconsistent.
+
+### Venn diagrams
+
+`vennFigure(["A", "B", "C"], { shade })` draws up to three sets. `shade` picks regions by membership: a function such as `(m) => m.A && !m.B`, or strings such as `"110"` (in A and B, not in C). The eight regions of three sets are A∩B∩C, A∩B∩C′, …, A′∩B′∩C′; a syllogism's premises shade the regions they say are empty and `marks` put a cross in a region that has a member. The shading is a grid of cells, so it is estimated at the circles' edges; `regions` lists exactly which regions are shaded.
+
+### Try it
+
+```js
+// all M are P, all S are M: shade what the premises say is empty
+const empty = (m) => (m.M && !m.P) || (m.S && !m.M);
+const v = vennFigure(["S", "M", "P"], { shade: empty });
+PRINT("shaded regions (S M P):", v.regions.join(" "));
+PRINT("S outside P is shaded entirely, so all S are P:", ["100", "110"].every((r) => v.regions.includes(r)));
+SHOW(figureSVG(v, { width: 320, height: 280 }));
+const leaf = (s) => ({ sequent: s, rule: "Ax", premises: [] });
+SHOW(figureSVG(proofTreeFigure({ sequent: "p ∧ q ⊢ q ∧ p", rule: "∧L", premises: [{ sequent: "p, q ⊢ q ∧ p", rule: "∧R", premises: [leaf("p, q ⊢ q"), leaf("p, q ⊢ p")] }] })));
+```
+
+---
+
+Page: https://ratmath.com/graphics/dynamics-pictures.html
+
+Pictures for the Shelf
+
+## Pictures of dynamics
+
+The pictures phase of the chaos package: cobwebs, orbits and return maps, bifurcation diagrams, escape-time pictures with honest pixels, attractors, L-systems and cellular automata, and frames that move a parameter.
+
+### Cobwebs
+
+To iterate xn+1​=f(xn​) by eye: go up to the graph of f, across to the diagonal y=x, and repeat. `cobwebFigure(f, x0, n)` draws that staircase with the graph and the diagonal. A fixed point is where the graph meets the diagonal; the staircase spirals in when ∣f′∣<1 there and out when ∣f′∣>1. It takes a float function or chaos's `IteratedMap`.
+
+### Orbits, return maps, bifurcations
+
+`orbitFigure` draws xn​ against n; `returnMapFigure(values, { lag })` the pairs (xn​,xn+k​), where a series that looks random can show it is a curve. `bifurcationFigure(diagram)` draws the long-run values from chaos's `bifurcationDiagram`, with `marks` at bifurcation points that chaos proves.
+
+### Escape-time pictures
+
+Chaos classifies each pixel of the Mandelbrot set, a Julia set or Newton's basins as proved inside, proved outside, or undecided. `escapeFigure(grid)` keeps the three apart: inside dark, outside shaded by escape time, undecided in its own colour (orange by default), so the picture never claims more than was proved. Its status is certified.
+
+### Attractors, L-systems, automata
+
+`pointCloudFigure` and `attractor3d` plot points in the plane or in space. `segmentsFigure(lsystem.turtle(n))` draws a turtle path, marked exact when the angle is a multiple of 30° and chaos gives exact end points. `spacetimeFigure(rows)` draws an elementary automaton's run with time going down, and `lifeFigure` a Life pattern.
+
+### Moving a parameter
+
+`parameterFrames(values, build)` builds one figure per value; `framesSVG` plays them. A cobweb as r runs through the period doublings of the logistic map is the classic example.
+
+### Try it
+
+```js
+const f = (r) => (x) => r * x * (1 - x);
+const c = cobwebFigure(f(3.2), 0.15, 40, { range: [0, 1] });
+PRINT("after 40 steps the orbit alternates:", c.orbit.slice(-2).map((x) => x.toFixed(6)).join(", "));
+SHOW(figureSVG(c, { width: 300, height: 300 }));
+// the long-run values of the logistic family, from floats
+const cols = [];
+for (let i = 0; i <= 400; i++) {
+  const r = 2.8 + (1.2 * i) / 400;
+  let x = 0.5;
+  for (let k = 0; k < 500; k++) x = r * x * (1 - x);
+  const pts = new Set();
+  for (let k = 0; k < 80; k++) pts.add(Math.round((x = r * x * (1 - x)) * 1e4) / 1e4);
+  cols.push({ parameter: r, points: [...pts] });
+}
+SHOW(figureSVG(bifurcationFigure(cols, { marks: [{ at: 3, label: "r = 3" }] }), { width: 420, height: 280 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/equation-pictures.html
+
+Pictures for the Shelf
+
+## Phase portraits and curvature
+
+The pictures for differential equations and differential geometry (roadmap 13.1 and 13.2): phase portraits with proved equilibria, solutions in time, the moving frame of a curve, and surfaces coloured by curvature.
+
+### Phase portraits
+
+For a planar system x′=f(x,y), y′=g(x,y), `phasePortrait([f, g], { x, y, orbits })` draws:
+
+- arrows of the direction field, all one length so only the direction shows;
+
+- the nullclines f=0 (where motion is vertical) and g=0 (horizontal), traced by marching squares;
+
+- orbits through the given points, followed forward and backward by Runge–Kutta in floats;
+
+- every equilibrium in the window, found and proved unique in a small box by analytic's planarSystem(...).equilibria, and labelled by its kind from the certified trace and determinant of the Jacobian: saddle when detJ; a node or spiral, stable or not, by the sign of trJ and of (trJ)2−4detJ.
+
+The arrows and orbits are estimated; the equilibria are proved, and `fig.equilibria` has their boxes. When the search covers the whole window, `complete` says there are no others.
+
+### Solutions in time
+
+`solutionFrames(u, times)` draws u(x,t) at each time on one window: the heat equation's modes decaying, a wave travelling. Play them with `framesSVG`.
+
+### The moving frame
+
+For a plane curve r(t), the unit tangent is T=r′/∣r′∣, the normal N is T turned a quarter turn, and the curvature is κ=(x′y′′−y′x′′)/∣r′∣3. The osculating circle has radius 1/∣κ∣ and centre r+N/κ. `frameAlongCurve(r, t)` gets all of these certified from analytic's `curve(...).at(t)` and draws them; `frameFrames` moves the frame along the curve.
+
+### Curvature on a surface
+
+`curvatureSurface([x, y, z], { u, v })` colours each cell of a parametric surface by its Gaussian curvature K=(LN−M2)/(EG−F2), or by the mean curvature: red where it is positive (the surface bends the same way in every direction, like a sphere), blue where it is negative (a saddle), white near zero. On a torus the outside is red and the inside blue, and Gauss–Bonnet says the two cancel: ∬KdA=2πχ=0. `curveOnSurface` lifts a path in (u,v) to the surface, for a geodesic or the path of a transported vector.
+
+### Try it
+
+```js
+const pp = phasePortrait(["y", "x - x^3 - y/4"], { x: [-2, 2], y: [-1.5, 1.5], orbits: [[0.05, 0], [-0.05, 0], [1.9, 1.3], [-1.9, -1.3]] });
+for (const e of pp.equilibria) PRINT(e.kind, "near", e.point.map((iv) => iv.low.toNumber().toFixed(6)).join(", "));
+SHOW(figureSVG(pp, { width: 420, height: 320 }));
+const torus = curvatureSurface(["(2+cos(v))*cos(u)", "(2+cos(v))*sin(u)", "sin(v)"], { u: [0, 6.2832], v: [0, 6.2832], grid: 26 });
+PRINT("Gaussian curvature ranges over", torus.range.map((k) => k.toFixed(3)).join(" to "));
+SHOW(figureSVG(torus, { width: 360, height: 280 }));
+```
+
+---
+
+Page: https://ratmath.com/graphics/numerical-pictures.html
+
+Pictures for the Shelf
+
+## Pictures of numerical methods
+
+The pictures for numerical analysis (roadmap 13.3): Newton's tangents, interpolation and Runge's phenomenon, the pieces of a quadrature rule, stability regions, and observed orders of convergence.
+
+### Newton's method
+
+Newton's step replaces f by its tangent at xk​ and goes to where the tangent meets the axis: xk+1​=xk​−f(xk​)/f′(xk​). `newtonFigure(f, x0, n)` draws each tangent; near a simple root the error is squared at each step, so the tangents crowd together fast.
+
+### Interpolation
+
+Through n points there is one polynomial of degree below n. `interpolationFigure(f, n)` builds it by divided differences and draws f, the interpolant and the error. For f(x)=1/(1+25x2) on equally spaced points the error near the ends grows with n (Runge's phenomenon); with `nodes: "chebyshev"`, the points cos2n(2i+1)π​, it shrinks.
+
+### Quadrature
+
+`quadratureFigure(f, [a, b], n, { rule })` shades what the rule integrates: rectangles for the midpoint rule, trapezoids, or for Simpson's rule a parabola through each pair of panels, which integrates cubics exactly.
+
+### Stability regions
+
+A one-step method applied to y′=λy multiplies y by R(hλ) at each step: R(z)=1+z for Euler, 1+z+z2/2 for Heun, ∑k≤4​zk/k! for the classical Runge–Kutta method. The solution stays bounded when ∣R(z)∣≤1. `stabilityRegion(R)` shades that set; Euler's is the disc of radius 1 about −1.
+
+### Orders of convergence
+
+If the error behaves like Chp, then logE=logC+plogh: a line of slope p on log–log axes. `convergenceFigure(rows)` plots (h,E) and fits the slope, the observed order.
+
+### Try it
+
+```js
+const runge = "1/(1+25*x^2)";
+const eq = interpolationFigure(runge, 13);
+const ch = interpolationFigure(runge, 13, { nodes: "chebyshev" });
+PRINT("largest error, equal spacing:", eq.maxError.toFixed(3), "; Chebyshev points:", ch.maxError.toFixed(3));
+SHOW(figureSVG(eq, { width: 420, height: 260 }));
+const rows = [0.2, 0.1, 0.05, 0.025].map((h) => {
+  // the trapezoid rule for the integral of e^x on [0, 1]
+  const n = Math.round(1 / h);
+  let s = (1 + Math.E) / 2;
+  for (let k = 1; k < n; k++) s += Math.exp(k * h);
+  return [h, Math.abs(s * h - (Math.E - 1))];
+});
+PRINT("observed order of the trapezoid rule:", convergenceFigure(rows).order.toFixed(3));
+SHOW(figureSVG(stabilityRegion("rk4"), { width: 320, height: 300 }));
+```

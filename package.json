@@ -51,17 +51,18 @@
     "url": "git+https://github.com/ratmath/graphics.git"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "bun": ">=1.4.2"
   },
   "dependencies": {
     "@ratmath/analytic": "^0.1.0",
     "@ratmath/algebraic": "^0.1.0"
   },
   "peerDependencies": {
-    "@ratmath/core": ">=0.10.0 <0.12.0"
+    "@ratmath/core": ">=0.12.0"
   },
   "devDependencies": {
-    "@ratmath/core": "^0.11.0",
+    "@ratmath/core": "^0.12.0",
     "katex": "0.19.1"
   },
   "workspaces": [

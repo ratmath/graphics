@@ -51,7 +51,8 @@
     "url": "git+https://github.com/ratmath/graphics.git"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "bun": ">=1.4.2"
   },
   "dependencies": {
     "@ratmath/analytic": "^0.1.0",

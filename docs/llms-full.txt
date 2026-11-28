@@ -1,6 +1,6 @@
 # @ratmath/graphics 0.1.0: full documentation
 
-> Exact-rational graphics for RatMath: fast float sketches while exploring, certified pixel-exact plots when settled; graphs, parametric and polar curves, regions, exact geometry, and exports to SVG, TikZ, PDF, PNG and text. From https://ratmath.com/graphics/, commit 9e2043e. Each page ends with a runnable example; in it, PRINT(...) prints.
+> Exact-rational graphics for RatMath: fast float sketches while exploring, certified pixel-exact plots when settled; graphs, parametric and polar curves, regions, exact geometry, and exports to SVG, TikZ, PDF, PNG and text. From https://ratmath.com/graphics/, commit 17713ff. Each page ends with a runnable example; in it, PRINT(...) prints.
 
 
 ---
